@@ -12,8 +12,8 @@ const nextConfig = {
   compress: true,
   // Increase the build timeout
   experimental: {
-    // Reduce memory usage during builds
-    optimizeCss: true,
+    // Remove optimizeCss as it requires critters
+    // optimizeCss: true,
     // Optimize font loading
     optimizeFonts: true,
   },
