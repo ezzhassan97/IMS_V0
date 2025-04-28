@@ -83,7 +83,12 @@ const MOCK_SHEET_DATA = {
       Bedrooms: Math.floor(Math.random() * 5),
       Bathrooms: Math.floor(1 + Math.random() * 4),
     })),
-  sheets: ["Units", "Pricing", "Metadata"],
+  sheets: ["Project 1", "Project 2", "Payment Sheet"],
+  sheetDetails: [
+    { name: "Project 1", rows: 124, columns: 8 },
+    { name: "Project 2", rows: 86, columns: 5 },
+    { name: "Payment Sheet", rows: 38, columns: 4 },
+  ],
   fileSize: "2.4 MB",
   lastModified: new Date().toLocaleDateString(),
   fileType: "Excel (.xlsx)",
@@ -228,10 +233,46 @@ export function SheetPreprocessor() {
   const [presetName, setPresetName] = useState(`Preset-${new Date().toLocaleDateString().replace(/\//g, "-")}`)
 
   const [headerPositions, setHeaderPositions] = useState({
-    Units: 0,
-    Pricing: 1,
-    Metadata: 0,
+    "Project 1": 0,
+    "Project 2": 1,
+    "Payment Sheet": -1, // -1 indicates not detected
   })
+
+  const [headerDetectionStatus, setHeaderDetectionStatus] = useState({
+    "Project 1": "detected", // detected, undetected
+    "Project 2": "detected",
+    "Payment Sheet": "undetected",
+  })
+
+  const [ignoredTabs, setIgnoredTabs] = useState({
+    "Project 1": false,
+    "Project 2": false,
+    "Payment Sheet": false,
+  })
+
+  const [sheetPreviewMode, setSheetPreviewMode] = useState("both") // "input", "output", "both"
+  const [showActionSummary, setShowActionSummary] = useState(false)
+  const [actionHistory, setActionHistory] = useState<
+    Array<{
+      step: string
+      action: string
+      timestamp: string
+      details?: string
+    }>
+  >([
+    {
+      step: "Initial Setup",
+      action: "Developer and projects selected",
+      timestamp: new Date().toISOString(),
+      details: "Developer: ABC Developers, Projects: Palm Heights, Metro Residences",
+    },
+    {
+      step: "Headers Detection",
+      action: "Auto-detected headers",
+      timestamp: new Date().toISOString(),
+      details: "Project 1: Row 0, Project 2: Row 1, Payment Sheet: Not detected",
+    },
+  ])
 
   const [cleaningOptions, setCleaningOptions] = useState({
     removeEmptyRows: false,
@@ -244,9 +285,9 @@ export function SheetPreprocessor() {
 
   const [mergeTabsEnabled, setMergeTabsEnabled] = useState(false)
   const [tabsToMerge, setTabsToMerge] = useState({
-    Units: false,
-    Pricing: false,
-    Metadata: false,
+    "Project 1": false,
+    "Project 2": false,
+    "Payment Sheet": false,
   })
 
   // Mock projects data
@@ -894,658 +935,1195 @@ export function SheetPreprocessor() {
               <Button
                 variant="outline"
                 className="flex items-center gap-1"
-                onClick={() => {
-                  // This would open the action summary drawer in a real implementation
-                  toast({
-                    title: "Action Summary",
-                    description: "This would open the action summary drawer in a real implementation.",
-                  })
-                }}
+                onClick={() => setShowActionSummary(!showActionSummary)}
               >
                 <Settings className="h-4 w-4" />
                 <span>Action Summary</span>
               </Button>
             </div>
 
-            {/* Step-by-step workflow */}
-            <Tabs defaultValue="headers" className="w-full">
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="headers">1. Headers & Cleaning</TabsTrigger>
-                <TabsTrigger value="projects">2. Project Assignment</TabsTrigger>
-                <TabsTrigger value="merging">3. Tab Merging & Mapping</TabsTrigger>
-              </TabsList>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`md:col-span-${showActionSummary ? "2" : "3"} space-y-4`}>
+                {/* Step-by-step workflow */}
+                <Tabs defaultValue="headers" className="w-full">
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="headers" className="flex items-center gap-1">
+                      1. Headers Detection
+                      {Object.values(headerDetectionStatus).every((status) => status === "detected") && (
+                        <Check className="h-4 w-4 text-green-500" />
+                      )}
+                    </TabsTrigger>
+                    {projects.length > 1 && sheetData.sheets.length > 1 && (
+                      <TabsTrigger value="projects">2. Project Assignment</TabsTrigger>
+                    )}
+                    <TabsTrigger value="merging">
+                      {projects.length > 1 && sheetData.sheets.length > 1 ? "3" : "2"}. Tab Merging & Mapping
+                    </TabsTrigger>
+                  </TabsList>
 
-              {/* Step 1: Headers & Cleaning */}
-              <TabsContent value="headers" className="space-y-4">
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-3">Header Detection</h4>
+                  {/* Step 1: Headers Detection */}
+                  <TabsContent value="headers" className="space-y-4">
+                    <div className="border rounded-md p-4">
+                      <h4 className="text-sm font-medium mb-3">Header Detection</h4>
 
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="col-span-2 space-y-2">
-                        <label className="text-sm font-medium">Available Tabs</label>
-                        <div className="flex flex-wrap gap-2">
-                          {(sheetData.sheets || ["Units", "Pricing", "Metadata"]).map(
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="col-span-2 space-y-2">
+                            <label className="text-sm font-medium">Available Tabs</label>
+                            <div className="flex flex-wrap gap-2">
+                              {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map(
+                                (sheet: string, index: number) => (
+                                  <Button
+                                    key={index}
+                                    variant={sheet === (sheetData.sheetName || "Project 1") ? "default" : "outline"}
+                                    size="sm"
+                                    className={`text-xs ${ignoredTabs[sheet] ? "opacity-50 line-through" : ""}`}
+                                  >
+                                    {sheet}
+                                    {ignoredTabs[sheet] && <X className="ml-1 h-3 w-3" />}
+                                  </Button>
+                                ),
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              Detected headers:
+                              {Object.entries(headerPositions)
+                                .filter(([tab, pos]) => pos >= 0 && !ignoredTabs[tab])
+                                .map(([tab]) => tab)
+                                .join(", ")}
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Auto-Detect Headers</label>
+                            <Button variant="secondary" size="sm" className="w-full">
+                              Detect Headers in All Tabs
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                          {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map(
                             (sheet: string, index: number) => (
-                              <Button
-                                key={index}
-                                variant={sheet === (sheetData.sheetName || "Units") ? "default" : "outline"}
-                                size="sm"
-                                className="text-xs"
-                              >
-                                {sheet}
-                              </Button>
+                              <div key={index} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium flex items-center gap-1">
+                                    {sheet}
+                                    {headerDetectionStatus[sheet] === "detected" ? (
+                                      <Check className="h-4 w-4 text-green-500" />
+                                    ) : (
+                                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                                    )}
+                                  </label>
+                                  <div className="flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground">Ignore</label>
+                                    <Checkbox
+                                      checked={ignoredTabs[sheet]}
+                                      onCheckedChange={(checked) => {
+                                        const newIgnoredTabs = { ...ignoredTabs }
+                                        newIgnoredTabs[sheet] = !!checked
+                                        setIgnoredTabs(newIgnoredTabs)
+
+                                        // Add to action history
+                                        if (checked) {
+                                          setActionHistory([
+                                            ...actionHistory,
+                                            {
+                                              step: "Headers Detection",
+                                              action: `Ignored tab: ${sheet}`,
+                                              timestamp: new Date().toISOString(),
+                                            },
+                                          ])
+                                        } else {
+                                          setActionHistory([
+                                            ...actionHistory,
+                                            {
+                                              step: "Headers Detection",
+                                              action: `Re-included tab: ${sheet}`,
+                                              timestamp: new Date().toISOString(),
+                                            },
+                                          ])
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="number"
+                                    min="-1"
+                                    value={headerPositions[sheet]}
+                                    onChange={(e) => {
+                                      const newValue = Number.parseInt(e.target.value) || 0
+                                      setHeaderPositions({ ...headerPositions, [sheet]: newValue })
+                                      setHeaderDetectionStatus({
+                                        ...headerDetectionStatus,
+                                        [sheet]: newValue >= 0 ? "detected" : "undetected",
+                                      })
+
+                                      // Add to action history
+                                      setActionHistory([
+                                        ...actionHistory,
+                                        {
+                                          step: "Headers Detection",
+                                          action: `Set header position for ${sheet}`,
+                                          timestamp: new Date().toISOString(),
+                                          details: `Row: ${newValue}`,
+                                        },
+                                      ])
+                                    }}
+                                    className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                                    disabled={ignoredTabs[sheet]}
+                                  />
+                                  {headerDetectionStatus[sheet] === "detected" ? (
+                                    <Badge className="bg-green-100 text-green-800">Detected</Badge>
+                                  ) : (
+                                    <Badge className="bg-red-100 text-red-800">Not Detected</Badge>
+                                  )}
+                                  {headerDetectionStatus[sheet] === "undetected" && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7"
+                                      onClick={() => {
+                                        setHeaderPositions({ ...headerPositions, [sheet]: 0 })
+                                        setHeaderDetectionStatus({
+                                          ...headerDetectionStatus,
+                                          [sheet]: "detected",
+                                        })
+
+                                        // Add to action history
+                                        setActionHistory([
+                                          ...actionHistory,
+                                          {
+                                            step: "Headers Detection",
+                                            action: `Auto-detected headers for ${sheet}`,
+                                            timestamp: new Date().toISOString(),
+                                            details: "Row: 0",
+                                          },
+                                        ])
+                                      }}
+                                    >
+                                      Auto-detect
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
                             ),
                           )}
                         </div>
                       </div>
+                    </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Auto-Detect Headers</label>
-                        <Button variant="secondary" size="sm" className="w-full">
-                          Detect Headers in All Tabs
+                    <div className="border rounded-md p-4">
+                      <h4 className="text-sm font-medium mb-3">Data Cleaning Issues</h4>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-2 border rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Empty Rows</span>
+                              <Badge variant="outline" className="text-red-600">
+                                12 detected
+                              </Badge>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Data Cleaning",
+                                    action: "Removed empty rows",
+                                    timestamp: new Date().toISOString(),
+                                    details: "12 rows removed",
+                                  },
+                                ])
+
+                                toast({
+                                  title: "Empty rows removed",
+                                  description: "12 empty rows have been removed from the sheet.",
+                                })
+                              }}
+                            >
+                              Remove Empty Rows
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2 border rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Empty Columns</span>
+                              <Badge variant="outline" className="text-red-600">
+                                2 detected
+                              </Badge>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Data Cleaning",
+                                    action: "Removed empty columns",
+                                    timestamp: new Date().toISOString(),
+                                    details: "2 columns removed",
+                                  },
+                                ])
+
+                                toast({
+                                  title: "Empty columns removed",
+                                  description: "2 empty columns have been removed from the sheet.",
+                                })
+                              }}
+                            >
+                              Remove Empty Columns
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2 border rounded-md p-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm">Merged Cells</span>
+                              <Badge variant="outline" className="text-amber-600">
+                                3 detected
+                              </Badge>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs"
+                              onClick={() => {
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Data Cleaning",
+                                    action: "Unmerged cells",
+                                    timestamp: new Date().toISOString(),
+                                    details: "3 merged cells unmerged",
+                                  },
+                                ])
+
+                                toast({
+                                  title: "Cells unmerged",
+                                  description: "3 merged cells have been unmerged.",
+                                })
+                              }}
+                            >
+                              Unmerge Cells
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={() => {
+                          if (projects.length > 1 && sheetData.sheets.length > 1) {
+                            document.querySelector('[data-value="projects"]')?.click()
+                          } else {
+                            document.querySelector('[data-value="merging"]')?.click()
+                          }
+                        }}
+                      >
+                        {projects.length > 1 && sheetData.sheets.length > 1
+                          ? "Continue to Project Assignment"
+                          : "Continue to Tab Merging"}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
+
+                  {/* Step 2: Project Assignment - Only show if multiple projects and tabs */}
+                  {projects.length > 1 && sheetData.sheets.length > 1 && (
+                    <TabsContent value="projects" className="space-y-4">
+                      <div className="border rounded-md p-4">
+                        <h4 className="text-sm font-medium mb-3">Project Assignment</h4>
+
+                        <div className="space-y-4">
+                          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                            <div className="flex items-center gap-2">
+                              <FileSpreadsheet className="h-4 w-4" />
+                              <span className="font-medium">Project Assignment Strategy</span>
+                            </div>
+                            <p className="mt-1 text-xs">
+                              You've selected multiple projects. You need to assign each tab to a specific project or
+                              use a column to differentiate between projects.
+                            </p>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                id="use-column"
+                                checked={useColumnForProjects}
+                                onCheckedChange={(checked) => {
+                                  setUseColumnForProjects(!!checked)
+
+                                  // Add to action history
+                                  setActionHistory([
+                                    ...actionHistory,
+                                    {
+                                      step: "Project Assignment",
+                                      action: checked
+                                        ? "Enabled column-based project assignment"
+                                        : "Disabled column-based project assignment",
+                                      timestamp: new Date().toISOString(),
+                                    },
+                                  ])
+                                }}
+                              />
+                              <label htmlFor="use-column" className="text-sm">
+                                Use a column to differentiate between projects
+                              </label>
+                            </div>
+
+                            <div className="border-t pt-4">
+                              <h5 className="text-sm font-medium mb-2">Assign tabs to projects:</h5>
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div className="font-medium">Tab</div>
+                                  <div className="font-medium">Project</div>
+                                </div>
+
+                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                                  .filter((sheet) => !ignoredTabs[sheet])
+                                  .map((sheet, index) => (
+                                    <div key={index} className="grid grid-cols-2 gap-2 items-center">
+                                      <div className="text-sm">{sheet}</div>
+                                      <Select defaultValue={index === 0 ? "proj1" : "proj3"}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                          <SelectValue placeholder="Select project" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {projects.map((projId) => {
+                                            const project = PROJECTS.find((p) => p.id === projId)
+                                            return project ? (
+                                              <SelectItem key={projId} value={projId}>
+                                                {project.name}
+                                              </SelectItem>
+                                            ) : null
+                                          })}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          onClick={() => document.querySelector('[data-value="headers"]')?.click()}
+                        >
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back to Headers Detection
+                        </Button>
+                        <Button onClick={() => document.querySelector('[data-value="merging"]')?.click()}>
+                          Continue to Tab Merging
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TabsContent>
+                  )}
+
+                  {/* Step 3: Tab Merging & Mapping */}
+                  <TabsContent value="merging" className="space-y-4">
+                    <div className="border rounded-md p-4">
+                      <h4 className="text-sm font-medium mb-3">Tab Merging</h4>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Merge Multiple Tabs</label>
+                          <Switch
+                            checked={mergeTabsEnabled}
+                            onCheckedChange={(checked) => {
+                              setMergeTabsEnabled(checked)
+
+                              // Add to action history
+                              setActionHistory([
+                                ...actionHistory,
+                                {
+                                  step: "Tab Merging",
+                                  action: checked ? "Enabled tab merging" : "Disabled tab merging",
+                                  timestamp: new Date().toISOString(),
+                                },
+                              ])
+                            }}
+                          />
+                        </div>
+
+                        <div className="border rounded-md p-3 bg-muted/20">
+                          <div className="text-xs text-muted-foreground mb-2">Tabs to Merge:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                              .filter((sheet) => !ignoredTabs[sheet])
+                              .map((sheet, index) => (
+                                <Badge key={index} variant="outline" className="flex items-center gap-1">
+                                  {sheet}
+                                  <Checkbox
+                                    className="h-3 w-3 ml-1"
+                                    checked={tabsToMerge[sheet]}
+                                    onCheckedChange={(checked) => {
+                                      const newTabsToMerge = { ...tabsToMerge }
+                                      newTabsToMerge[sheet] = !!checked
+                                      setTabsToMerge(newTabsToMerge)
+
+                                      // Add to action history
+                                      if (checked) {
+                                        setActionHistory([
+                                          ...actionHistory,
+                                          {
+                                            step: "Tab Merging",
+                                            action: `Selected tab for merging: ${sheet}`,
+                                            timestamp: new Date().toISOString(),
+                                          },
+                                        ])
+                                      } else {
+                                        setActionHistory([
+                                          ...actionHistory,
+                                          {
+                                            step: "Tab Merging",
+                                            action: `Deselected tab from merging: ${sheet}`,
+                                            timestamp: new Date().toISOString(),
+                                          },
+                                        ])
+                                      }
+                                    }}
+                                    disabled={!mergeTabsEnabled}
+                                  />
+                                </Badge>
+                              ))}
+                          </div>
+                        </div>
+
+                        <div className="text-xs text-amber-600 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Validation required before merging tabs with different structures
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          disabled={!mergeTabsEnabled}
+                          onClick={() => {
+                            // Add to action history
+                            setActionHistory([
+                              ...actionHistory,
+                              {
+                                step: "Tab Merging",
+                                action: "Validated tabs for merging",
+                                timestamp: new Date().toISOString(),
+                                details: "All selected tabs are compatible for merging",
+                              },
+                            ])
+
+                            toast({
+                              title: "Tabs validated",
+                              description: "Selected tabs are compatible for merging.",
+                            })
+                          }}
+                        >
+                          Validate Selected Tabs
                         </Button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Units Tab</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min="0"
-                            value={headerPositions.Units}
-                            onChange={(e) =>
-                              setHeaderPositions({ ...headerPositions, Units: Number.parseInt(e.target.value) || 0 })
-                            }
-                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                          />
-                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Pricing Tab</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min="0"
-                            value={headerPositions.Pricing}
-                            onChange={(e) =>
-                              setHeaderPositions({ ...headerPositions, Pricing: Number.parseInt(e.target.value) || 0 })
-                            }
-                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                          />
-                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Metadata Tab</label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min="0"
-                            value={headerPositions.Metadata}
-                            onChange={(e) =>
-                              setHeaderPositions({ ...headerPositions, Metadata: Number.parseInt(e.target.value) || 0 })
-                            }
-                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                          />
-                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-3">Data Cleaning</h4>
-
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="remove-empty-rows"
-                              checked={cleaningOptions.removeEmptyRows}
-                              onCheckedChange={(checked) =>
-                                setCleaningOptions({ ...cleaningOptions, removeEmptyRows: !!checked })
-                              }
-                            />
-                            <label htmlFor="remove-empty-rows" className="text-sm">
-                              Remove Empty Rows
-                            </label>
-                          </div>
-                          <Badge variant="outline">12 empty rows detected</Badge>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="remove-empty-cols"
-                              checked={cleaningOptions.removeEmptyColumns}
-                              onCheckedChange={(checked) =>
-                                setCleaningOptions({ ...cleaningOptions, removeEmptyColumns: !!checked })
-                              }
-                            />
-                            <label htmlFor="remove-empty-cols" className="text-sm">
-                              Remove Empty Columns
-                            </label>
-                          </div>
-                          <Badge variant="outline">0 empty columns detected</Badge>
-                        </div>
-                      </div>
+                    <div className="border rounded-md p-4">
+                      <h4 className="text-sm font-medium mb-3">Smart Column Mapping</h4>
 
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="unmerge-cells"
-                              checked={cleaningOptions.unmergeCells}
-                              onCheckedChange={(checked) =>
-                                setCleaningOptions({ ...cleaningOptions, unmergeCells: !!checked })
-                              }
-                            />
-                            <label htmlFor="unmerge-cells" className="text-sm">
-                              Unmerge Merged Cells
-                            </label>
+                        <div className="text-xs text-muted-foreground mb-1">
+                          System detected similar columns across tabs that could be mapped:
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="border rounded-md p-2 bg-muted/20">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-blue-50">
+                                  Project 1
+                                </Badge>
+                                <span className="text-sm font-medium">Area (sqm)</span>
+                              </div>
+                              <div className="text-xs">→</div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-green-50">
+                                  Project 2
+                                </Badge>
+                                <span className="text-sm font-medium">Space</span>
+                              </div>
+                              <Badge className="bg-green-100 text-green-800 text-xs">95% match</Badge>
+                            </div>
                           </div>
-                          <Badge variant="outline">3 merged cells detected</Badge>
-                        </div>
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="reposition-headers"
-                              checked={cleaningOptions.repositionHeaders}
-                              onCheckedChange={(checked) =>
-                                setCleaningOptions({ ...cleaningOptions, repositionHeaders: !!checked })
-                              }
-                            />
-                            <label htmlFor="reposition-headers" className="text-sm">
-                              Reposition Misplaced Headers
-                            </label>
+                          <div className="border rounded-md p-2 bg-muted/20">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-blue-50">
+                                  Project 1
+                                </Badge>
+                                <span className="text-sm font-medium">Unit ID</span>
+                              </div>
+                              <div className="text-xs">→</div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-green-50">
+                                  Project 2
+                                </Badge>
+                                <span className="text-sm font-medium">Unit Code</span>
+                              </div>
+                              <Badge className="bg-green-100 text-green-800 text-xs">90% match</Badge>
+                            </div>
                           </div>
-                          <Badge variant="outline">Headers detected in row 2</Badge>
-                        </div>
-                      </div>
-                    </div>
 
-                    <Button className="w-full mt-2">Apply Data Cleaning</Button>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button onClick={() => document.querySelector('[data-value="projects"]')?.click()}>
-                    Continue to Project Assignment
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* Step 2: Project Assignment */}
-              <TabsContent value="projects" className="space-y-4">
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-3">Project Assignment</h4>
-
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                      <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-4 w-4" />
-                        <span className="font-medium">Project Assignment Strategy</span>
-                      </div>
-                      <p className="mt-1 text-xs">
-                        {projects.length > 1
-                          ? "You've selected multiple projects. You need to assign each tab to a specific project or use a column to differentiate between projects."
-                          : "You've selected a single project. All data will be assigned to this project automatically."}
-                      </p>
-                    </div>
-
-                    {projects.length > 1 ? (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="use-column"
-                            checked={useColumnForProjects}
-                            onCheckedChange={(checked) => setUseColumnForProjects(!!checked)}
-                          />
-                          <label htmlFor="use-column" className="text-sm">
-                            Use a column to differentiate between projects
-                          </label>
-                        </div>
-
-                        <div className="border-t pt-4">
-                          <h5 className="text-sm font-medium mb-2">Assign tabs to projects:</h5>
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div className="font-medium">Tab</div>
-                              <div className="font-medium">Project</div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 items-center">
-                              <div className="text-sm">Units</div>
-                              <Select defaultValue="proj1">
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Select project" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {projects.map((projId) => {
-                                    const project = PROJECTS.find((p) => p.id === projId)
-                                    return project ? (
-                                      <SelectItem key={projId} value={projId}>
-                                        {project.name}
-                                      </SelectItem>
-                                    ) : null
-                                  })}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 items-center">
-                              <div className="text-sm">Pricing</div>
-                              <Select defaultValue="proj3">
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Select project" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {projects.map((projId) => {
-                                    const project = PROJECTS.find((p) => p.id === projId)
-                                    return project ? (
-                                      <SelectItem key={projId} value={projId}>
-                                        {project.name}
-                                      </SelectItem>
-                                    ) : null
-                                  })}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2 items-center">
-                              <div className="text-sm">Metadata</div>
-                              <Select defaultValue="proj1">
-                                <SelectTrigger className="h-8 text-xs">
-                                  <SelectValue placeholder="Select project" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {projects.map((projId) => {
-                                    const project = PROJECTS.find((p) => p.id === projId)
-                                    return project ? (
-                                      <SelectItem key={projId} value={projId}>
-                                        {project.name}
-                                      </SelectItem>
-                                    ) : null
-                                  })}
-                                </SelectContent>
-                              </Select>
+                          <div className="border rounded-md p-2 bg-muted/20">
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-blue-50">
+                                  Project 1
+                                </Badge>
+                                <span className="text-sm font-medium">Building</span>
+                              </div>
+                              <div className="text-xs">→</div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="bg-amber-50">
+                                  Payment Sheet
+                                </Badge>
+                                <span className="text-sm font-medium">Block</span>
+                              </div>
+                              <Badge className="bg-amber-100 text-amber-800 text-xs">75% match</Badge>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="bg-muted/20 p-4 rounded-md">
-                        <div className="flex items-center">
-                          <Check className="h-4 w-4 text-green-600 mr-2" />
-                          <span className="text-sm">All data will be assigned to:</span>
-                        </div>
-                        <div className="font-medium mt-1">
-                          {projects.length > 0
-                            ? PROJECTS.find((p) => p.id === projects[0])?.name
-                            : "No project selected"}
-                        </div>
-                      </div>
-                    )}
 
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {projects.length > 1
-                        ? "A 'Project' column will be auto-created during merging."
-                        : "Project name will be auto-filled for all records."}
-                    </div>
-                  </div>
-                </div>
+                        <div className="flex justify-between">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Add to action history
+                              setActionHistory([
+                                ...actionHistory,
+                                {
+                                  step: "Column Mapping",
+                                  action: "Adjusted column mappings",
+                                  timestamp: new Date().toISOString(),
+                                },
+                              ])
+                            }}
+                          >
+                            Adjust Mappings
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              // Add to action history
+                              setActionHistory([
+                                ...actionHistory,
+                                {
+                                  step: "Column Mapping",
+                                  action: "Accepted all mapping suggestions",
+                                  timestamp: new Date().toISOString(),
+                                  details: "3 column mappings applied",
+                                },
+                              ])
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => document.querySelector('[data-value="headers"]')?.click()}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Headers & Cleaning
-                  </Button>
-                  <Button onClick={() => document.querySelector('[data-value="merging"]')?.click()}>
-                    Continue to Tab Merging
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </TabsContent>
-
-              {/* Step 3: Tab Merging & Mapping */}
-              <TabsContent value="merging" className="space-y-4">
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-3">Tab Merging</h4>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Merge Multiple Tabs</label>
-                      <Switch checked={mergeTabsEnabled} onCheckedChange={setMergeTabsEnabled} />
-                    </div>
-
-                    <div className="border rounded-md p-3 bg-muted/20">
-                      <div className="text-xs text-muted-foreground mb-2">Tabs to Merge:</div>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Units
-                          <Checkbox
-                            className="h-3 w-3 ml-1"
-                            checked={tabsToMerge.Units}
-                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Units: !!checked })}
-                            disabled={!mergeTabsEnabled}
-                          />
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Pricing
-                          <Checkbox
-                            className="h-3 w-3 ml-1"
-                            checked={tabsToMerge.Pricing}
-                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Pricing: !!checked })}
-                            disabled={!mergeTabsEnabled}
-                          />
-                        </Badge>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          Metadata
-                          <Checkbox
-                            className="h-3 w-3 ml-1"
-                            checked={tabsToMerge.Metadata}
-                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Metadata: !!checked })}
-                            disabled={!mergeTabsEnabled}
-                          />
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-amber-600 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      Validation required before merging tabs with different structures
-                    </div>
-
-                    <Button variant="outline" size="sm" className="w-full">
-                      Validate Selected Tabs
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="border rounded-md p-4">
-                  <h4 className="text-sm font-medium mb-3">Smart Column Mapping</h4>
-
-                  <div className="space-y-3">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      System detected similar columns across tabs that could be mapped:
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="border rounded-md p-2 bg-muted/20">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-blue-50">
-                              Units
-                            </Badge>
-                            <span className="text-sm font-medium">Area (sqm)</span>
-                          </div>
-                          <div className="text-xs">→</div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-green-50">
-                              Pricing
-                            </Badge>
-                            <span className="text-sm font-medium">Space</span>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800 text-xs">95% match</Badge>
-                        </div>
-                      </div>
-
-                      <div className="border rounded-md p-2 bg-muted/20">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-blue-50">
-                              Units
-                            </Badge>
-                            <span className="text-sm font-medium">Unit ID</span>
-                          </div>
-                          <div className="text-xs">→</div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-green-50">
-                              Pricing
-                            </Badge>
-                            <span className="text-sm font-medium">Unit Code</span>
-                          </div>
-                          <Badge className="bg-green-100 text-green-800 text-xs">90% match</Badge>
-                        </div>
-                      </div>
-
-                      <div className="border rounded-md p-2 bg-muted/20">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-blue-50">
-                              Units
-                            </Badge>
-                            <span className="text-sm font-medium">Building</span>
-                          </div>
-                          <div className="text-xs">→</div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-amber-50">
-                              Metadata
-                            </Badge>
-                            <span className="text-sm font-medium">Block</span>
-                          </div>
-                          <Badge className="bg-amber-100 text-amber-800 text-xs">75% match</Badge>
+                              toast({
+                                title: "Mappings accepted",
+                                description: "All suggested column mappings have been applied.",
+                              })
+                            }}
+                          >
+                            Accept All Suggestions
+                          </Button>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-between">
-                      <Button variant="outline" size="sm">
-                        Adjust Mappings
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (projects.length > 1 && sheetData.sheets.length > 1) {
+                            document.querySelector('[data-value="projects"]')?.click()
+                          } else {
+                            document.querySelector('[data-value="headers"]')?.click()
+                          }
+                        }}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        {projects.length > 1 && sheetData.sheets.length > 1
+                          ? "Back to Project Assignment"
+                          : "Back to Headers Detection"}
                       </Button>
-                      <Button variant="outline" size="sm">
-                        Accept All Suggestions
+                      <Button onClick={() => handleNext()}>
+                        Continue to Column Mapping
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Sheet Preview Section with Input/Output Split */}
+                <div className="mt-6 border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Sheet Preview</h3>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={sheetPreviewMode === "input" || sheetPreviewMode === "both" ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => {
+                          if (sheetPreviewMode === "input") {
+                            setSheetPreviewMode("both")
+                          } else if (sheetPreviewMode === "both") {
+                            setSheetPreviewMode("output")
+                          } else {
+                            setSheetPreviewMode("input")
+                          }
+                        }}
+                      >
+                        <FileSpreadsheet className="h-3 w-3 mr-1" />
+                        Input Sheet
+                      </Button>
+                      <Button
+                        variant={sheetPreviewMode === "output" || sheetPreviewMode === "both" ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => {
+                          if (sheetPreviewMode === "output") {
+                            setSheetPreviewMode("both")
+                          } else if (sheetPreviewMode === "both") {
+                            setSheetPreviewMode("input")
+                          } else {
+                            setSheetPreviewMode("output")
+                          }
+                        }}
+                      >
+                        <FileSpreadsheet className="h-3 w-3 mr-1" />
+                        Output Sheet
                       </Button>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => document.querySelector('[data-value="projects"]')?.click()}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Project Assignment
-                  </Button>
-                  <Button onClick={() => handleNext()}>
-                    Continue to Column Mapping
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </TabsContent>
-            </Tabs>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Input Sheet */}
+                    {(sheetPreviewMode === "input" || sheetPreviewMode === "both") && (
+                      <div
+                        className={`border rounded-md ${sheetPreviewMode === "both" ? "md:col-span-1" : "md:col-span-2"}`}
+                      >
+                        <div className="bg-muted p-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs font-medium">Input Sheet</span>
+                          </div>
+                          <div className="flex gap-1">
+                            {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                              .filter((sheet) => !ignoredTabs[sheet])
+                              .map((sheet: string, index: number) => (
+                                <Button
+                                  key={index}
+                                  variant={sheet === (sheetData.sheetName || "Project 1") ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className="h-6 text-xs px-2"
+                                >
+                                  {sheet}
+                                </Button>
+                              ))}
+                          </div>
+                        </div>
+                        <ScrollArea className="h-[300px]">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
+                                  {sheetData?.headers?.map((header: string, i: number) => (
+                                    <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
+                                      {header}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                                  <tr
+                                    key={rowIndex}
+                                    className={`${rowIndex === headerPositions["Project 1"] ? "bg-blue-50" : ""} ${
+                                      rowIndex === 3 || rowIndex === 7 ? "bg-red-50" : ""
+                                    }`}
+                                  >
+                                    <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
+                                    {sheetData.headers.map((header: string, colIndex: number) => (
+                                      <td
+                                        key={colIndex}
+                                        className={`p-2 text-xs whitespace-nowrap ${
+                                          (colIndex === 2 && rowIndex === 5) || (colIndex === 4 && rowIndex === 6)
+                                            ? "bg-amber-50"
+                                            : ""
+                                        }`}
+                                      >
+                                        {row[header]}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
 
-            {/* Sheet Preview Section with Input/Output Split */}
-            <div className="mt-6 border-t pt-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Sheet Preview</h3>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                    <FileSpreadsheet className="h-3 w-3 mr-1" />
-                    Input Sheet
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                    <FileSpreadsheet className="h-3 w-3 mr-1" />
-                    Output Sheet
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-                    <FileSpreadsheet className="h-3 w-3 mr-1" />
-                    Both
-                  </Button>
+                    {/* Output Sheet (Processed) */}
+                    {(sheetPreviewMode === "output" || sheetPreviewMode === "both") && (
+                      <div
+                        className={`border rounded-md ${sheetPreviewMode === "both" ? "md:col-span-1" : "md:col-span-2"}`}
+                      >
+                        <div className="bg-muted p-2 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-xs font-medium">Output Sheet (Processed)</span>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            Preview
+                          </Badge>
+                        </div>
+                        <ScrollArea className="h-[300px]">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
+                                  {/* Add Project column if multiple projects */}
+                                  {projects.length > 1 && (
+                                    <th className="p-2 text-left text-xs whitespace-nowrap bg-green-50">Project</th>
+                                  )}
+                                  {sheetData?.headers?.map((header: string, i: number) => (
+                                    <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
+                                      {header}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                                  <tr key={rowIndex}>
+                                    <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
+                                    {/* Add Project value if multiple projects */}
+                                    {projects.length > 1 && (
+                                      <td className="p-2 text-xs whitespace-nowrap bg-green-50">
+                                        {PROJECTS.find((p) => p.id === projects[0])?.name}
+                                      </td>
+                                    )}
+                                    {sheetData.headers.map((header: string, colIndex: number) => (
+                                      <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
+                                        {row[header]}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Showing first 10 rows of {sheetData?.rows?.length} total rows
+                  </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Input Sheet */}
-                <div className="border rounded-md">
-                  <div className="bg-muted p-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs font-medium">Input Sheet</span>
+              {/* Action Summary Side Panel */}
+              {showActionSummary && (
+                <div className="md:col-span-1 border-l pl-4">
+                  <div className="sticky top-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium">Action Summary</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setShowActionSummary(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="flex gap-1">
-                      {(sheetData.sheets || ["Units", "Pricing", "Metadata"]).map((sheet: string, index: number) => (
-                        <Button
-                          key={index}
-                          variant={sheet === (sheetData.sheetName || "Units") ? "secondary" : "ghost"}
-                          size="sm"
-                          className="h-6 text-xs px-2"
-                        >
-                          {sheet}
-                        </Button>
+
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                      {actionHistory.map((action, index) => (
+                        <div key={index} className="border rounded-md p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">
+                              {action.step}
+                            </Badge>
+                            <span className="text-muted-foreground">
+                              {new Date(action.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <p className="font-medium mt-1">{action.action}</p>
+                          {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                        </div>
                       ))}
                     </div>
                   </div>
-                  <ScrollArea className="h-[300px]">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-muted/50">
-                            <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
-                            {sheetData?.headers?.map((header: string, i: number) => (
-                              <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                            <tr
-                              key={rowIndex}
-                              className={rowIndex === sheetPreparationSettings.headerRowIndex ? "bg-blue-50" : ""}
-                            >
-                              <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
-                              {sheetData.headers.map((header: string, colIndex: number) => (
-                                <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
-                                  {row[header]}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </ScrollArea>
                 </div>
-
-                {/* Output Sheet (Processed) */}
-                <div className="border rounded-md">
-                  <div className="bg-muted p-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs font-medium">Output Sheet (Processed)</span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      Preview
-                    </Badge>
-                  </div>
-                  <ScrollArea className="h-[300px]">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-muted/50">
-                            <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
-                            {/* Add Project column if multiple projects */}
-                            {projects.length > 1 && (
-                              <th className="p-2 text-left text-xs whitespace-nowrap bg-green-50">Project</th>
-                            )}
-                            {sheetData?.headers?.map((header: string, i: number) => (
-                              <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                            <tr key={rowIndex}>
-                              <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
-                              {/* Add Project value if multiple projects */}
-                              {projects.length > 1 && (
-                                <td className="p-2 text-xs whitespace-nowrap bg-green-50">
-                                  {PROJECTS.find((p) => p.id === projects[0])?.name}
-                                </td>
-                              )}
-                              {sheetData.headers.map((header: string, colIndex: number) => (
-                                <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
-                                  {row[header]}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </ScrollArea>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Showing first 10 rows of {sheetData?.rows?.length} total rows
-              </p>
+              )}
             </div>
           </Card>
         </TabsContent>
 
         <TabsContent value="mapping" className="mt-0">
-          <SheetColumnMapper data={sheetData} onMappingChange={setColumnMappings} />
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={() => setShowActionSummary(!showActionSummary)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Action Summary</span>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
+              <SheetColumnMapper data={sheetData} onMappingChange={setColumnMappings} />
+            </div>
+
+            {showActionSummary && (
+              <div className="md:col-span-1 border-l pl-4">
+                <div className="sticky top-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium">Action Summary</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowActionSummary(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {actionHistory.map((action, index) => (
+                      <div key={index} className="border rounded-md p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {action.step}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            {new Date(action.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="font-medium mt-1">{action.action}</p>
+                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="transform" className="mt-0">
-          <SheetDataTransformer
-            data={sheetData}
-            columnMappings={columnMappings}
-            onTransformationsChange={setTransformations}
-          />
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={() => setShowActionSummary(!showActionSummary)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Action Summary</span>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
+              <SheetDataTransformer
+                data={sheetData}
+                columnMappings={columnMappings}
+                onTransformationsChange={(transforms) => {
+                  setTransformations(transforms)
+
+                  // Add to action history when transformations change
+                  if (transforms.length > transformations.length) {
+                    setActionHistory([
+                      ...actionHistory,
+                      {
+                        step: "Transform Data",
+                        action: "Added data transformation",
+                        timestamp: new Date().toISOString(),
+                        details: `Total transformations: ${transforms.length}`,
+                      },
+                    ])
+                  }
+                }}
+              />
+            </div>
+
+            {showActionSummary && (
+              <div className="md:col-span-1 border-l pl-4">
+                <div className="sticky top-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium">Action Summary</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowActionSummary(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {actionHistory.map((action, index) => (
+                      <div key={index} className="border rounded-md p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {action.step}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            {new Date(action.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="font-medium mt-1">{action.action}</p>
+                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="cleanup" className="mt-0">
-          <SheetDataCleanup
-            data={sheetData}
-            columnMappings={columnMappings}
-            transformations={transformations}
-            onCleanupActionsChange={setCleanupActions}
-          />
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={() => setShowActionSummary(!showActionSummary)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Action Summary</span>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
+              <SheetDataCleanup
+                data={sheetData}
+                columnMappings={columnMappings}
+                transformations={transformations}
+                onCleanupActionsChange={(actions) => {
+                  setCleanupActions(actions)
+
+                  // Add to action history when cleanup actions change
+                  if (actions.length > cleanupActions.length) {
+                    setActionHistory([
+                      ...actionHistory,
+                      {
+                        step: "Cleanup & Standardize",
+                        action: "Added cleanup action",
+                        timestamp: new Date().toISOString(),
+                        details: `Total cleanup actions: ${actions.length}`,
+                      },
+                    ])
+                  }
+                }}
+              />
+            </div>
+
+            {showActionSummary && (
+              <div className="md:col-span-1 border-l pl-4">
+                <div className="sticky top-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium">Action Summary</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowActionSummary(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {actionHistory.map((action, index) => (
+                      <div key={index} className="border rounded-md p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {action.step}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            {new Date(action.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="font-medium mt-1">{action.action}</p>
+                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="validation" className="mt-0">
-          <SheetDataValidator
-            data={{
-              columns: sheetData?.headers || [],
-              rows: sheetData?.rows || [],
-            }}
-            mapping={columnMappings}
-            issues={validationIssues}
-            onIssuesChange={setValidationIssues}
-            transformations={transformations}
-            onTransformationsChange={setTransformations}
-          />
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={() => setShowActionSummary(!showActionSummary)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Action Summary</span>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
+              <SheetDataValidator
+                data={{
+                  columns: sheetData?.headers || [],
+                  rows: sheetData?.rows || [],
+                }}
+                mapping={columnMappings}
+                issues={validationIssues}
+                onIssuesChange={(issues) => {
+                  setValidationIssues(issues)
+
+                  // Add to action history when validation is performed
+                  setActionHistory([
+                    ...actionHistory,
+                    {
+                      step: "Validate Data",
+                      action: "Performed data validation",
+                      timestamp: new Date().toISOString(),
+                      details: `Found ${issues.length} issues`,
+                    },
+                  ])
+                }}
+                transformations={transformations}
+                onTransformationsChange={setTransformations}
+              />
+            </div>
+
+            {showActionSummary && (
+              <div className="md:col-span-1 border-l pl-4">
+                <div className="sticky top-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium">Action Summary</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowActionSummary(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {actionHistory.map((action, index) => (
+                      <div key={index} className="border rounded-md p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {action.step}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            {new Date(action.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="font-medium mt-1">{action.action}</p>
+                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="review" className="mt-0">
-          <SheetFinalReview
-            data={{
-              columns: sheetData?.headers || [],
-              rows: sheetData?.rows || [],
-              fileName: sheetData?.fileName || "sample-data.xlsx",
-              sheetName: sheetData?.sheetName || "Sheet1",
-              totalRows: sheetData?.totalRows || 0,
-            }}
-            mapping={columnMappings}
-            transformations={transformations}
-            cleanupActions={cleanupActions}
-            validationIssues={validationIssues}
-            initialSetup={initialSetup}
-          />
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              className="flex items-center gap-1"
+              onClick={() => setShowActionSummary(!showActionSummary)}
+            >
+              <Settings className="h-4 w-4" />
+              <span>Action Summary</span>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
+              <SheetFinalReview
+                data={{
+                  columns: sheetData?.headers || [],
+                  rows: sheetData?.rows || [],
+                  fileName: sheetData?.fileName || "sample-data.xlsx",
+                  sheetName: sheetData?.sheetName || "Sheet1",
+                  totalRows: sheetData?.totalRows || 0,
+                }}
+                mapping={columnMappings}
+                transformations={transformations}
+                cleanupActions={cleanupActions}
+                validationIssues={validationIssues}
+                initialSetup={initialSetup}
+              />
+            </div>
+
+            {showActionSummary && (
+              <div className="md:col-span-1 border-l pl-4">
+                <div className="sticky top-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium">Action Summary</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setShowActionSummary(false)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                    {actionHistory.map((action, index) => (
+                      <div key={index} className="border rounded-md p-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {action.step}
+                          </Badge>
+                          <span className="text-muted-foreground">
+                            {new Date(action.timestamp).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="font-medium mt-1">{action.action}</p>
+                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="save" className="mt-0">

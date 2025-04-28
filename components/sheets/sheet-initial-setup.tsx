@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
+import { toast } from "@/components/ui/use-toast"
 
 // Mock data for developers
 const DEVELOPERS = [
@@ -48,11 +49,11 @@ const MOCK_SHEET_DATA = {
   fileType: "Excel Spreadsheet",
   lastModified: "2023-06-15 14:32:45",
   totalRows: 248,
-  sheets: ["Units", "Pricing", "Availability"],
+  sheets: ["Project 1", "Project 2", "Payment Sheet"],
   sheetDetails: [
-    { name: "Units", rows: 124, columns: 8 },
-    { name: "Pricing", rows: 86, columns: 5 },
-    { name: "Availability", rows: 38, columns: 4 },
+    { name: "Project 1", rows: 124, columns: 8 },
+    { name: "Project 2", rows: 86, columns: 5 },
+    { name: "Payment Sheet", rows: 38, columns: 4 },
   ],
   headers: ["Unit ID", "Project", "Type", "Area (sqm)", "Price", "Status", "Floor", "Building"],
   rows: Array(30)
@@ -108,6 +109,7 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
   const [activeSheet, setActiveSheet] = useState("Units")
   const [isEditing, setIsEditing] = useState(false)
   const [sheetData, setSheetData] = useState(MOCK_SHEET_DATA)
+  const [ignoredTab, setIgnoredTab] = useState("")
 
   const handleDeveloperChange = (value: string) => {
     setDeveloper(value)
@@ -466,19 +468,42 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
             </Button>
           </div>
 
-          <Tabs defaultValue="Units" onValueChange={setActiveSheet}>
+          <Tabs defaultValue="Project 1" onValueChange={setActiveSheet}>
             <div className="bg-muted/30 p-2 border-b">
-              <TabsList>
-                {sheetData.sheets.map((sheet: string, index: number) => (
-                  <TabsTrigger key={index} value={sheet}>
-                    {sheet}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="flex items-center justify-between">
+                <TabsList>
+                  {sheetData.sheets.map((sheet: string, index: number) => (
+                    <TabsTrigger key={index} value={sheet}>
+                      {sheet}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground">Ignore selected tab</label>
+                  <Checkbox
+                    checked={ignoredTab === activeSheet}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setIgnoredTab(activeSheet)
+                        toast({
+                          title: "Tab ignored",
+                          description: `${activeSheet} will be ignored during import.`,
+                        })
+                      } else {
+                        setIgnoredTab("")
+                        toast({
+                          title: "Tab included",
+                          description: `${activeSheet} will be included in the import.`,
+                        })
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             {sheetData.sheets.map((sheet: string) => (
-              <TabsContent key={sheet} value={sheet} className="p-0">
+              <TabsContent key={sheet} value={sheet} className={`p-0 ${ignoredTab === sheet ? "opacity-50" : ""}`}>
                 <ScrollArea className="max-h-[400px]">
                   <Table>
                     <TableHeader>
