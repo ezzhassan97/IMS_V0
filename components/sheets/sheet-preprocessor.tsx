@@ -101,10 +101,10 @@ const getSteps = (needsOcr: boolean) => {
 export function SheetPreprocessor() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const sheetId = searchParams.get("id") || "mock-sheet-1" // Default to mock sheet if no ID
-  const needsOcr = searchParams.get("needsOcr") === "true"
-  const fileType = (searchParams.get("fileType") || "pdf") as "pdf" | "image"
-  const fileName = searchParams.get("fileName") || "Uploaded file"
+  const sheetId = searchParams?.get("id") || "mock-sheet-1" // Default to mock sheet if no ID
+  const needsOcr = searchParams?.get("needsOcr") === "true"
+  const fileType = (searchParams?.get("fileType") || "pdf") as "pdf" | "image"
+  const fileName = searchParams?.get("fileName") || "Uploaded file"
   const { toast } = useToast()
 
   const STEPS = getSteps(needsOcr)
@@ -497,9 +497,7 @@ export function SheetPreprocessor() {
             }}
             mapping={columnMappings}
             transformations={transformations}
-            cleanupActions={cleanupActions}
             validationIssues={validationIssues}
-            initialSetup={initialSetup}
           />
         </TabsContent>
 

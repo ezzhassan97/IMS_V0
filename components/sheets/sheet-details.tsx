@@ -30,7 +30,7 @@ const mockSheetData = {
 
 export function SheetDetails() {
   const searchParams = useSearchParams()
-  const sheetId = searchParams.get("id") || "mock-sheet-id"
+  const sheetId = searchParams?.get("id") || "mock-sheet-id"
   const [activeTab, setActiveTab] = useState("data")
 
   return (

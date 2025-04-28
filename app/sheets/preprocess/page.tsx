@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { SheetPreprocessor } from "@/components/sheets/sheet-preprocessor"
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export default function SheetPreprocessPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Sheet Preprocessing</h1>
-      <SheetPreprocessor />
+      <Suspense fallback={<div className="flex items-center justify-center p-8">Loading preprocessor...</div>}>
+        <SheetPreprocessor />
+      </Suspense>
     </div>
   )
 }
