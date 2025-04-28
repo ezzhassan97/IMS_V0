@@ -1,19 +1,21 @@
-import type { Metadata } from "next"
+"use client"
+
 import { Suspense } from "react"
+import { useSearchParams } from "next/navigation"
+import { DashboardHeader } from "@/components/dashboard/dashboard-header"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { SheetPreprocessor } from "@/components/sheets/sheet-preprocessor"
 
-export const metadata: Metadata = {
-  title: "Sheet Preprocessing | Real Estate IMS",
-  description: "Preprocess and map your sheet data before importing",
-}
-
 export default function SheetPreprocessPage() {
+  const searchParams = useSearchParams()
+  const sheetId = searchParams.get("id") || "default-sheet"
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Sheet Preprocessing</h1>
+    <DashboardShell>
+      <DashboardHeader heading="Preprocess Sheet" text="Clean and prepare your data for import." />
       <Suspense fallback={<div className="flex items-center justify-center p-8">Loading preprocessor...</div>}>
-        <SheetPreprocessor />
+        <SheetPreprocessor sheetId={sheetId} />
       </Suspense>
-    </div>
+    </DashboardShell>
   )
 }
