@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
@@ -12,7 +13,9 @@ export default function SheetDetailsPage() {
   return (
     <DashboardShell>
       <DashboardHeader heading="Sheet Details" text="View and manage your imported inventory sheet." />
-      <SheetDetails />
+      <Suspense fallback={<div className="p-4 text-center">Loading sheet details...</div>}>
+        <SheetDetails />
+      </Suspense>
     </DashboardShell>
   )
 }
