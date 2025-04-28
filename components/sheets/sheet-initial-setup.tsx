@@ -1,19 +1,20 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Check, ChevronsUpDown, X } from "lucide-react"
+import { Building2, Check, ChevronsUpDown, X, PenSquare } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 
 // Mock data for developers
 const DEVELOPERS = [
@@ -40,6 +41,34 @@ const PROJECTS = [
   { id: "proj10", name: "Downtown Lofts", developer: "dev4" },
 ]
 
+// Mock sheet data
+const MOCK_SHEET_DATA = {
+  fileName: "inventory_q2_2023.xlsx",
+  fileSize: "2.4 MB",
+  fileType: "Excel Spreadsheet",
+  lastModified: "2023-06-15 14:32:45",
+  totalRows: 248,
+  sheets: ["Units", "Pricing", "Availability"],
+  sheetDetails: [
+    { name: "Units", rows: 124, columns: 8 },
+    { name: "Pricing", rows: 86, columns: 5 },
+    { name: "Availability", rows: 38, columns: 4 },
+  ],
+  headers: ["Unit ID", "Project", "Type", "Area (sqm)", "Price", "Status", "Floor", "Building"],
+  rows: Array(30)
+    .fill(0)
+    .map((_, i) => ({
+      "Unit ID": `UNIT-${1000 + i}`,
+      Project: ["Palm Heights", "Green Valley", "Metro Residences"][Math.floor(Math.random() * 3)],
+      Type: ["Studio", "1BR", "2BR", "3BR"][Math.floor(Math.random() * 4)],
+      "Area (sqm)": Math.floor(50 + Math.random() * 150),
+      Price: Math.floor(500000 + Math.random() * 2000000),
+      Status: ["Available", "Reserved", "Sold"][Math.floor(Math.random() * 3)],
+      Floor: Math.floor(1 + Math.random() * 20),
+      Building: ["A", "B", "C", "D"][Math.floor(Math.random() * 4)],
+    })),
+}
+
 interface SheetInitialSetupProps {
   initialData: {
     developer: string
@@ -48,16 +77,19 @@ interface SheetInitialSetupProps {
     entryId: string
   }
   onSetupChange: (data: any) => void
-  sheetData: any
+  sheetData?: any
 }
 
-export function SheetInitialSetup({ initialData, onSetupChange, sheetData }: SheetInitialSetupProps) {
+export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSetupProps) {
   const [developer, setDeveloper] = useState(initialData.developer)
   const [projects, setProjects] = useState<string[]>(initialData.projects)
   const [propertyType, setPropertyType] = useState(initialData.propertyType)
-  const [entryId, setEntryId] = useState(initialData.entryId)
+  const [entryId] = useState("ENTRY-" + Math.floor(10000 + Math.random() * 90000))
   const [open, setOpen] = useState(false)
   const [projectsOpen, setProjectsOpen] = useState(false)
+  const [activeSheet, setActiveSheet] = useState("Units")
+  const [isEditing, setIsEditing] = useState(false)
+  const [sheetData, setSheetData] = useState(MOCK_SHEET_DATA)
 
   const handleDeveloperChange = (value: string) => {
     setDeveloper(value)
@@ -96,17 +128,6 @@ export function SheetInitialSetup({ initialData, onSetupChange, sheetData }: She
     })
   }
 
-  const handleEntryIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEntryId(e.target.value)
-    onSetupChange({
-      ...initialData,
-      developer,
-      projects,
-      propertyType,
-      entryId: e.target.value,
-    })
-  }
-
   const handleSave = () => {
     onSetupChange({
       developer,
@@ -114,6 +135,16 @@ export function SheetInitialSetup({ initialData, onSetupChange, sheetData }: She
       propertyType,
       entryId,
     })
+  }
+
+  const handleCellEdit = (rowIndex: number, header: string, value: string) => {
+    const updatedData = { ...sheetData }
+    updatedData.rows[rowIndex][header] = value
+    setSheetData(updatedData)
+  }
+
+  const toggleEditing = () => {
+    setIsEditing(!isEditing)
   }
 
   const selectedDeveloper = DEVELOPERS.find((d) => d.id === developer)
@@ -126,6 +157,41 @@ export function SheetInitialSetup({ initialData, onSetupChange, sheetData }: She
         <CardDescription>Configure basic information for this import</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Entry Information Section */}
+        <div className="bg-muted/30 p-4 rounded-lg border">
+          <h3 className="text-sm font-medium mb-2">Entry Information</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Entry ID:</span> {entryId}
+            </div>
+            <div>
+              <span className="font-medium">File Name:</span> {sheetData.fileName}
+            </div>
+            <div>
+              <span className="font-medium">Format:</span> {sheetData.fileType}
+            </div>
+            <div>
+              <span className="font-medium">Size:</span> {sheetData.fileSize}
+            </div>
+            <div>
+              <span className="font-medium">Last Modified:</span> {sheetData.lastModified}
+            </div>
+            <div>
+              <span className="font-medium">Sheets:</span> {sheetData.sheets.join(", ")}
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t grid grid-cols-3 gap-2 text-xs">
+            {sheetData.sheetDetails.map((sheet: any, index: number) => (
+              <div key={index} className="bg-background p-2 rounded border">
+                <div className="font-medium">{sheet.name}</div>
+                <div>
+                  {sheet.rows} rows, {sheet.columns} columns
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
@@ -239,37 +305,80 @@ export function SheetInitialSetup({ initialData, onSetupChange, sheetData }: She
               </Select>
               <p className="text-xs text-muted-foreground">Select the property type for this inventory</p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="entry-id">Entry ID</Label>
-              <Input id="entry-id" value={entryId} onChange={handleEntryIdChange} />
-              <p className="text-xs text-muted-foreground">A unique identifier for this import entry</p>
-            </div>
           </div>
         </div>
 
-        <div className="bg-muted/30 p-4 rounded-lg border">
-          <h3 className="text-sm font-medium mb-2">File Information</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="font-medium">File Name:</span> {sheetData?.fileName || "N/A"}
-            </div>
-            <div>
-              <span className="font-medium">File Size:</span> {sheetData?.fileSize || "N/A"}
-            </div>
-            <div>
-              <span className="font-medium">File Type:</span> {sheetData?.fileType || "N/A"}
-            </div>
-            <div>
-              <span className="font-medium">Last Modified:</span> {sheetData?.lastModified || "N/A"}
-            </div>
-            <div>
-              <span className="font-medium">Total Rows:</span> {sheetData?.totalRows || "N/A"}
-            </div>
-            <div>
-              <span className="font-medium">Sheets:</span> {sheetData?.sheets ? sheetData.sheets.join(", ") : "N/A"}
-            </div>
+        {/* Sheet Preview with Tabs */}
+        <div className="border rounded-md overflow-hidden mt-6">
+          <div className="bg-muted/30 p-3 border-b flex justify-between items-center">
+            <h3 className="text-sm font-medium">Sheet Preview</h3>
+            <Button variant="ghost" size="sm" onClick={toggleEditing} className="h-8 gap-1">
+              {isEditing ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Done
+                </>
+              ) : (
+                <>
+                  <PenSquare className="h-4 w-4" />
+                  Edit
+                </>
+              )}
+            </Button>
           </div>
+
+          <Tabs defaultValue="Units" onValueChange={setActiveSheet}>
+            <div className="bg-muted/30 p-2 border-b">
+              <TabsList>
+                {sheetData.sheets.map((sheet: string, index: number) => (
+                  <TabsTrigger key={index} value={sheet}>
+                    {sheet}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            {sheetData.sheets.map((sheet: string) => (
+              <TabsContent key={sheet} value={sheet} className="p-0">
+                <ScrollArea className="max-h-[400px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12">#</TableHead>
+                        {sheetData.headers.map((header: string, i: number) => (
+                          <TableHead key={i}>{header}</TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sheetData.rows.map((row: any, rowIndex: number) => (
+                        <TableRow key={rowIndex}>
+                          <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+                          {sheetData.headers.map((header: string, colIndex: number) => (
+                            <TableCell key={colIndex}>
+                              {isEditing ? (
+                                <Input
+                                  value={row[header] || ""}
+                                  onChange={(e) => handleCellEdit(rowIndex, header, e.target.value)}
+                                  className="h-8 w-full"
+                                />
+                              ) : (
+                                row[header]
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+                <div className="p-2 text-xs text-muted-foreground border-t">
+                  Showing {sheetData.rows.length} of{" "}
+                  {sheetData.sheetDetails.find((s) => s.name === activeSheet)?.rows || 0} rows
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
 
         <div className="flex justify-end">

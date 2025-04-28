@@ -18,7 +18,6 @@ import { AIAssistant } from "./ai-assistant"
 import { useToast } from "@/components/ui/use-toast"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   ArrowLeft,
   ArrowRight,
@@ -38,6 +37,7 @@ import {
   TableIcon,
   Merge,
   X,
+  Edit,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -185,7 +185,7 @@ export function SheetPreprocessor() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploadType, setUploadType] = useState("excel")
   const [selectedProject, setSelectedProject] = useState("")
-  const [fileUploaded, setFileUploaded] = useState(false)
+  const [fileUploaded, setFileUploaded] = useState(true) // Set to true by default for demo
 
   // Determine if OCR is needed based on file type
   const needsOcr = uploadType === "pdf" || uploadType === "image"
@@ -194,21 +194,24 @@ export function SheetPreprocessor() {
 
   // OCR state
   const [isProcessingOcr, setIsProcessingOcr] = useState(false)
-  const [ocrCompleted, setOcrCompleted] = useState(false)
-  const [ocrTables, setOcrTables] = useState<any[]>([])
-  const [selectedTables, setSelectedTables] = useState<string[]>([])
+  const [ocrCompleted, setOcrCompleted] = useState(true) // Set to true by default for demo
+  const [ocrTables, setOcrTables] = useState<any[]>(MOCK_OCR_TABLES) // Initialize with mock tables
+  const [selectedTables, setSelectedTables] = useState<string[]>(["table-1"]) // Pre-select first table
   const [mergeError, setMergeError] = useState<string | null>(null)
   const [ocrDemoState, setOcrDemoState] = useState<"high" | "medium" | "low">("high")
+
+  // Add a new state variable for editing mode at the top of the component with the other state variables
+  const [isEditingExtractedData, setIsEditingExtractedData] = useState(false)
 
   const STEPS = getSteps(needsOcr)
   const [currentStep, setCurrentStep] = useState("upload")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [sheetData, setSheetData] = useState<any>(null)
+  const [sheetData, setSheetData] = useState<any>(MOCK_SHEET_DATA) // Initialize with mock data
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({})
   const [validationIssues, setValidationIssues] = useState<any[]>([])
   const [transformations, setTransformations] = useState<any[]>([])
   const [cleanupActions, setCleanupActions] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Set to false by default for demo
   const [sheetPreparationSettings, setSheetPreparationSettings] = useState({
     headerRowIndex: 0,
     selectedTab: "0",
@@ -216,8 +219,8 @@ export function SheetPreprocessor() {
     removedEmptyColumns: false,
   })
   const [initialSetup, setInitialSetup] = useState({
-    developer: "",
-    projects: [],
+    developer: "dev1", // Set a default developer
+    projects: ["proj1", "proj3"], // Set some default projects
     propertyType: "residential",
     entryId: `ENTRY-${Date.now().toString().slice(-6)}`,
   })
@@ -225,18 +228,8 @@ export function SheetPreprocessor() {
 
   // Fetch mock sheet data
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      setSheetData(MOCK_SHEET_DATA)
-      setLoading(false)
-    }
-
-    // Only fetch data if file is uploaded and not in OCR step or if OCR is completed
-    if (fileUploaded && (!needsOcr || ocrCompleted)) {
-      fetchData()
-    }
+    // For demo purposes, we already have the data loaded
+    // This effect is kept for when actual API integration is needed
   }, [fileUploaded, needsOcr, ocrCompleted])
 
   // Auto-detect column mappings
@@ -458,6 +451,16 @@ export function SheetPreprocessor() {
     handleNext()
   }
 
+  // Add a function to handle cell edits
+  const handleExtractedCellEdit = (tableId: string, rowIndex: number, header: string, value: string) => {
+    const updatedTables = [...ocrTables]
+    const tableIndex = updatedTables.findIndex((t) => t.id === tableId)
+    if (tableIndex !== -1) {
+      updatedTables[tableIndex].data[rowIndex][header] = value
+      setOcrTables(updatedTables)
+    }
+  }
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex items-center justify-between">
@@ -540,22 +543,6 @@ export function SheetPreprocessor() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="project">Select Project</Label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger id="project">
-                      <SelectValue placeholder="Select a project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="palm-hills">Palm Hills October</SelectItem>
-                      <SelectItem value="marassi">Marassi North Coast</SelectItem>
-                      <SelectItem value="mountain-view">Mountain View iCity</SelectItem>
-                      <SelectItem value="zed-east">Zed East</SelectItem>
-                      <SelectItem value="sodic-east">SODIC East</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <Tabs defaultValue="excel" value={uploadType} onValueChange={setUploadType}>
                   <TabsList className="grid grid-cols-3 w-full">
                     <TabsTrigger value="excel" className="flex flex-col items-center gap-1 py-2 h-auto">
@@ -608,7 +595,7 @@ export function SheetPreprocessor() {
               <Button variant="outline" onClick={() => router.push("/sheets")}>
                 Cancel
               </Button>
-              <Button onClick={handleUpload} disabled={!selectedFile || !selectedProject || isProcessing}>
+              <Button onClick={handleUpload} disabled={!selectedFile || isProcessing}>
                 {isProcessing ? "Uploading..." : "Upload & Process"}
               </Button>
             </CardFooter>
@@ -733,7 +720,29 @@ export function SheetPreprocessor() {
                   {/* Right side - Extracted data */}
                   <div className="space-y-4">
                     <div className="border rounded-md p-4">
-                      <h3 className="text-sm font-medium mb-2">Extracted Data</h3>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-medium">Extracted Data</h3>
+                        {ocrCompleted && selectedTables.length === 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsEditingExtractedData(!isEditingExtractedData)}
+                            className="flex items-center gap-1"
+                          >
+                            {isEditingExtractedData ? (
+                              <>
+                                <Check className="h-4 w-4" />
+                                Done Editing
+                              </>
+                            ) : (
+                              <>
+                                <Edit className="h-4 w-4" />
+                                Edit Data
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
 
                       {!ocrCompleted ? (
                         <div className="text-center py-8 text-muted-foreground">
@@ -777,7 +786,24 @@ export function SheetPreprocessor() {
                                       {ocrTables
                                         .find((t) => t.id === selectedTables[0])
                                         ?.headers.map((header: string, colIndex: number) => (
-                                          <TableCell key={colIndex}>{row[header]}</TableCell>
+                                          <TableCell key={colIndex}>
+                                            {isEditingExtractedData ? (
+                                              <Input
+                                                value={row[header] || ""}
+                                                onChange={(e) =>
+                                                  handleExtractedCellEdit(
+                                                    selectedTables[0],
+                                                    rowIndex,
+                                                    header,
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                className="h-8 w-full"
+                                              />
+                                            ) : (
+                                              row[header]
+                                            )}
+                                          </TableCell>
                                         ))}
                                     </TableRow>
                                   ))}
@@ -806,6 +832,9 @@ export function SheetPreprocessor() {
                             %
                           </li>
                           {ocrTables.length > 1 && <li>• You can merge compatible tables if needed</li>}
+                          {isEditingExtractedData && (
+                            <li>• Currently in edit mode - make changes directly in the table</li>
+                          )}
                         </ul>
                       </div>
                     )}
@@ -1076,38 +1105,40 @@ export function SheetPreprocessor() {
 
       {/* Fixed Navigation Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex justify-between z-40">
-        <Button variant="outline" onClick={handlePrevious} disabled={currentStep === STEPS[0].id}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
+        <div className="container mx-auto flex justify-between">
+          <Button variant="outline" onClick={handlePrevious} disabled={currentStep === STEPS[0].id}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Previous
+          </Button>
 
-        <div className="text-sm text-muted-foreground">
-          Step {STEPS.findIndex((step) => step.id === currentStep) + 1} of {STEPS.length}
+          <div className="text-sm text-muted-foreground">
+            Step {STEPS.findIndex((step) => step.id === currentStep) + 1} of {STEPS.length}
+          </div>
+
+          {currentStep !== STEPS[STEPS.length - 1].id ? (
+            <Button
+              onClick={handleNext}
+              disabled={
+                (currentStep === "ocr" && !ocrCompleted) ||
+                (currentStep === "ocr" && ocrCompleted && selectedTables.length !== 1)
+              }
+            >
+              Next
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button onClick={handleFinish} disabled={isProcessing} className="bg-green-600 hover:bg-green-700">
+              {isProcessing ? (
+                "Processing..."
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Finalize
+                </>
+              )}
+            </Button>
+          )}
         </div>
-
-        {currentStep !== STEPS[STEPS.length - 1].id ? (
-          <Button
-            onClick={handleNext}
-            disabled={
-              (currentStep === "ocr" && !ocrCompleted) ||
-              (currentStep === "ocr" && ocrCompleted && selectedTables.length !== 1)
-            }
-          >
-            Next
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button onClick={handleFinish} disabled={isProcessing} className="bg-green-600 hover:bg-green-700">
-            {isProcessing ? (
-              "Processing..."
-            ) : (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Finalize
-              </>
-            )}
-          </Button>
-        )}
       </div>
 
       {/* AI Assistant */}

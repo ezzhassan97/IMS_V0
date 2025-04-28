@@ -10,7 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { FileText, ImageIcon, TableIcon, Sparkles, Loader2, Edit, Check, RefreshCw, Download } from "lucide-react"
+import {
+  FileText,
+  ImageIcon,
+  TableIcon,
+  Sparkles,
+  Loader2,
+  Edit,
+  Check,
+  RefreshCw,
+  Download,
+  PenSquare,
+} from "lucide-react"
 
 interface SheetOCRStepProps {
   fileType: "pdf" | "image"
@@ -74,6 +85,10 @@ export function SheetOCRStep({ fileType, fileName, onComplete }: SheetOCRStepPro
 
   const handleComplete = () => {
     onComplete(extractedData)
+  }
+
+  const toggleEditing = () => {
+    setIsEditing(!isEditing)
   }
 
   return (
@@ -229,7 +244,7 @@ export function SheetOCRStep({ fileType, fileName, onComplete }: SheetOCRStepPro
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(!isEditing)}>
+                    <Button variant="outline" size="sm" onClick={toggleEditing}>
                       {isEditing ? (
                         <>
                           <Check className="mr-2 h-4 w-4" />
@@ -253,38 +268,71 @@ export function SheetOCRStep({ fileType, fileName, onComplete }: SheetOCRStepPro
                   </div>
                 </div>
 
-                <ScrollArea className="h-[400px] border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        {extractedData.headers.map((header: string, index: number) => (
-                          <TableHead key={index}>{header}</TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {extractedData.rows.map((row: any, rowIndex: number) => (
-                        <TableRow key={rowIndex}>
-                          <TableCell className="font-medium">{rowIndex + 1}</TableCell>
-                          {extractedData.headers.map((header: string, colIndex: number) => (
-                            <TableCell key={colIndex}>
-                              {isEditing ? (
-                                <Input
-                                  value={row[header] || ""}
-                                  onChange={(e) => handleCellEdit(rowIndex, header, e.target.value)}
-                                  className="h-8 w-full"
-                                />
-                              ) : (
-                                row[header]
-                              )}
-                            </TableCell>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Left side - Document preview */}
+                  <div className="border rounded-md overflow-hidden bg-muted/30">
+                    <div className="aspect-video flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="mx-auto mb-4">
+                          {fileType === "pdf" ? (
+                            <FileText className="h-16 w-16 text-muted-foreground" />
+                          ) : (
+                            <ImageIcon className="h-16 w-16 text-muted-foreground" />
+                          )}
+                        </div>
+                        <p className="text-muted-foreground">
+                          {fileName || (fileType === "pdf" ? "PDF Document" : "Image File")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right side - Extracted data table */}
+                  <div className="border rounded-md relative">
+                    {!isEditing && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 z-10"
+                        onClick={toggleEditing}
+                      >
+                        <PenSquare className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <ScrollArea className="h-[400px]">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            {extractedData.headers.map((header: string, index: number) => (
+                              <TableHead key={index}>{header}</TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {extractedData.rows.map((row: any, rowIndex: number) => (
+                            <TableRow key={rowIndex}>
+                              <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+                              {extractedData.headers.map((header: string, colIndex: number) => (
+                                <TableCell key={colIndex}>
+                                  {isEditing ? (
+                                    <Input
+                                      value={row[header] || ""}
+                                      onChange={(e) => handleCellEdit(rowIndex, header, e.target.value)}
+                                      className="h-8 w-full"
+                                    />
+                                  ) : (
+                                    row[header]
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
                           ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </div>
+                </div>
 
                 <div className="flex justify-center">
                   <Button onClick={handleComplete} className="w-full max-w-xs">
