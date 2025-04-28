@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { SheetDataPreview } from "./sheet-data-preview"
 import { SheetColumnMapper } from "./sheet-column-mapper"
 import { SheetDataValidator } from "./sheet-data-validator"
 import { SheetDataTransformer } from "./sheet-data-transformer"
@@ -42,6 +41,9 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Mock data for sheet processing
 const MOCK_SHEET_DATA = {
@@ -147,7 +149,6 @@ const getSteps = (needsOcr: boolean) => {
   const baseSteps = [
     { id: "upload", label: "Upload File", icon: FileUp },
     { id: "setup", label: "Initial Setup", icon: FileSpreadsheet },
-    { id: "preview", label: "Preview Data", icon: FileSpreadsheet },
     { id: "preparation", label: "Sheet Preparation", icon: Settings },
     { id: "mapping", label: "Map Columns", icon: MapPin },
     { id: "transform", label: "Transform Data", icon: Wand2 },
@@ -225,6 +226,38 @@ export function SheetPreprocessor() {
     entryId: `ENTRY-${Date.now().toString().slice(-6)}`,
   })
   const [presetName, setPresetName] = useState(`Preset-${new Date().toLocaleDateString().replace(/\//g, "-")}`)
+
+  const [headerPositions, setHeaderPositions] = useState({
+    Units: 0,
+    Pricing: 1,
+    Metadata: 0,
+  })
+
+  const [cleaningOptions, setCleaningOptions] = useState({
+    removeEmptyRows: false,
+    removeEmptyColumns: false,
+    unmergeCells: false,
+    repositionHeaders: false,
+  })
+
+  const [useColumnForProjects, setUseColumnForProjects] = useState(false)
+
+  const [mergeTabsEnabled, setMergeTabsEnabled] = useState(false)
+  const [tabsToMerge, setTabsToMerge] = useState({
+    Units: false,
+    Pricing: false,
+    Metadata: false,
+  })
+
+  // Mock projects data
+  const PROJECTS = [
+    { id: "proj1", name: "Palm Heights" },
+    { id: "proj2", name: "Green Valley" },
+    { id: "proj3", name: "Metro Residences" },
+  ]
+
+  // Use initialSetup.projects instead of selectedProject
+  const projects = initialSetup.projects
 
   // Fetch mock sheet data
   useEffect(() => {
@@ -849,147 +882,615 @@ export function SheetPreprocessor() {
           <SheetInitialSetup initialData={initialSetup} onSetupChange={setInitialSetup} sheetData={sheetData} />
         </TabsContent>
 
-        <TabsContent value="preview" className="mt-0">
-          {loading ? (
-            <Card className="p-6">
-              <div className="text-center py-8">
-                <p>Loading sheet data...</p>
-              </div>
-            </Card>
-          ) : (
-            <SheetDataPreview data={sheetData} />
-          )}
-        </TabsContent>
-
         <TabsContent value="preparation" className="mt-0">
           <Card className="p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-medium mb-1">Prepare Your Sheet</h3>
-              <p className="text-muted-foreground text-sm">
-                Before mapping columns, make sure your sheet is properly structured.
-              </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium mb-1">Prepare Your Sheet</h3>
+                <p className="text-muted-foreground text-sm">
+                  Before mapping columns, make sure your sheet is properly structured.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                className="flex items-center gap-1"
+                onClick={() => {
+                  // This would open the action summary drawer in a real implementation
+                  toast({
+                    title: "Action Summary",
+                    description: "This would open the action summary drawer in a real implementation.",
+                  })
+                }}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Action Summary</span>
+              </Button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Header Row Position</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={sheetPreparationSettings.headerRowIndex}
-                      onChange={(e) =>
-                        setSheetPreparationSettings({
-                          ...sheetPreparationSettings,
-                          headerRowIndex: Number.parseInt(e.target.value) || 0,
-                        })
-                      }
-                      className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                    />
-                    <Button variant="secondary" size="sm">
-                      Detect Headers
-                    </Button>
+            {/* Step-by-step workflow */}
+            <Tabs defaultValue="headers" className="w-full">
+              <TabsList className="grid grid-cols-3 mb-4">
+                <TabsTrigger value="headers">1. Headers & Cleaning</TabsTrigger>
+                <TabsTrigger value="projects">2. Project Assignment</TabsTrigger>
+                <TabsTrigger value="merging">3. Tab Merging & Mapping</TabsTrigger>
+              </TabsList>
+
+              {/* Step 1: Headers & Cleaning */}
+              <TabsContent value="headers" className="space-y-4">
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-3">Header Detection</h4>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <label className="text-sm font-medium">Available Tabs</label>
+                        <div className="flex flex-wrap gap-2">
+                          {(sheetData.sheets || ["Units", "Pricing", "Metadata"]).map(
+                            (sheet: string, index: number) => (
+                              <Button
+                                key={index}
+                                variant={sheet === (sheetData.sheetName || "Units") ? "default" : "outline"}
+                                size="sm"
+                                className="text-xs"
+                              >
+                                {sheet}
+                              </Button>
+                            ),
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Auto-Detect Headers</label>
+                        <Button variant="secondary" size="sm" className="w-full">
+                          Detect Headers in All Tabs
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Units Tab</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={headerPositions.Units}
+                            onChange={(e) =>
+                              setHeaderPositions({ ...headerPositions, Units: Number.parseInt(e.target.value) || 0 })
+                            }
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                          />
+                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Pricing Tab</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={headerPositions.Pricing}
+                            onChange={(e) =>
+                              setHeaderPositions({ ...headerPositions, Pricing: Number.parseInt(e.target.value) || 0 })
+                            }
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                          />
+                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Metadata Tab</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            value={headerPositions.Metadata}
+                            onChange={(e) =>
+                              setHeaderPositions({ ...headerPositions, Metadata: Number.parseInt(e.target.value) || 0 })
+                            }
+                            className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
+                          />
+                          <Badge className="bg-green-100 text-green-800">Detected</Badge>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Set to 0 if headers are in the first row, or specify the row number
-                  </p>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Sheet Tabs</label>
-                  <select
-                    value={sheetPreparationSettings.selectedTab}
-                    onChange={(e) =>
-                      setSheetPreparationSettings({
-                        ...sheetPreparationSettings,
-                        selectedTab: e.target.value,
-                      })
-                    }
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                  >
-                    <option value="0">Units (50 rows)</option>
-                    <option value="1">Pricing (12 rows)</option>
-                    <option value="2">Metadata (5 rows)</option>
-                  </select>
-                  <p className="text-xs text-muted-foreground">Select which tab to import</p>
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-3">Data Cleaning</h4>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="remove-empty-rows"
+                              checked={cleaningOptions.removeEmptyRows}
+                              onCheckedChange={(checked) =>
+                                setCleaningOptions({ ...cleaningOptions, removeEmptyRows: !!checked })
+                              }
+                            />
+                            <label htmlFor="remove-empty-rows" className="text-sm">
+                              Remove Empty Rows
+                            </label>
+                          </div>
+                          <Badge variant="outline">12 empty rows detected</Badge>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="remove-empty-cols"
+                              checked={cleaningOptions.removeEmptyColumns}
+                              onCheckedChange={(checked) =>
+                                setCleaningOptions({ ...cleaningOptions, removeEmptyColumns: !!checked })
+                              }
+                            />
+                            <label htmlFor="remove-empty-cols" className="text-sm">
+                              Remove Empty Columns
+                            </label>
+                          </div>
+                          <Badge variant="outline">0 empty columns detected</Badge>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="unmerge-cells"
+                              checked={cleaningOptions.unmergeCells}
+                              onCheckedChange={(checked) =>
+                                setCleaningOptions({ ...cleaningOptions, unmergeCells: !!checked })
+                              }
+                            />
+                            <label htmlFor="unmerge-cells" className="text-sm">
+                              Unmerge Merged Cells
+                            </label>
+                          </div>
+                          <Badge variant="outline">3 merged cells detected</Badge>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="reposition-headers"
+                              checked={cleaningOptions.repositionHeaders}
+                              onCheckedChange={(checked) =>
+                                setCleaningOptions({ ...cleaningOptions, repositionHeaders: !!checked })
+                              }
+                            />
+                            <label htmlFor="reposition-headers" className="text-sm">
+                              Reposition Misplaced Headers
+                            </label>
+                          </div>
+                          <Badge variant="outline">Headers detected in row 2</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button className="w-full mt-2">Apply Data Cleaning</Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button onClick={() => document.querySelector('[data-value="projects"]')?.click()}>
+                    Continue to Project Assignment
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Step 2: Project Assignment */}
+              <TabsContent value="projects" className="space-y-4">
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-3">Project Assignment</h4>
+
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
+                      <div className="flex items-center gap-2">
+                        <FileSpreadsheet className="h-4 w-4" />
+                        <span className="font-medium">Project Assignment Strategy</span>
+                      </div>
+                      <p className="mt-1 text-xs">
+                        {projects.length > 1
+                          ? "You've selected multiple projects. You need to assign each tab to a specific project or use a column to differentiate between projects."
+                          : "You've selected a single project. All data will be assigned to this project automatically."}
+                      </p>
+                    </div>
+
+                    {projects.length > 1 ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="use-column"
+                            checked={useColumnForProjects}
+                            onCheckedChange={(checked) => setUseColumnForProjects(!!checked)}
+                          />
+                          <label htmlFor="use-column" className="text-sm">
+                            Use a column to differentiate between projects
+                          </label>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <h5 className="text-sm font-medium mb-2">Assign tabs to projects:</h5>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div className="font-medium">Tab</div>
+                              <div className="font-medium">Project</div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 items-center">
+                              <div className="text-sm">Units</div>
+                              <Select defaultValue="proj1">
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projects.map((projId) => {
+                                    const project = PROJECTS.find((p) => p.id === projId)
+                                    return project ? (
+                                      <SelectItem key={projId} value={projId}>
+                                        {project.name}
+                                      </SelectItem>
+                                    ) : null
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 items-center">
+                              <div className="text-sm">Pricing</div>
+                              <Select defaultValue="proj3">
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projects.map((projId) => {
+                                    const project = PROJECTS.find((p) => p.id === projId)
+                                    return project ? (
+                                      <SelectItem key={projId} value={projId}>
+                                        {project.name}
+                                      </SelectItem>
+                                    ) : null
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 items-center">
+                              <div className="text-sm">Metadata</div>
+                              <Select defaultValue="proj1">
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Select project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {projects.map((projId) => {
+                                    const project = PROJECTS.find((p) => p.id === projId)
+                                    return project ? (
+                                      <SelectItem key={projId} value={projId}>
+                                        {project.name}
+                                      </SelectItem>
+                                    ) : null
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-muted/20 p-4 rounded-md">
+                        <div className="flex items-center">
+                          <Check className="h-4 w-4 text-green-600 mr-2" />
+                          <span className="text-sm">All data will be assigned to:</span>
+                        </div>
+                        <div className="font-medium mt-1">
+                          {projects.length > 0
+                            ? PROJECTS.find((p) => p.id === projects[0])?.name
+                            : "No project selected"}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {projects.length > 1
+                        ? "A 'Project' column will be auto-created during merging."
+                        : "Project name will be auto-filled for all records."}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={() => document.querySelector('[data-value="headers"]')?.click()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Headers & Cleaning
+                  </Button>
+                  <Button onClick={() => document.querySelector('[data-value="merging"]')?.click()}>
+                    Continue to Tab Merging
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+
+              {/* Step 3: Tab Merging & Mapping */}
+              <TabsContent value="merging" className="space-y-4">
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-3">Tab Merging</h4>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Merge Multiple Tabs</label>
+                      <Switch checked={mergeTabsEnabled} onCheckedChange={setMergeTabsEnabled} />
+                    </div>
+
+                    <div className="border rounded-md p-3 bg-muted/20">
+                      <div className="text-xs text-muted-foreground mb-2">Tabs to Merge:</div>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          Units
+                          <Checkbox
+                            className="h-3 w-3 ml-1"
+                            checked={tabsToMerge.Units}
+                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Units: !!checked })}
+                            disabled={!mergeTabsEnabled}
+                          />
+                        </Badge>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          Pricing
+                          <Checkbox
+                            className="h-3 w-3 ml-1"
+                            checked={tabsToMerge.Pricing}
+                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Pricing: !!checked })}
+                            disabled={!mergeTabsEnabled}
+                          />
+                        </Badge>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          Metadata
+                          <Checkbox
+                            className="h-3 w-3 ml-1"
+                            checked={tabsToMerge.Metadata}
+                            onCheckedChange={(checked) => setTabsToMerge({ ...tabsToMerge, Metadata: !!checked })}
+                            disabled={!mergeTabsEnabled}
+                          />
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      Validation required before merging tabs with different structures
+                    </div>
+
+                    <Button variant="outline" size="sm" className="w-full">
+                      Validate Selected Tabs
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border rounded-md p-4">
+                  <h4 className="text-sm font-medium mb-3">Smart Column Mapping</h4>
+
+                  <div className="space-y-3">
+                    <div className="text-xs text-muted-foreground mb-1">
+                      System detected similar columns across tabs that could be mapped:
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="border rounded-md p-2 bg-muted/20">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-blue-50">
+                              Units
+                            </Badge>
+                            <span className="text-sm font-medium">Area (sqm)</span>
+                          </div>
+                          <div className="text-xs">→</div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-green-50">
+                              Pricing
+                            </Badge>
+                            <span className="text-sm font-medium">Space</span>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800 text-xs">95% match</Badge>
+                        </div>
+                      </div>
+
+                      <div className="border rounded-md p-2 bg-muted/20">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-blue-50">
+                              Units
+                            </Badge>
+                            <span className="text-sm font-medium">Unit ID</span>
+                          </div>
+                          <div className="text-xs">→</div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-green-50">
+                              Pricing
+                            </Badge>
+                            <span className="text-sm font-medium">Unit Code</span>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800 text-xs">90% match</Badge>
+                        </div>
+                      </div>
+
+                      <div className="border rounded-md p-2 bg-muted/20">
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-blue-50">
+                              Units
+                            </Badge>
+                            <span className="text-sm font-medium">Building</span>
+                          </div>
+                          <div className="text-xs">→</div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-amber-50">
+                              Metadata
+                            </Badge>
+                            <span className="text-sm font-medium">Block</span>
+                          </div>
+                          <Badge className="bg-amber-100 text-amber-800 text-xs">75% match</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <Button variant="outline" size="sm">
+                        Adjust Mappings
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Accept All Suggestions
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between">
+                  <Button variant="outline" onClick={() => document.querySelector('[data-value="projects"]')?.click()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Project Assignment
+                  </Button>
+                  <Button onClick={() => handleNext()}>
+                    Continue to Column Mapping
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            {/* Sheet Preview Section with Input/Output Split */}
+            <div className="mt-6 border-t pt-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Sheet Preview</h3>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                    <FileSpreadsheet className="h-3 w-3 mr-1" />
+                    Input Sheet
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                    <FileSpreadsheet className="h-3 w-3 mr-1" />
+                    Output Sheet
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+                    <FileSpreadsheet className="h-3 w-3 mr-1" />
+                    Both
+                  </Button>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Remove Empty Rows</label>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setSheetPreparationSettings({
-                          ...sheetPreparationSettings,
-                          removedEmptyRows: true,
-                        })
-                      }
-                    >
-                      Remove Empty Rows
-                    </Button>
-                    <Badge variant="outline">12 empty rows detected</Badge>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Remove Empty Columns</label>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setSheetPreparationSettings({
-                          ...sheetPreparationSettings,
-                          removedEmptyColumns: true,
-                        })
-                      }
-                    >
-                      Remove Empty Columns
-                    </Button>
-                    <Badge variant="outline">0 empty columns detected</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h3 className="text-sm font-medium mb-2">Sheet Preview</h3>
-              <div className="border rounded-md overflow-hidden">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="w-12 p-2 text-left text-xs">Row</th>
-                      {sheetData?.headers?.map((header: string, i: number) => (
-                        <th key={i} className="p-2 text-left text-xs">
-                          {header}
-                        </th>
+                {/* Input Sheet */}
+                <div className="border rounded-md">
+                  <div className="bg-muted p-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-medium">Input Sheet</span>
+                    </div>
+                    <div className="flex gap-1">
+                      {(sheetData.sheets || ["Units", "Pricing", "Metadata"]).map((sheet: string, index: number) => (
+                        <Button
+                          key={index}
+                          variant={sheet === (sheetData.sheetName || "Units") ? "secondary" : "ghost"}
+                          size="sm"
+                          className="h-6 text-xs px-2"
+                        >
+                          {sheet}
+                        </Button>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sheetData?.rows?.slice(0, 5).map((row: any, rowIndex: number) => (
-                      <tr
-                        key={rowIndex}
-                        className={rowIndex === sheetPreparationSettings.headerRowIndex ? "bg-blue-50" : ""}
-                      >
-                        <td className="p-2 text-xs font-medium">{rowIndex + 1}</td>
-                        {sheetData.headers.map((header: string, colIndex: number) => (
-                          <td key={colIndex} className="p-2 text-xs">
-                            {row[header]}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[300px]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
+                            {sheetData?.headers?.map((header: string, i: number) => (
+                              <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                            <tr
+                              key={rowIndex}
+                              className={rowIndex === sheetPreparationSettings.headerRowIndex ? "bg-blue-50" : ""}
+                            >
+                              <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
+                              {sheetData.headers.map((header: string, colIndex: number) => (
+                                <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
+                                  {row[header]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                {/* Output Sheet (Processed) */}
+                <div className="border rounded-md">
+                  <div className="bg-muted p-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-medium">Output Sheet (Processed)</span>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      Preview
+                    </Badge>
+                  </div>
+                  <ScrollArea className="h-[300px]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
+                            {/* Add Project column if multiple projects */}
+                            {projects.length > 1 && (
+                              <th className="p-2 text-left text-xs whitespace-nowrap bg-green-50">Project</th>
+                            )}
+                            {sheetData?.headers?.map((header: string, i: number) => (
+                              <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                            <tr key={rowIndex}>
+                              <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
+                              {/* Add Project value if multiple projects */}
+                              {projects.length > 1 && (
+                                <td className="p-2 text-xs whitespace-nowrap bg-green-50">
+                                  {PROJECTS.find((p) => p.id === projects[0])?.name}
+                                </td>
+                              )}
+                              {sheetData.headers.map((header: string, colIndex: number) => (
+                                <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
+                                  {row[header]}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Showing first 5 rows of {sheetData?.rows?.length} total rows
+                Showing first 10 rows of {sheetData?.rows?.length} total rows
               </p>
             </div>
           </Card>

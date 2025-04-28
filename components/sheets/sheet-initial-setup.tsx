@@ -67,6 +67,16 @@ const MOCK_SHEET_DATA = {
       Floor: Math.floor(1 + Math.random() * 20),
       Building: ["A", "B", "C", "D"][Math.floor(Math.random() * 4)],
     })),
+  isIdentical: false,
+  structureMatch: "Minor Changes",
+  newUnits: 3,
+  modifiedUnits: 5,
+  removedUnits: 1,
+  suggestedPreset: "Palm Hills - October Units v2",
+  tabChanges: "No changes in sheet tabs",
+  columnChanges: "+2 new columns (Payment Plan, Handover Date)",
+  formatChanges: "Price format changed from '1,000,000' to '1M'",
+  availablePresets: ["Palm Hills - October", "Green Valley - Standard", "Custom Preset 3"],
 }
 
 interface SheetInitialSetupProps {
@@ -78,6 +88,14 @@ interface SheetInitialSetupProps {
   }
   onSetupChange: (data: any) => void
   sheetData?: any
+}
+
+// Add this CSS class definition somewhere in your component or in a global CSS file
+// This is just to ensure the success badge has the right styling
+const badgeVariants = {
+  // ... existing variants
+  success: "bg-green-100 text-green-800 hover:bg-green-200 border-green-200",
+  warning: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200",
 }
 
 export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSetupProps) {
@@ -304,6 +322,127 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">Select the property type for this inventory</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sheet Comparison with Previous Entry */}
+        <div className="bg-muted/30 p-4 rounded-lg border mt-6">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-sm font-medium">Comparison with Previous Entry</h3>
+            <Badge variant={sheetData.isIdentical ? "success" : "warning"} className="text-xs">
+              {sheetData.isIdentical ? "100% Match" : "Changes Detected"}
+            </Badge>
+          </div>
+
+          {/* Changes from previous entry - at the top */}
+          <div className="space-y-2 mb-3">
+            <h4 className="text-xs font-medium">Changes Detected</h4>
+            <div className="border rounded-md p-2 bg-background">
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  <span>+{sheetData.newUnits || 3} New units</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                  <span>{sheetData.modifiedUnits || 5} Modified units</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                  <span>{sheetData.removedUnits || 1} Removed units</span>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t grid grid-cols-1 gap-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Tabs
+                  </Badge>
+                  <span className="text-xs">{sheetData.tabChanges || "No changes in sheet tabs"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Columns
+                  </Badge>
+                  <span className="text-xs">
+                    {sheetData.columnChanges || "+2 new columns (Payment Plan, Handover Date)"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    Format
+                  </Badge>
+                  <span className="text-xs">
+                    {sheetData.formatChanges || "Price format changed from '1,000,000' to '1M'"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Previous entry information */}
+          <div className="mb-3">
+            <h4 className="text-xs font-medium mb-2">Previous Entry Information</h4>
+            <div className="border rounded-md p-2 bg-background">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Date:</span> 2023-05-10
+                </div>
+                <div>
+                  <span className="text-muted-foreground">User:</span> John Smith
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Sheet:</span> inventory_q1_2023.xlsx
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Structure:</span>
+                  <span
+                    className={`ml-1 ${sheetData.structureMatch === "Identical" ? "text-green-600" : sheetData.structureMatch === "Minor Changes" ? "text-amber-600" : "text-red-600"}`}
+                  >
+                    {sheetData.structureMatch || "Identical"}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t">
+                <div className="text-xs text-muted-foreground mb-1">Projects:</div>
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                    <Building2 className="h-3 w-3" />
+                    Palm Heights
+                  </Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                    <Building2 className="h-3 w-3" />
+                    Mountain View
+                  </Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1 text-xs">
+                    <Building2 className="h-3 w-3" />
+                    Harbor Lights
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preset Selection - at the bottom */}
+          <div>
+            <h4 className="text-xs font-medium mb-2">Preset Selection</h4>
+            <div className="flex items-center justify-between">
+              <Select defaultValue={sheetData.suggestedPreset}>
+                <SelectTrigger className="h-8 text-xs w-[220px]">
+                  <SelectValue placeholder="Select preset" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={sheetData.suggestedPreset}>{sheetData.suggestedPreset} (Suggested)</SelectItem>
+                  {(sheetData.availablePresets || []).map((preset, i) => (
+                    <SelectItem key={i} value={preset}>
+                      {preset}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" className="h-8">
+                Apply Preset
+              </Button>
             </div>
           </div>
         </div>
