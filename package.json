@@ -60,10 +60,8 @@
     "zod": "latest",
     "immer": "latest",
     "use-sync-external-store": "latest",
-    "@emotion/is-prop-valid": "latest",
     "@tanstack/react-table": "latest",
     "zustand": "latest",
-    "framer-motion": "latest",
     "fs": "latest",
     "path": "latest"
   },

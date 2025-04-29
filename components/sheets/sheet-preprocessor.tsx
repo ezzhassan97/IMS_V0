@@ -37,6 +37,9 @@ import {
   Merge,
   X,
   Edit,
+  RotateCcw,
+  RefreshCw,
+  ChevronRight,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -252,12 +255,17 @@ export function SheetPreprocessor() {
 
   const [sheetPreviewMode, setSheetPreviewMode] = useState("both") // "input", "output", "both"
   const [showActionSummary, setShowActionSummary] = useState(false)
+  const [openAccordion, setOpenAccordion] = useState<string | null>(null)
   const [actionHistory, setActionHistory] = useState<
     Array<{
       step: string
       action: string
       timestamp: string
       details?: string
+      reverted?: boolean
+      nonRevertible?: boolean
+      expandable?: boolean
+      expanded?: boolean
     }>
   >([
     {
@@ -265,12 +273,21 @@ export function SheetPreprocessor() {
       action: "Developer and projects selected",
       timestamp: new Date().toISOString(),
       details: "Developer: ABC Developers, Projects: Palm Heights, Metro Residences",
+      expandable: true,
     },
     {
       step: "Headers Detection",
       action: "Auto-detected headers",
       timestamp: new Date().toISOString(),
       details: "Project 1: Row 0, Project 2: Row 1, Payment Sheet: Not detected",
+      nonRevertible: true,
+    },
+    {
+      step: "Data Cleaning",
+      action: "Removed empty rows",
+      timestamp: new Date().toISOString(),
+      details: "12 rows removed",
+      expandable: true,
     },
   ])
 
@@ -534,6 +551,14 @@ export function SheetPreprocessor() {
       setOcrTables(updatedTables)
     }
   }
+
+  // Add a state variable for tracking dialog state at the top of the component with other state variables
+  const [showMergeDialog, setShowMergeDialog] = useState(false)
+  const [mergeDialogData, setMergeDialogData] = useState<{
+    tabs: string[]
+    compatible: boolean
+    message: string
+  }>({ tabs: [], compatible: false, message: "" })
 
   return (
     <div className="space-y-4 pb-20">
@@ -942,123 +967,54 @@ export function SheetPreprocessor() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={`md:col-span-${showActionSummary ? "2" : "3"} space-y-4`}>
-                {/* Step-by-step workflow */}
-                <Tabs defaultValue="headers" className="w-full">
-                  <TabsList className="grid grid-cols-3 mb-4">
-                    <TabsTrigger value="headers" className="flex items-center gap-1">
-                      1. Headers Detection
-                      {Object.values(headerDetectionStatus).every((status) => status === "detected") && (
-                        <Check className="h-4 w-4 text-green-500" />
-                      )}
-                    </TabsTrigger>
-                    {projects.length > 1 && sheetData.sheets.length > 1 && (
-                      <TabsTrigger value="projects">2. Project Assignment</TabsTrigger>
-                    )}
-                    <TabsTrigger value="merging">
-                      {projects.length > 1 && sheetData.sheets.length > 1 ? "3" : "2"}. Tab Merging & Mapping
-                    </TabsTrigger>
-                  </TabsList>
+            <div className="grid grid-cols-12 gap-4">
+              {/* Left side - Actions Panel */}
+              <div className="col-span-12 md:col-span-3 space-y-3">
+                <Card className="p-3">
+                  <h3 className="text-sm font-medium mb-3">Sheet Preparation Actions</h3>
 
-                  {/* Step 1: Headers Detection */}
-                  <TabsContent value="headers" className="space-y-4">
-                    <div className="border rounded-md p-4">
-                      <h4 className="text-sm font-medium mb-3">Header Detection</h4>
+                  {/* Headers Detection - Always show, but with different content based on detection status */}
+                  <div className="mb-3 border rounded-md overflow-hidden">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                      onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
+                    >
+                      <div className="flex items-center">
+                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ? (
+                          <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+                        ) : (
+                          <Check className="h-4 w-4 mr-2 text-green-500" />
+                        )}
+                        Headers Detection
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "headers" ? "transform rotate-90" : ""}`}
+                      />
+                    </Button>
 
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="col-span-2 space-y-2">
-                            <label className="text-sm font-medium">Available Tabs</label>
-                            <div className="flex flex-wrap gap-2">
-                              {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map(
-                                (sheet: string, index: number) => (
+                    {openAccordion === "headers" && (
+                      <div className="border-t p-3 space-y-3 bg-muted/10">
+                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ? (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              {Object.values(headerDetectionStatus).filter((status) => status === "undetected").length}{" "}
+                              tab(s) need header detection
+                            </div>
+
+                            {Object.entries(headerDetectionStatus)
+                              .filter(([_, status]) => status === "undetected")
+                              .map(([tab]) => (
+                                <div key={tab} className="flex items-center justify-between">
+                                  <span className="text-sm">{tab}</span>
                                   <Button
-                                    key={index}
-                                    variant={sheet === (sheetData.sheetName || "Project 1") ? "default" : "outline"}
                                     size="sm"
-                                    className={`text-xs ${ignoredTabs[sheet] ? "opacity-50 line-through" : ""}`}
-                                  >
-                                    {sheet}
-                                    {ignoredTabs[sheet] && <X className="ml-1 h-3 w-3" />}
-                                  </Button>
-                                ),
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              Detected headers:
-                              {Object.entries(headerPositions)
-                                .filter(([tab, pos]) => pos >= 0 && !ignoredTabs[tab])
-                                .map(([tab]) => tab)
-                                .join(", ")}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Auto-Detect Headers</label>
-                            <Button variant="secondary" size="sm" className="w-full">
-                              Detect Headers in All Tabs
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
-                          {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map(
-                            (sheet: string, index: number) => (
-                              <div key={index} className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <label className="text-sm font-medium flex items-center gap-1">
-                                    {sheet}
-                                    {headerDetectionStatus[sheet] === "detected" ? (
-                                      <Check className="h-4 w-4 text-green-500" />
-                                    ) : (
-                                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                                    )}
-                                  </label>
-                                  <div className="flex items-center gap-1">
-                                    <label className="text-xs text-muted-foreground">Ignore</label>
-                                    <Checkbox
-                                      checked={ignoredTabs[sheet]}
-                                      onCheckedChange={(checked) => {
-                                        const newIgnoredTabs = { ...ignoredTabs }
-                                        newIgnoredTabs[sheet] = !!checked
-                                        setIgnoredTabs(newIgnoredTabs)
-
-                                        // Add to action history
-                                        if (checked) {
-                                          setActionHistory([
-                                            ...actionHistory,
-                                            {
-                                              step: "Headers Detection",
-                                              action: `Ignored tab: ${sheet}`,
-                                              timestamp: new Date().toISOString(),
-                                            },
-                                          ])
-                                        } else {
-                                          setActionHistory([
-                                            ...actionHistory,
-                                            {
-                                              step: "Headers Detection",
-                                              action: `Re-included tab: ${sheet}`,
-                                              timestamp: new Date().toISOString(),
-                                            },
-                                          ])
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    min="-1"
-                                    value={headerPositions[sheet]}
-                                    onChange={(e) => {
-                                      const newValue = Number.parseInt(e.target.value) || 0
-                                      setHeaderPositions({ ...headerPositions, [sheet]: newValue })
+                                    variant="outline"
+                                    onClick={() => {
+                                      setHeaderPositions({ ...headerPositions, [tab]: 0 })
                                       setHeaderDetectionStatus({
                                         ...headerDetectionStatus,
-                                        [sheet]: newValue >= 0 ? "detected" : "undetected",
+                                        [tab]: "detected",
                                       })
 
                                       // Add to action history
@@ -1066,137 +1022,175 @@ export function SheetPreprocessor() {
                                         ...actionHistory,
                                         {
                                           step: "Headers Detection",
-                                          action: `Set header position for ${sheet}`,
+                                          action: `Auto-detected headers for ${tab}`,
                                           timestamp: new Date().toISOString(),
-                                          details: `Row: ${newValue}`,
+                                          details: "Row: 0",
                                         },
                                       ])
+
+                                      toast({
+                                        title: "Headers detected",
+                                        description: `Headers for ${tab} have been detected at row 0.`,
+                                      })
                                     }}
-                                    className="w-20 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                                    disabled={ignoredTabs[sheet]}
-                                  />
-                                  {headerDetectionStatus[sheet] === "detected" ? (
-                                    <Badge className="bg-green-100 text-green-800">Detected</Badge>
-                                  ) : (
-                                    <Badge className="bg-red-100 text-red-800">Not Detected</Badge>
-                                  )}
-                                  {headerDetectionStatus[sheet] === "undetected" && (
+                                  >
+                                    Auto-detect
+                                  </Button>
+                                </div>
+                              ))}
+                          </>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center text-green-600">
+                              <Check className="h-4 w-4 mr-2" />
+                              <span className="text-sm">All headers detected successfully</span>
+                            </div>
+
+                            <div className="space-y-2">
+                              {Object.entries(headerDetectionStatus).map(([tab, status]) => (
+                                <div key={tab} className="flex items-center justify-between">
+                                  <span className="text-sm">{tab}</span>
+                                  <div className="flex items-center">
+                                    <Badge variant="outline" className="mr-2 text-xs text-green-600">
+                                      Row: {headerPositions[tab]}
+                                    </Badge>
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="text-xs h-7"
+                                      className="text-xs"
                                       onClick={() => {
-                                        setHeaderPositions({ ...headerPositions, [sheet]: 0 })
                                         setHeaderDetectionStatus({
                                           ...headerDetectionStatus,
-                                          [sheet]: "detected",
+                                          [tab]: "undetected",
                                         })
 
-                                        // Add to action history
                                         setActionHistory([
                                           ...actionHistory,
                                           {
                                             step: "Headers Detection",
-                                            action: `Auto-detected headers for ${sheet}`,
+                                            action: `Reset header detection for ${tab}`,
                                             timestamp: new Date().toISOString(),
-                                            details: "Row: 0",
                                           },
                                         ])
+
+                                        toast({
+                                          title: "Header detection reset",
+                                          description: `You can now re-detect headers for ${tab}.`,
+                                        })
                                       }}
                                     >
-                                      Auto-detect
+                                      Re-detect
                                     </Button>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
-                            ),
-                          )}
-                        </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="border rounded-md p-4">
-                      <h4 className="text-sm font-medium mb-3">Data Cleaning Issues</h4>
+                  {/* Data Cleaning - Always show */}
+                  <div className="mb-3 border rounded-md overflow-hidden">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                      onClick={() => setOpenAccordion(openAccordion === "cleaning" ? null : "cleaning")}
+                    >
+                      <div className="flex items-center">
+                        <Brush className="h-4 w-4 mr-2 text-blue-500" />
+                        Data Cleaning
+                      </div>
+                      {sheetData.emptyCells > 0 || sheetData.emptyColumns > 0 ? (
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <Check className="h-4 w-4 text-green-500" />
+                      )}
+                    </Button>
 
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2 border rounded-md p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Empty Rows</span>
+                    {openAccordion === "cleaning" && (
+                      <div className="border-t p-3 space-y-3 bg-muted/10">
+                        {sheetData.emptyCells > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Empty Rows</span>
+                            <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-red-600">
                                 12 detected
                               </Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                                onClick={() => {
+                                  // Add to action history
+                                  setActionHistory([
+                                    ...actionHistory,
+                                    {
+                                      step: "Data Cleaning",
+                                      action: "Removed empty rows",
+                                      timestamp: new Date().toISOString(),
+                                      details: "12 rows removed",
+                                    },
+                                  ])
+
+                                  toast({
+                                    title: "Empty rows removed",
+                                    description: "12 empty rows have been removed from the sheet.",
+                                  })
+                                }}
+                              >
+                                Remove
+                              </Button>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full text-xs"
-                              onClick={() => {
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Data Cleaning",
-                                    action: "Removed empty rows",
-                                    timestamp: new Date().toISOString(),
-                                    details: "12 rows removed",
-                                  },
-                                ])
-
-                                toast({
-                                  title: "Empty rows removed",
-                                  description: "12 empty rows have been removed from the sheet.",
-                                })
-                              }}
-                            >
-                              Remove Empty Rows
-                            </Button>
                           </div>
+                        )}
 
-                          <div className="space-y-2 border rounded-md p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Empty Columns</span>
+                        {sheetData.emptyColumns > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm">Empty Columns</span>
+                            <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-red-600">
                                 2 detected
                               </Badge>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="w-full text-xs"
-                              onClick={() => {
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Data Cleaning",
-                                    action: "Removed empty columns",
-                                    timestamp: new Date().toISOString(),
-                                    details: "2 columns removed",
-                                  },
-                                ])
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                                onClick={() => {
+                                  // Add to action history
+                                  setActionHistory([
+                                    ...actionHistory,
+                                    {
+                                      step: "Data Cleaning",
+                                      action: "Removed empty columns",
+                                      timestamp: new Date().toISOString(),
+                                      details: "2 columns removed",
+                                    },
+                                  ])
 
-                                toast({
-                                  title: "Empty columns removed",
-                                  description: "2 empty columns have been removed from the sheet.",
-                                })
-                              }}
-                            >
-                              Remove Empty Columns
-                            </Button>
+                                  toast({
+                                    title: "Empty columns removed",
+                                    description: "2 empty columns have been removed from the sheet.",
+                                  })
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           </div>
+                        )}
 
-                          <div className="space-y-2 border rounded-md p-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm">Merged Cells</span>
-                              <Badge variant="outline" className="text-amber-600">
-                                3 detected
-                              </Badge>
-                            </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Merged Cells</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-amber-600">
+                              3 detected
+                            </Badge>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="w-full text-xs"
+                              className="text-xs"
                               onClick={() => {
                                 // Add to action history
                                 setActionHistory([
@@ -1215,90 +1209,78 @@ export function SheetPreprocessor() {
                                 })
                               }}
                             >
-                              Unmerge Cells
+                              Unmerge
                             </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={() => {
-                          if (projects.length > 1 && sheetData.sheets.length > 1) {
-                            document.querySelector('[data-value="projects"]')?.click()
-                          } else {
-                            document.querySelector('[data-value="merging"]')?.click()
-                          }
-                        }}
-                      >
-                        {projects.length > 1 && sheetData.sheets.length > 1
-                          ? "Continue to Project Assignment"
-                          : "Continue to Tab Merging"}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TabsContent>
-
-                  {/* Step 2: Project Assignment - Only show if multiple projects and tabs */}
+                  {/* Project Assignment - Only show if multiple projects and tabs */}
                   {projects.length > 1 && sheetData.sheets.length > 1 && (
-                    <TabsContent value="projects" className="space-y-4">
-                      <div className="border rounded-md p-4">
-                        <h4 className="text-sm font-medium mb-3">Project Assignment</h4>
+                    <div className="mb-3 border rounded-md overflow-hidden">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                        onClick={() => setOpenAccordion(openAccordion === "projects" ? null : "projects")}
+                      >
+                        <div className="flex items-center">
+                          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                          Project Assignment
+                        </div>
+                        {useColumnForProjects ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        )}
+                      </Button>
 
-                        <div className="space-y-4">
-                          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm text-blue-800">
-                            <div className="flex items-center gap-2">
-                              <FileSpreadsheet className="h-4 w-4" />
-                              <span className="font-medium">Project Assignment Strategy</span>
-                            </div>
-                            <p className="mt-1 text-xs">
-                              You've selected multiple projects. You need to assign each tab to a specific project or
-                              use a column to differentiate between projects.
-                            </p>
+                      {openAccordion === "projects" && (
+                        <div className="border-t p-3 space-y-3 bg-muted/10">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="use-column"
+                              checked={useColumnForProjects}
+                              onCheckedChange={(checked) => {
+                                setUseColumnForProjects(!!checked)
+
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Project Assignment",
+                                    action: checked
+                                      ? "Enabled column-based project assignment"
+                                      : "Disabled column-based project assignment",
+                                    timestamp: new Date().toISOString(),
+                                  },
+                                ])
+
+                                toast({
+                                  title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
+                                  description: checked
+                                    ? "Projects will be assigned based on column values"
+                                    : "Projects will be assigned based on tabs",
+                                })
+                              }}
+                            />
+                            <label htmlFor="use-column" className="text-sm">
+                              Use a column to differentiate between projects
+                            </label>
                           </div>
 
-                          <div className="space-y-4">
-                            <div className="flex items-center gap-2">
-                              <Checkbox
-                                id="use-column"
-                                checked={useColumnForProjects}
-                                onCheckedChange={(checked) => {
-                                  setUseColumnForProjects(!!checked)
-
-                                  // Add to action history
-                                  setActionHistory([
-                                    ...actionHistory,
-                                    {
-                                      step: "Project Assignment",
-                                      action: checked
-                                        ? "Enabled column-based project assignment"
-                                        : "Disabled column-based project assignment",
-                                      timestamp: new Date().toISOString(),
-                                    },
-                                  ])
-                                }}
-                              />
-                              <label htmlFor="use-column" className="text-sm">
-                                Use a column to differentiate between projects
-                              </label>
-                            </div>
-
-                            <div className="border-t pt-4">
-                              <h5 className="text-sm font-medium mb-2">Assign tabs to projects:</h5>
-                              <div className="space-y-3">
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                  <div className="font-medium">Tab</div>
-                                  <div className="font-medium">Project</div>
-                                </div>
-
+                          {!useColumnForProjects && (
+                            <div className="space-y-2 pt-2">
+                              <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
+                              <div className="space-y-2">
                                 {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
                                   .filter((sheet) => !ignoredTabs[sheet])
                                   .map((sheet, index) => (
-                                    <div key={index} className="grid grid-cols-2 gap-2 items-center">
-                                      <div className="text-sm">{sheet}</div>
-                                      <Select defaultValue={index === 0 ? "proj1" : "proj3"}>
-                                        <SelectTrigger className="h-8 text-xs">
+                                    <div key={index} className="flex items-center justify-between">
+                                      <span className="text-xs">{sheet}</span>
+                                      <Select defaultValue={index === 0 ? "proj1" : "proj3"} className="w-32">
+                                        <SelectTrigger className="h-7 text-xs">
                                           <SelectValue placeholder="Select project" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -1316,440 +1298,257 @@ export function SheetPreprocessor() {
                                   ))}
                               </div>
                             </div>
-                          </div>
+                          )}
                         </div>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <Button
-                          variant="outline"
-                          onClick={() => document.querySelector('[data-value="headers"]')?.click()}
-                        >
-                          <ArrowLeft className="mr-2 h-4 w-4" />
-                          Back to Headers Detection
-                        </Button>
-                        <Button onClick={() => document.querySelector('[data-value="merging"]')?.click()}>
-                          Continue to Tab Merging
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TabsContent>
+                      )}
+                    </div>
                   )}
-
-                  {/* Step 3: Tab Merging & Mapping */}
-                  <TabsContent value="merging" className="space-y-4">
-                    <div className="border rounded-md p-4">
-                      <h4 className="text-sm font-medium mb-3">Tab Merging</h4>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">Merge Multiple Tabs</label>
-                          <Switch
-                            checked={mergeTabsEnabled}
-                            onCheckedChange={(checked) => {
-                              setMergeTabsEnabled(checked)
-
-                              // Add to action history
-                              setActionHistory([
-                                ...actionHistory,
-                                {
-                                  step: "Tab Merging",
-                                  action: checked ? "Enabled tab merging" : "Disabled tab merging",
-                                  timestamp: new Date().toISOString(),
-                                },
-                              ])
-                            }}
-                          />
+                  {/* Tab Merging - Only show if multiple tabs */}
+                  {sheetData.sheets.length > 1 && (
+                    <div className="mb-3 border rounded-md overflow-hidden">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                        onClick={() => setOpenAccordion(openAccordion === "merging" ? null : "merging")}
+                      >
+                        <div className="flex items-center">
+                          <Merge className="h-4 w-4 mr-2 text-purple-500" />
+                          Tab Merging
                         </div>
+                        {mergeTabsEnabled ? (
+                          Object.values(tabsToMerge).some((value) => value) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          )
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        )}
+                      </Button>
 
-                        <div className="border rounded-md p-3 bg-muted/20">
-                          <div className="text-xs text-muted-foreground mb-2">Tabs to Merge:</div>
-                          <div className="flex flex-wrap gap-2">
-                            {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                              .filter((sheet) => !ignoredTabs[sheet])
-                              .map((sheet, index) => (
-                                <Badge key={index} variant="outline" className="flex items-center gap-1">
-                                  {sheet}
-                                  <Checkbox
-                                    className="h-3 w-3 ml-1"
-                                    checked={tabsToMerge[sheet]}
-                                    onCheckedChange={(checked) => {
-                                      const newTabsToMerge = { ...tabsToMerge }
-                                      newTabsToMerge[sheet] = !!checked
-                                      setTabsToMerge(newTabsToMerge)
+                      {openAccordion === "merging" && (
+                        <div className="border-t p-3 space-y-3 bg-muted/10">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm">Merge Multiple Tabs</label>
+                            <Switch
+                              checked={mergeTabsEnabled}
+                              onCheckedChange={(checked) => {
+                                setMergeTabsEnabled(checked)
 
-                                      // Add to action history
-                                      if (checked) {
-                                        setActionHistory([
-                                          ...actionHistory,
-                                          {
-                                            step: "Tab Merging",
-                                            action: `Selected tab for merging: ${sheet}`,
-                                            timestamp: new Date().toISOString(),
-                                          },
-                                        ])
-                                      } else {
-                                        setActionHistory([
-                                          ...actionHistory,
-                                          {
-                                            step: "Tab Merging",
-                                            action: `Deselected tab from merging: ${sheet}`,
-                                            timestamp: new Date().toISOString(),
-                                          },
-                                        ])
-                                      }
-                                    }}
-                                    disabled={!mergeTabsEnabled}
-                                  />
-                                </Badge>
-                              ))}
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Tab Merging",
+                                    action: checked ? "Enabled tab merging" : "Disabled tab merging",
+                                    timestamp: new Date().toISOString(),
+                                  },
+                                ])
+
+                                toast({
+                                  title: checked ? "Tab merging enabled" : "Tab merging disabled",
+                                  description: checked
+                                    ? "You can now select tabs to merge"
+                                    : "Tab merging has been disabled",
+                                })
+                              }}
+                            />
                           </div>
-                        </div>
 
-                        <div className="text-xs text-amber-600 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Validation required before merging tabs with different structures
-                        </div>
+                          {mergeTabsEnabled && (
+                            <>
+                              <div className="text-xs text-muted-foreground">Select tabs to merge:</div>
+                              <div className="space-y-1">
+                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                                  .filter((sheet) => !ignoredTabs[sheet])
+                                  .map((sheet, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                      <Checkbox
+                                        checked={tabsToMerge[sheet]}
+                                        onCheckedChange={(checked) => {
+                                          const newTabsToMerge = { ...tabsToMerge }
+                                          newTabsToMerge[sheet] = !!checked
+                                          setTabsToMerge(newTabsToMerge)
 
+                                          // Add to action history
+                                          if (checked) {
+                                            setActionHistory([
+                                              ...actionHistory,
+                                              {
+                                                step: "Tab Merging",
+                                                action: `Selected tab for merging: ${sheet}`,
+                                                timestamp: new Date().toISOString(),
+                                              },
+                                            ])
+                                          } else {
+                                            setActionHistory([
+                                              ...actionHistory,
+                                              {
+                                                step: "Tab Merging",
+                                                action: `Deselected tab from merging: ${sheet}`,
+                                                timestamp: new Date().toISOString(),
+                                              },
+                                            ])
+                                          }
+                                        }}
+                                      />
+                                      <label className="text-sm">{sheet}</label>
+                                    </div>
+                                  ))}
+                              </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-2"
+                                disabled={!Object.values(tabsToMerge).some((value) => value)}
+                                onClick={() => {
+                                  // Collect selected tabs
+                                  const selectedTabs = Object.entries(tabsToMerge)
+                                    .filter(([_, selected]) => selected)
+                                    .map(([tab]) => tab)
+
+                                  // Simulate validation
+                                  const isCompatible = true // In a real app, you'd check compatibility
+
+                                  // Set dialog data
+                                  setMergeDialogData({
+                                    tabs: selectedTabs,
+                                    compatible: isCompatible,
+                                    message: isCompatible
+                                      ? "All selected tabs are compatible for merging"
+                                      : "Cannot merge tabs with different column structures",
+                                  })
+
+                                  // Show dialog
+                                  setShowMergeDialog(true)
+
+                                  // Close accordion
+                                  setOpenAccordion(null)
+                                }}
+                              >
+                                Validate & Merge Selected Tabs
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              </div>
+
+              {/* Center - Sheet Preview */}
+              <div className={`col-span-12 ${showActionSummary ? "md:col-span-6" : "md:col-span-9"}`}>
+                <div className="border rounded-md">
+                  <div className="bg-muted p-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs font-medium">
+                        {sheetPreviewMode === "input" ? "Input Sheet" : "Output Sheet (Processed)"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                          .filter((sheet) => !ignoredTabs[sheet])
+                          .map((sheet: string, index: number) => (
+                            <Button
+                              key={index}
+                              variant={sheet === (sheetData.sheetName || "Project 1") ? "secondary" : "ghost"}
+                              size="sm"
+                              className="h-6 text-xs px-2"
+                            >
+                              {sheet}
+                            </Button>
+                          ))}
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
                         <Button
-                          variant="outline"
+                          variant={sheetPreviewMode === "input" ? "default" : "outline"}
                           size="sm"
-                          className="w-full"
-                          disabled={!mergeTabsEnabled}
-                          onClick={() => {
-                            // Add to action history
-                            setActionHistory([
-                              ...actionHistory,
-                              {
-                                step: "Tab Merging",
-                                action: "Validated tabs for merging",
-                                timestamp: new Date().toISOString(),
-                                details: "All selected tabs are compatible for merging",
-                              },
-                            ])
-
-                            toast({
-                              title: "Tabs validated",
-                              description: "Selected tabs are compatible for merging.",
-                            })
-                          }}
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setSheetPreviewMode("input")}
                         >
-                          Validate Selected Tabs
+                          Input
+                        </Button>
+                        <Button
+                          variant={sheetPreviewMode === "output" ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => setSheetPreviewMode("output")}
+                        >
+                          Output
                         </Button>
                       </div>
                     </div>
-
-                    <div className="border rounded-md p-4">
-                      <h4 className="text-sm font-medium mb-3">Smart Column Mapping</h4>
-
-                      <div className="space-y-3">
-                        <div className="text-xs text-muted-foreground mb-1">
-                          System detected similar columns across tabs that could be mapped:
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="border rounded-md p-2 bg-muted/20">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-blue-50">
-                                  Project 1
-                                </Badge>
-                                <span className="text-sm font-medium">Area (sqm)</span>
-                              </div>
-                              <div className="text-xs">→</div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-green-50">
-                                  Project 2
-                                </Badge>
-                                <span className="text-sm font-medium">Space</span>
-                              </div>
-                              <Badge className="bg-green-100 text-green-800 text-xs">95% match</Badge>
-                            </div>
-                          </div>
-
-                          <div className="border rounded-md p-2 bg-muted/20">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-blue-50">
-                                  Project 1
-                                </Badge>
-                                <span className="text-sm font-medium">Unit ID</span>
-                              </div>
-                              <div className="text-xs">→</div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-green-50">
-                                  Project 2
-                                </Badge>
-                                <span className="text-sm font-medium">Unit Code</span>
-                              </div>
-                              <Badge className="bg-green-100 text-green-800 text-xs">90% match</Badge>
-                            </div>
-                          </div>
-
-                          <div className="border rounded-md p-2 bg-muted/20">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-blue-50">
-                                  Project 1
-                                </Badge>
-                                <span className="text-sm font-medium">Building</span>
-                              </div>
-                              <div className="text-xs">→</div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="bg-amber-50">
-                                  Payment Sheet
-                                </Badge>
-                                <span className="text-sm font-medium">Block</span>
-                              </div>
-                              <Badge className="bg-amber-100 text-amber-800 text-xs">75% match</Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Add to action history
-                              setActionHistory([
-                                ...actionHistory,
-                                {
-                                  step: "Column Mapping",
-                                  action: "Adjusted column mappings",
-                                  timestamp: new Date().toISOString(),
-                                },
-                              ])
-                            }}
-                          >
-                            Adjust Mappings
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              // Add to action history
-                              setActionHistory([
-                                ...actionHistory,
-                                {
-                                  step: "Column Mapping",
-                                  action: "Accepted all mapping suggestions",
-                                  timestamp: new Date().toISOString(),
-                                  details: "3 column mappings applied",
-                                },
-                              ])
-
-                              toast({
-                                title: "Mappings accepted",
-                                description: "All suggested column mappings have been applied.",
-                              })
-                            }}
-                          >
-                            Accept All Suggestions
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          if (projects.length > 1 && sheetData.sheets.length > 1) {
-                            document.querySelector('[data-value="projects"]')?.click()
-                          } else {
-                            document.querySelector('[data-value="headers"]')?.click()
-                          }
-                        }}
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        {projects.length > 1 && sheetData.sheets.length > 1
-                          ? "Back to Project Assignment"
-                          : "Back to Headers Detection"}
-                      </Button>
-                      <Button onClick={() => handleNext()}>
-                        Continue to Column Mapping
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-
-                {/* Sheet Preview Section with Input/Output Split */}
-                <div className="mt-6 border-t pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Sheet Preview</h3>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant={sheetPreviewMode === "input" || sheetPreviewMode === "both" ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => {
-                          if (sheetPreviewMode === "input") {
-                            setSheetPreviewMode("both")
-                          } else if (sheetPreviewMode === "both") {
-                            setSheetPreviewMode("output")
-                          } else {
-                            setSheetPreviewMode("input")
-                          }
-                        }}
-                      >
-                        <FileSpreadsheet className="h-3 w-3 mr-1" />
-                        Input Sheet
-                      </Button>
-                      <Button
-                        variant={sheetPreviewMode === "output" || sheetPreviewMode === "both" ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => {
-                          if (sheetPreviewMode === "output") {
-                            setSheetPreviewMode("both")
-                          } else if (sheetPreviewMode === "both") {
-                            setSheetPreviewMode("input")
-                          } else {
-                            setSheetPreviewMode("output")
-                          }
-                        }}
-                      >
-                        <FileSpreadsheet className="h-3 w-3 mr-1" />
-                        Output Sheet
-                      </Button>
-                    </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Input Sheet */}
-                    {(sheetPreviewMode === "input" || sheetPreviewMode === "both") && (
-                      <div
-                        className={`border rounded-md ${sheetPreviewMode === "both" ? "md:col-span-1" : "md:col-span-2"}`}
-                      >
-                        <div className="bg-muted p-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-xs font-medium">Input Sheet</span>
-                          </div>
-                          <div className="flex gap-1">
-                            {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                              .filter((sheet) => !ignoredTabs[sheet])
-                              .map((sheet: string, index: number) => (
-                                <Button
-                                  key={index}
-                                  variant={sheet === (sheetData.sheetName || "Project 1") ? "secondary" : "ghost"}
-                                  size="sm"
-                                  className="h-6 text-xs px-2"
+                  <ScrollArea className="h-[500px]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted/50">
+                            <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
+                            {/* Add Project column if showing output with multiple projects */}
+                            {sheetPreviewMode === "output" && projects.length > 1 && (
+                              <th className="p-2 text-left text-xs whitespace-nowrap bg-green-50">Project</th>
+                            )}
+                            {sheetData?.headers?.map((header: string, i: number) => (
+                              <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sheetData?.rows?.slice(0, 20).map((row: any, rowIndex: number) => (
+                            <tr
+                              key={rowIndex}
+                              className={`${
+                                sheetPreviewMode === "input" && rowIndex === headerPositions["Project 1"]
+                                  ? "bg-blue-50"
+                                  : ""
+                              } ${
+                                sheetPreviewMode === "input" && (rowIndex === 3 || rowIndex === 7) ? "bg-red-50" : ""
+                              }`}
+                            >
+                              <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
+                              {/* Add Project value if showing output with multiple projects */}
+                              {sheetPreviewMode === "output" && projects.length > 1 && (
+                                <td className="p-2 text-xs whitespace-nowrap bg-green-50">
+                                  {PROJECTS.find((p) => p.id === projects[0])?.name}
+                                </td>
+                              )}
+                              {sheetData.headers.map((header: string, colIndex: number) => (
+                                <td
+                                  key={colIndex}
+                                  className={`p-2 text-xs whitespace-nowrap ${
+                                    sheetPreviewMode === "input" &&
+                                    ((colIndex === 2 && rowIndex === 5) || (colIndex === 4 && rowIndex === 6))
+                                      ? "bg-amber-50"
+                                      : ""
+                                  }`}
                                 >
-                                  {sheet}
-                                </Button>
+                                  {row[header]}
+                                </td>
                               ))}
-                          </div>
-                        </div>
-                        <ScrollArea className="h-[300px]">
-                          <div className="overflow-x-auto">
-                            <table className="w-full">
-                              <thead>
-                                <tr className="bg-muted/50">
-                                  <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
-                                  {sheetData?.headers?.map((header: string, i: number) => (
-                                    <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
-                                      {header}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                                  <tr
-                                    key={rowIndex}
-                                    className={`${rowIndex === headerPositions["Project 1"] ? "bg-blue-50" : ""} ${
-                                      rowIndex === 3 || rowIndex === 7 ? "bg-red-50" : ""
-                                    }`}
-                                  >
-                                    <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
-                                    {sheetData.headers.map((header: string, colIndex: number) => (
-                                      <td
-                                        key={colIndex}
-                                        className={`p-2 text-xs whitespace-nowrap ${
-                                          (colIndex === 2 && rowIndex === 5) || (colIndex === 4 && rowIndex === 6)
-                                            ? "bg-amber-50"
-                                            : ""
-                                        }`}
-                                      >
-                                        {row[header]}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
-
-                    {/* Output Sheet (Processed) */}
-                    {(sheetPreviewMode === "output" || sheetPreviewMode === "both") && (
-                      <div
-                        className={`border rounded-md ${sheetPreviewMode === "both" ? "md:col-span-1" : "md:col-span-2"}`}
-                      >
-                        <div className="bg-muted p-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-xs font-medium">Output Sheet (Processed)</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            Preview
-                          </Badge>
-                        </div>
-                        <ScrollArea className="h-[300px]">
-                          <div className="overflow-x-auto">
-                            <table className="w-full">
-                              <thead>
-                                <tr className="bg-muted/50">
-                                  <th className="w-12 p-2 text-left text-xs sticky left-0 bg-muted/50">Row</th>
-                                  {/* Add Project column if multiple projects */}
-                                  {projects.length > 1 && (
-                                    <th className="p-2 text-left text-xs whitespace-nowrap bg-green-50">Project</th>
-                                  )}
-                                  {sheetData?.headers?.map((header: string, i: number) => (
-                                    <th key={i} className="p-2 text-left text-xs whitespace-nowrap">
-                                      {header}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                                  <tr key={rowIndex}>
-                                    <td className="p-2 text-xs font-medium sticky left-0 bg-white">{rowIndex + 1}</td>
-                                    {/* Add Project value if multiple projects */}
-                                    {projects.length > 1 && (
-                                      <td className="p-2 text-xs whitespace-nowrap bg-green-50">
-                                        {PROJECTS.find((p) => p.id === projects[0])?.name}
-                                      </td>
-                                    )}
-                                    {sheetData.headers.map((header: string, colIndex: number) => (
-                                      <td key={colIndex} className="p-2 text-xs whitespace-nowrap">
-                                        {row[header]}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </ScrollArea>
+                  <div className="p-2 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Showing first 20 rows of {sheetData?.rows?.length} total rows
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Showing first 10 rows of {sheetData?.rows?.length} total rows
-                  </p>
                 </div>
               </div>
 
-              {/* Action Summary Side Panel */}
+              {/* Right side - Action Summary (conditionally shown) */}
               {showActionSummary && (
-                <div className="md:col-span-1 border-l pl-4">
+                <div className="col-span-12 md:col-span-3 border-l pl-4">
                   <div className="sticky top-4">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-medium">Action Summary</h3>
@@ -1765,17 +1564,87 @@ export function SheetPreprocessor() {
 
                     <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
                       {actionHistory.map((action, index) => (
-                        <div key={index} className="border rounded-md p-2 text-xs">
+                        <div
+                          key={index}
+                          className={`border rounded-md p-2 text-xs ${action.reverted ? "opacity-60" : ""}`}
+                        >
                           <div className="flex items-center justify-between">
                             <Badge variant="outline" className="text-xs">
                               {action.step}
                             </Badge>
-                            <span className="text-muted-foreground">
-                              {new Date(action.timestamp).toLocaleTimeString()}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-muted-foreground">
+                                {new Date(action.timestamp).toLocaleTimeString()}
+                              </span>
+                              {!action.nonRevertible && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-5 w-5 p-0 ml-1"
+                                  onClick={() => {
+                                    // Toggle reverted state
+                                    const updatedHistory = [...actionHistory]
+                                    updatedHistory[index] = {
+                                      ...updatedHistory[index],
+                                      reverted: !updatedHistory[index].reverted,
+                                    }
+                                    setActionHistory(updatedHistory)
+
+                                    // Show toast
+                                    toast({
+                                      title: updatedHistory[index].reverted ? "Action reverted" : "Action restored",
+                                      description: action.action,
+                                      variant: updatedHistory[index].reverted ? "destructive" : "default",
+                                    })
+                                  }}
+                                >
+                                  {action.reverted ? (
+                                    <RefreshCw className="h-3 w-3" />
+                                  ) : (
+                                    <RotateCcw className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <p className="font-medium mt-1">{action.action}</p>
-                          {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                          <p className={`font-medium mt-1 ${action.reverted ? "line-through" : ""}`}>{action.action}</p>
+
+                          {action.details && (
+                            <div className="mt-1">
+                              {action.expandable ? (
+                                <div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-5 p-0 text-xs text-muted-foreground flex items-center gap-1"
+                                    onClick={() => {
+                                      // Toggle expanded state
+                                      const updatedHistory = [...actionHistory]
+                                      updatedHistory[index] = {
+                                        ...updatedHistory[index],
+                                        expanded: !updatedHistory[index].expanded,
+                                      }
+                                      setActionHistory(updatedHistory)
+                                    }}
+                                  >
+                                    <ChevronRight
+                                      className={`h-3 w-3 ${action.expanded ? "transform rotate-90" : ""}`}
+                                    />
+                                    Details
+                                  </Button>
+                                  {action.expanded && (
+                                    <div className="text-muted-foreground mt-1 pl-3 border-l-2 border-muted">
+                                      {action.details}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className={`text-muted-foreground mt-0.5 ${action.reverted ? "line-through" : ""}`}>
+                                  {action.details}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1783,6 +1652,8 @@ export function SheetPreprocessor() {
                 </div>
               )}
             </div>
+
+            {/* Action Summary Panel - Conditionally shown */}
           </Card>
         </TabsContent>
 
@@ -2154,14 +2025,14 @@ export function SheetPreprocessor() {
                     <span className="font-medium">Developer:</span> {initialSetup.developer}
                   </p>
                   <p>
-                    <span className="font-medium">Projects:</span>{" "}
+                    <span className="font-medium">Projects:</span>
                     {initialSetup.projects.length > 0 ? initialSetup.projects.join(", ") : "None"}
                   </p>
                   <p>
                     <span className="font-medium">Property Type Category:</span> {initialSetup.propertyType}
                   </p>
                   <p>
-                    <span className="font-medium">Column Mappings:</span>{" "}
+                    <span className="font-medium">Column Mappings:</span>
                     {Object.keys(columnMappings).filter((k) => columnMappings[k]).length} fields
                   </p>
                   <p>
@@ -2181,6 +2052,64 @@ export function SheetPreprocessor() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Tab Merging Dialog */}
+      {showMergeDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-2">Tab Merging Validation</h3>
+
+            <div className="my-4">
+              {mergeDialogData.compatible ? (
+                <div className="flex items-center text-green-600 gap-2">
+                  <Check className="h-5 w-5" />
+                  <p>Validation successful! The selected tabs can be merged.</p>
+                </div>
+              ) : (
+                <div className="flex items-center text-red-600 gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  <p>{mergeDialogData.message}</p>
+                </div>
+              )}
+
+              <div className="mt-2 text-sm text-muted-foreground">
+                <p>Selected tabs: {mergeDialogData.tabs.join(", ")}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowMergeDialog(false)}>
+                Cancel
+              </Button>
+              {mergeDialogData.compatible && (
+                <Button
+                  onClick={() => {
+                    // Add to action history
+                    setActionHistory([
+                      ...actionHistory,
+                      {
+                        step: "Tab Merging",
+                        action: "Merged tabs",
+                        timestamp: new Date().toISOString(),
+                        details: `Merged tabs: ${mergeDialogData.tabs.join(", ")}`,
+                      },
+                    ])
+
+                    toast({
+                      title: "Tabs merged successfully",
+                      description: `${mergeDialogData.tabs.length} tabs have been merged.`,
+                    })
+
+                    setShowMergeDialog(false)
+                  }}
+                >
+                  Merge Tabs
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Fixed Navigation Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 flex justify-between z-40">

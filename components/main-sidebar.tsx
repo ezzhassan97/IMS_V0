@@ -15,7 +15,6 @@ import {
   Building2,
   ChevronRight,
   ClipboardList,
-  CreditCard,
   FileSpreadsheet,
   Home,
   LayoutDashboard,
@@ -55,6 +54,7 @@ const sidebarItems: SidebarItem[] = [
       { title: "All Projects", href: "/projects" },
       { title: "Add Project", href: "/projects/new" },
       { title: "Phases", href: "/projects/phases" },
+      { title: "Payment Plans", href: "/payment-plans" },
     ],
   },
   {
@@ -72,15 +72,9 @@ const sidebarItems: SidebarItem[] = [
     href: "/sheets",
     icon: FileSpreadsheet,
     submenu: [
-      { title: "Upload Sheet", href: "/sheets/upload" },
       { title: "Processing", href: "/sheets/processing" },
-      { title: "Templates", href: "/sheets/templates" },
+      { title: "Presets", href: "/sheets/templates" },
     ],
-  },
-  {
-    title: "Payment Plans",
-    href: "/payment-plans",
-    icon: CreditCard,
   },
   {
     title: "Configurations",
@@ -111,6 +105,7 @@ export default function MainSidebar() {
   const pathname = usePathname()
   const { expanded, setExpanded, isMobile } = useSidebar()
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null)
+  const [isHovering, setIsHovering] = useState(false)
 
   const toggleSubmenu = (title: string) => {
     setOpenSubmenu(openSubmenu === title ? null : title)
@@ -120,13 +115,19 @@ export default function MainSidebar() {
     return pathname === href || pathname.startsWith(`${href}/`)
   }
 
+  const sidebarWidth = expanded || isHovering ? "w-64" : "w-[70px]"
+
   const sidebar = (
-    <div className={cn("flex h-screen flex-col border-r bg-background", expanded ? "w-64" : "w-[70px]")}>
+    <div
+      className={cn("flex h-screen flex-col border-r bg-background transition-all duration-300", sidebarWidth)}
+      onMouseEnter={() => !isMobile && !expanded && setIsHovering(true)}
+      onMouseLeave={() => !isMobile && setIsHovering(false)}
+    >
       <div className="flex h-14 items-center border-b px-3">
-        {expanded ? (
+        {expanded || isHovering ? (
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
             <Home className="h-5 w-5" />
-            <span>Real Estate IMS</span>
+            <span className="transition-opacity duration-300">Real Estate IMS</span>
           </Link>
         ) : (
           <Link href="/dashboard" className="flex w-full items-center justify-center">
@@ -135,7 +136,7 @@ export default function MainSidebar() {
         )}
         {!isMobile && (
           <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setExpanded(!expanded)}>
-            <ChevronRight className={cn("h-4 w-4", !expanded && "rotate-180")} />
+            <ChevronRight className={cn("h-4 w-4 transition-transform", !expanded && "rotate-180")} />
           </Button>
         )}
       </div>
@@ -147,20 +148,23 @@ export default function MainSidebar() {
                 <>
                   <Button
                     variant={isActive(item.href) ? "secondary" : "ghost"}
-                    className={cn("justify-start", expanded ? "w-full" : "w-full justify-center px-0")}
+                    className={cn(
+                      "justify-start transition-all duration-300",
+                      expanded || isHovering ? "w-full" : "w-full justify-center px-0",
+                    )}
                     onClick={() => toggleSubmenu(item.title)}
                   >
                     <item.icon className="h-5 w-5" />
-                    {expanded && (
+                    {(expanded || isHovering) && (
                       <>
-                        <span className="ml-2 flex-1 text-left">{item.title}</span>
+                        <span className="ml-2 flex-1 text-left transition-opacity duration-300">{item.title}</span>
                         <ChevronRight
                           className={cn("h-4 w-4 transition-transform", openSubmenu === item.title && "rotate-90")}
                         />
                       </>
                     )}
                   </Button>
-                  {expanded && openSubmenu === item.title && (
+                  {(expanded || isHovering) && openSubmenu === item.title && (
                     <div className="ml-4 mt-1 flex flex-col gap-1 pl-4 border-l">
                       {item.submenu.map((subitem) => (
                         <Button
@@ -178,12 +182,17 @@ export default function MainSidebar() {
               ) : (
                 <Button
                   variant={isActive(item.href) ? "secondary" : "ghost"}
-                  className={cn("justify-start", expanded ? "w-full" : "w-full justify-center px-0")}
+                  className={cn(
+                    "justify-start transition-all duration-300",
+                    expanded || isHovering ? "w-full" : "w-full justify-center px-0",
+                  )}
                   asChild
                 >
                   <Link href={item.href}>
                     <item.icon className="h-5 w-5" />
-                    {expanded && <span className="ml-2">{item.title}</span>}
+                    {(expanded || isHovering) && (
+                      <span className="ml-2 transition-opacity duration-300">{item.title}</span>
+                    )}
                   </Link>
                 </Button>
               )}
@@ -192,9 +201,15 @@ export default function MainSidebar() {
         </nav>
       </ScrollArea>
       <div className="border-t p-2">
-        <Button variant="ghost" className={cn("justify-start w-full", !expanded && "justify-center px-0")}>
+        <Button
+          variant="ghost"
+          className={cn(
+            "justify-start w-full transition-all duration-300",
+            !(expanded || isHovering) && "justify-center px-0",
+          )}
+        >
           <LogOut className="h-5 w-5" />
-          {expanded && <span className="ml-2">Logout</span>}
+          {(expanded || isHovering) && <span className="ml-2 transition-opacity duration-300">Logout</span>}
         </Button>
       </div>
     </div>
