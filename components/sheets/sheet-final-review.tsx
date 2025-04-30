@@ -5,6 +5,10 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, AlertTriangle, FileSpreadsheet, Wrench } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { useState } from "react"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 interface SheetFinalReviewProps {
   data: {
@@ -17,9 +21,18 @@ interface SheetFinalReviewProps {
   mapping: Record<string, string>
   transformations: Array<{ column: string; type: string; params: any }>
   validationIssues: Array<{ row: number; column: string; issue: string }>
+  cleanupActions?: any[]
+  initialSetup?: any
 }
 
-export function SheetFinalReview({ data, mapping, transformations, validationIssues }: SheetFinalReviewProps) {
+export function SheetFinalReview({
+  data,
+  mapping,
+  transformations,
+  validationIssues,
+  cleanupActions,
+  initialSetup,
+}: SheetFinalReviewProps) {
   // Get mapped columns
   const mappedColumns = Object.entries(mapping).map(([originalColumn, systemField]) => ({
     originalColumn,
@@ -31,6 +44,10 @@ export function SheetFinalReview({ data, mapping, transformations, validationIss
   const mappedColumnsCount = Object.keys(mapping).length
   const transformedColumnsCount = [...new Set(transformations.map((t) => t.column))].length
   const issuesCount = validationIssues.length
+
+  // Add a new section for saving presets
+  const [presetName, setPresetName] = useState(`Preset-${new Date().toLocaleDateString().replace(/\//g, "-")}`)
+  const [presetDescription, setPresetDescription] = useState("")
 
   return (
     <div className="space-y-6">
@@ -186,6 +203,74 @@ export function SheetFinalReview({ data, mapping, transformations, validationIss
             <li>You'll be able to review the imported data and make any necessary adjustments.</li>
             <li>The import history will be saved for future reference.</li>
           </ol>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Save Processing Preset</CardTitle>
+          <CardDescription>Save your configuration as a preset to reuse with similar sheets</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="preset-name">Preset Name</Label>
+                <Input
+                  id="preset-name"
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  placeholder="Enter a name for this preset"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="preset-description">Description (Optional)</Label>
+                <Input
+                  id="preset-description"
+                  value={presetDescription}
+                  onChange={(e) => setPresetDescription(e.target.value)}
+                  placeholder="Enter a description"
+                />
+              </div>
+            </div>
+
+            <div className="border rounded-md p-4 bg-muted/20">
+              <h4 className="text-sm font-medium mb-2">Preset Summary</h4>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="font-medium">Mappings:</span> {Object.keys(mapping).length}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Transformations:</span> {transformations.length}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Validation Rules:</span> {validationIssues.length > 0 ? "Yes" : "No"}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  {initialSetup && (
+                    <>
+                      <p className="text-sm">
+                        <span className="font-medium">Developer:</span> {initialSetup.developer}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Projects:</span> {initialSetup.projects?.length || 0}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Property Type:</span> {initialSetup.propertyType}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button>Save Preset</Button>
+              <Button variant="outline">Save & Apply to Similar Sheets</Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

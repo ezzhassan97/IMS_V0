@@ -4,31 +4,26 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   RotateCcw,
   History,
-  Filter,
   FileText,
   Undo,
   Redo,
   Eye,
   EyeOff,
-  Sparkles,
   Scissors,
   Combine,
   PenTool,
-  Users,
-  Database,
-  Plus,
   Trash2,
-  AlertCircle,
+  Brush,
+  TextCursorInput,
+  Wand2,
+  ListFilter,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -38,8 +33,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Calendar, Hash, Building, Layers, Paintbrush, Tag, Milestone } from "lucide-react"
+import { Check, ChevronDown, AlertCircle } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface SheetDataTransformerProps {
   data: any
@@ -62,6 +61,43 @@ interface FilterCondition {
   operator: string
   value: string
   logicOperator?: "AND" | "OR"
+}
+
+// Enum mappings for standardization
+const PROPERTY_TYPE_MAPPINGS = {
+  apartment: "Apartment",
+  apt: "Apartment",
+  flat: "Apartment",
+  villa: "Villa",
+  townhouse: "Townhouse",
+  "town house": "Townhouse",
+  penthouse: "Penthouse",
+  studio: "Studio",
+  duplex: "Duplex",
+  chalet: "Chalet",
+}
+
+const FINISHING_TYPE_MAPPINGS = {
+  "core & shell": "Core & Shell",
+  "core and shell": "Core & Shell",
+  shell: "Core & Shell",
+  "fully finished": "Fully Finished",
+  finished: "Fully Finished",
+  "semi finished": "Semi-Finished",
+  "semi-finished": "Semi-Finished",
+  semi: "Semi-Finished",
+  bare: "Core & Shell",
+}
+
+const STATUS_MAPPINGS = {
+  available: "Available",
+  avail: "Available",
+  reserved: "Reserved",
+  res: "Reserved",
+  sold: "Sold",
+  "sold out": "Sold",
+  "not available": "Not Available",
+  na: "Not Available",
 }
 
 export function SheetDataTransformer({
@@ -544,10 +580,8 @@ export function SheetDataTransformer({
       <CardHeader className="px-0 pt-0">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Data Transformation</CardTitle>
-            <CardDescription>
-              Transform your data with column splitting, merging, and conditional updates
-            </CardDescription>
+            <CardTitle>Data Transformation & Cleanup</CardTitle>
+            <CardDescription>Transform, clean, and standardize your data before import</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <TooltipProvider>
@@ -647,1095 +681,562 @@ export function SheetDataTransformer({
       </CardHeader>
 
       <CardContent className="px-0 pb-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
-            <TabsTrigger value="split" className="flex items-center gap-2">
-              <Scissors className="h-4 w-4" />
-              Split Column
-            </TabsTrigger>
-            <TabsTrigger value="merge" className="flex items-center gap-2">
-              <Combine className="h-4 w-4" />
-              Merge Columns
-            </TabsTrigger>
-            <TabsTrigger value="conditional" className="flex items-center gap-2">
-              <PenTool className="h-4 w-4" />
-              Conditional Update
-            </TabsTrigger>
-            <TabsTrigger value="filter" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter Builder
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Left Panel - Actions */}
+          <div className="md:col-span-1 space-y-4">
+            <div className="border rounded-md p-4">
+              <h3 className="text-sm font-medium mb-3 flex items-center">
+                <Wand2 className="h-4 w-4 mr-2" />
+                Transform Actions
+              </h3>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full" size="default">
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Transform
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-5xl max-h-[90vh]">
+                  <DialogHeader>
+                    <DialogTitle>Transform Data</DialogTitle>
+                    <DialogDescription>Filter units and apply multiple transformation actions</DialogDescription>
+                  </DialogHeader>
 
-          <TabsContent value="split" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1 space-y-4">
-                <div className="border rounded-md p-4">
-                  <h3 className="text-sm font-medium mb-3 flex items-center">
-                    <Scissors className="h-4 w-4 mr-2" />
-                    Split Column
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="column-select">Select Column to Split</Label>
-                      <Select value={selectedColumn} onValueChange={setSelectedColumn}>
-                        <SelectTrigger id="column-select">
-                          <SelectValue placeholder="Select a column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {transformedData.headers.map((header: string) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {/* Filter Section */}
+                  <div className="border rounded-md p-4 mb-4">
+                    <h4 className="text-sm font-medium mb-3">Filter Units</h4>
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div>
+                        <Label htmlFor="filter-column">Column</Label>
+                        <Select>
+                          <SelectTrigger id="filter-column">
+                            <SelectValue placeholder="Select column" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {transformedData.headers.map((header: string) => (
+                              <SelectItem key={header} value={header}>
+                                {header}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="filter-operator">Operator</Label>
+                        <Select>
+                          <SelectTrigger id="filter-operator">
+                            <SelectValue placeholder="Select operator" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="equals">Equals</SelectItem>
+                            <SelectItem value="contains">Contains</SelectItem>
+                            <SelectItem value="startsWith">Starts with</SelectItem>
+                            <SelectItem value="endsWith">Ends with</SelectItem>
+                            <SelectItem value="greaterThan">Greater than</SelectItem>
+                            <SelectItem value="lessThan">Less than</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="filter-value">Value</Label>
+                        <Input id="filter-value" placeholder="Enter value" />
+                      </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="delimiter">Split Delimiter</Label>
-                      <Select
-                        value={splitOptions.delimiter}
-                        onValueChange={(value) => setSplitOptions({ ...splitOptions, delimiter: value })}
-                      >
-                        <SelectTrigger id="delimiter">
-                          <SelectValue placeholder="Select delimiter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="-">Dash (-)</SelectItem>
-                          <SelectItem value=" ">Space</SelectItem>
-                          <SelectItem value=",">Comma (,)</SelectItem>
-                          <SelectItem value=".">Period (.)</SelectItem>
-                          <SelectItem value="/">Forward Slash (/)</SelectItem>
-                          <SelectItem value="_">Underscore (_)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex justify-end">
+                      <Button>Apply Filter</Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="position">Extract Position</Label>
-                      <Select
-                        value={splitOptions.position}
-                        onValueChange={(value) => setSplitOptions({ ...splitOptions, position: value })}
-                      >
-                        <SelectTrigger id="position">
-                          <SelectValue placeholder="Select position" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="first">First Part</SelectItem>
-                          <SelectItem value="last">Last Part</SelectItem>
-                          <SelectItem value="index">Second Part</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="new-column">New Column Name</Label>
-                      <Input
-                        id="new-column"
-                        value={splitOptions.newColumnName}
-                        onChange={(e) => setSplitOptions({ ...splitOptions, newColumnName: e.target.value })}
-                        placeholder="Enter new column name"
-                      />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="keep-original"
-                        checked={splitOptions.keepOriginal}
-                        onCheckedChange={(checked) =>
-                          setSplitOptions({ ...splitOptions, keepOriginal: checked === true })
-                        }
-                      />
-                      <Label htmlFor="keep-original">Keep original column unchanged</Label>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Apply To</Label>
-                      <RadioGroup
-                        value={transformScope}
-                        onValueChange={(value) => setTransformScope(value as "all" | "filtered")}
-                        className="flex flex-col space-y-1"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="all" id="all-records" />
-                          <Label htmlFor="all-records" className="flex items-center">
-                            <Database className="h-4 w-4 mr-1" />
-                            All Records
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="filtered" id="filtered-records" />
-                          <Label htmlFor="filtered-records" className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" />
-                            Filtered Records ({selectedRows.length})
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <Button
-                      onClick={applySplitTransformation}
-                      disabled={
-                        !selectedColumn ||
-                        !splitOptions.newColumnName ||
-                        (transformScope === "filtered" && selectedRows.length === 0)
-                      }
-                      className="w-full"
-                    >
-                      Apply Split
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full flex items-center justify-center"
-                      onClick={() => {
-                        // AI suggestion for split
-                      }}
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      AI Suggestions
-                    </Button>
                   </div>
-                </div>
-              </div>
 
-              <div className="md:col-span-2">
-                <div className="border rounded-md">
-                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">
-                      {showFilteredPreview
-                        ? `Filtered Data (${selectedRows.length} rows)`
-                        : showOriginal
-                          ? "Original Data"
-                          : "Transformed Data"}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {selectedRows.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowFilteredPreview(!showFilteredPreview)}
-                        >
-                          {showFilteredPreview ? "Show All Data" : "Show Filtered Data"}
+                  <div className="grid grid-cols-5 gap-4">
+                    {/* Actions Panel */}
+                    <div className="col-span-2 border rounded-md p-4 h-[400px] overflow-y-auto">
+                      <h4 className="text-sm font-medium mb-3">Actions</h4>
+
+                      <div className="space-y-2 mb-4">
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <Scissors className="mr-2 h-4 w-4" />
+                          Add Split Column Action
                         </Button>
-                      )}
-                      <Input
-                        placeholder="Search data..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value)
-                          setCurrentPage(1)
-                        }}
-                        className="w-40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12 text-center">#</TableHead>
-                          {transformedData.headers.map((header: string, index: number) => (
-                            <TableHead key={index}>
-                              <div className="flex items-center">
-                                <span>{header}</span>
-                                {columnMappings[header] && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {columnMappings[header]}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedData.map((row: any, rowIndex: number) => {
-                          const absoluteIndex = showFilteredPreview
-                            ? selectedRows[(currentPage - 1) * rowsPerPage + rowIndex]
-                            : (currentPage - 1) * rowsPerPage + rowIndex
-
-                          return (
-                            <TableRow
-                              key={rowIndex}
-                              className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
-                            >
-                              <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
-                              {transformedData.headers.map((header: string, colIndex: number) => (
-                                <TableCell key={colIndex}>{row[header]}</TableCell>
-                              ))}
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <div>Rows per page</div>
-                      <Select
-                        value={rowsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setRowsPerPage(Number.parseInt(value))
-                          setCurrentPage(1)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={rowsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[10, 20, 50, 100].map((pageSize) => (
-                            <SelectItem key={pageSize} value={pageSize.toString()}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-x-2 text-sm text-muted-foreground">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="merge" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1 space-y-4">
-                <div className="border rounded-md p-4">
-                  <h3 className="text-sm font-medium mb-3 flex items-center">
-                    <Combine className="h-4 w-4 mr-2" />
-                    Merge Columns
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="first-column">First Column</Label>
-                      <Select value={selectedColumn} onValueChange={setSelectedColumn}>
-                        <SelectTrigger id="first-column">
-                          <SelectValue placeholder="Select first column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {transformedData.headers.map((header: string) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="second-column">Second Column</Label>
-                      <Select value={secondColumn} onValueChange={setSecondColumn}>
-                        <SelectTrigger id="second-column">
-                          <SelectValue placeholder="Select second column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {transformedData.headers.map((header: string) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="separator">Separator</Label>
-                      <Select
-                        value={mergeOptions.separator}
-                        onValueChange={(value) => setMergeOptions({ ...mergeOptions, separator: value })}
-                      >
-                        <SelectTrigger id="separator">
-                          <SelectValue placeholder="Select separator" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value=" ">Space</SelectItem>
-                          <SelectItem value=", ">Comma (,)</SelectItem>
-                          <SelectItem value="-">Dash (-)</SelectItem>
-                          <SelectItem value=".">Period (.)</SelectItem>
-                          <SelectItem value="/">Forward Slash (/)</SelectItem>
-                          <SelectItem value="_">Underscore (_)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="target-column">Target Column</Label>
-                      <Input
-                        id="target-column"
-                        value={mergeOptions.targetColumn}
-                        onChange={(e) => setMergeOptions({ ...mergeOptions, targetColumn: e.target.value })}
-                        placeholder="Leave empty to replace first column"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Enter a new column name or leave empty to replace the first column
-                      </p>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="keep-originals"
-                        checked={mergeOptions.keepOriginals}
-                        onCheckedChange={(checked) =>
-                          setMergeOptions({ ...mergeOptions, keepOriginals: checked === true })
-                        }
-                      />
-                      <Label htmlFor="keep-originals">Keep original columns</Label>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Apply To</Label>
-                      <RadioGroup
-                        value={transformScope}
-                        onValueChange={(value) => setTransformScope(value as "all" | "filtered")}
-                        className="flex flex-col space-y-1"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="all" id="merge-all-records" />
-                          <Label htmlFor="merge-all-records" className="flex items-center">
-                            <Database className="h-4 w-4 mr-1" />
-                            All Records
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="filtered" id="merge-filtered-records" />
-                          <Label htmlFor="merge-filtered-records" className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" />
-                            Filtered Records ({selectedRows.length})
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <Button
-                      onClick={applyMergeTransformation}
-                      disabled={
-                        !selectedColumn ||
-                        !secondColumn ||
-                        selectedColumn === secondColumn ||
-                        (transformScope === "filtered" && selectedRows.length === 0)
-                      }
-                      className="w-full"
-                    >
-                      Apply Merge
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full flex items-center justify-center"
-                      onClick={() => {
-                        // AI suggestion for merge
-                      }}
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      AI Suggestions
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                {/* Same data table as in the split tab */}
-                <div className="border rounded-md">
-                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">
-                      {showFilteredPreview
-                        ? `Filtered Data (${selectedRows.length} rows)`
-                        : showOriginal
-                          ? "Original Data"
-                          : "Transformed Data"}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {selectedRows.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowFilteredPreview(!showFilteredPreview)}
-                        >
-                          {showFilteredPreview ? "Show All Data" : "Show Filtered Data"}
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <Combine className="mr-2 h-4 w-4" />
+                          Add Merge Columns Action
                         </Button>
-                      )}
-                      <Input
-                        placeholder="Search data..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value)
-                          setCurrentPage(1)
-                        }}
-                        className="w-40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12 text-center">#</TableHead>
-                          {transformedData.headers.map((header: string, index: number) => (
-                            <TableHead key={index}>
-                              <div className="flex items-center">
-                                <span>{header}</span>
-                                {columnMappings[header] && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {columnMappings[header]}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedData.map((row: any, rowIndex: number) => {
-                          const absoluteIndex = showFilteredPreview
-                            ? selectedRows[(currentPage - 1) * rowsPerPage + rowIndex]
-                            : (currentPage - 1) * rowsPerPage + rowIndex
-
-                          return (
-                            <TableRow
-                              key={rowIndex}
-                              className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
-                            >
-                              <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
-                              {transformedData.headers.map((header: string, colIndex: number) => (
-                                <TableCell key={colIndex}>{row[header]}</TableCell>
-                              ))}
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <div>Rows per page</div>
-                      <Select
-                        value={rowsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setRowsPerPage(Number.parseInt(value))
-                          setCurrentPage(1)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={rowsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[10, 20, 50, 100].map((pageSize) => (
-                            <SelectItem key={pageSize} value={pageSize.toString()}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-x-2 text-sm text-muted-foreground">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="conditional" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1 space-y-4">
-                <div className="border rounded-md p-4">
-                  <h3 className="text-sm font-medium mb-3 flex items-center">
-                    <PenTool className="h-4 w-4 mr-2" />
-                    Conditional Update
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="target-column-update">Target Column</Label>
-                      <Select
-                        value={conditionalUpdateOptions.targetColumn}
-                        onValueChange={(value) =>
-                          setConditionalUpdateOptions({ ...conditionalUpdateOptions, targetColumn: value })
-                        }
-                      >
-                        <SelectTrigger id="target-column-update">
-                          <SelectValue placeholder="Select target column" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {transformedData.headers.map((header: string) => (
-                            <SelectItem key={header} value={header}>
-                              {header}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="update-value">New Value</Label>
-                      <Input
-                        id="update-value"
-                        value={conditionalUpdateOptions.value}
-                        onChange={(e) =>
-                          setConditionalUpdateOptions({ ...conditionalUpdateOptions, value: e.target.value })
-                        }
-                        placeholder="Enter new value"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <Label>Filter Conditions</Label>
-                        <Button variant="outline" size="sm" onClick={addFilterCondition}>
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Condition
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <PenTool className="mr-2 h-4 w-4" />
+                          Add Data Action
                         </Button>
                       </div>
 
-                      {filterConditions.length === 0 ? (
-                        <div className="text-center py-4 border rounded-md bg-muted/30">
-                          <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">No conditions added yet</p>
+                      <h4 className="text-sm font-medium mb-2">Added Actions</h4>
+                      <div className="space-y-2">
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Scissors className="h-4 w-4 mr-2" />
+                              <span className="text-sm font-medium">Split "Unit Code"</span>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Add conditions to specify which rows to update
+                            Split by "-" into "Building" and "Unit Number"
                           </p>
                         </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {filterConditions.map((condition, index) => (
-                            <div key={index} className="border rounded-md p-3 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">Condition {index + 1}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeFilterCondition(index)}
-                                  className="h-7 w-7 p-0"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
 
-                              <div className="grid grid-cols-3 gap-2">
-                                <Select
-                                  value={condition.column}
-                                  onValueChange={(value) => updateFilterCondition(index, "column", value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Column" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {transformedData.headers.map((header: string) => (
-                                      <SelectItem key={header} value={header}>
-                                        {header}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-
-                                <Select
-                                  value={condition.operator}
-                                  onValueChange={(value) => updateFilterCondition(index, "operator", value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Operator" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="equals">Equals</SelectItem>
-                                    <SelectItem value="contains">Contains</SelectItem>
-                                    <SelectItem value="greater-than">Greater than</SelectItem>
-                                    <SelectItem value="less-than">Less than</SelectItem>
-                                  </SelectContent>
-                                </Select>
-
-                                <Input
-                                  value={condition.value}
-                                  onChange={(e) => updateFilterCondition(index, "value", e.target.value)}
-                                  placeholder="Value"
-                                />
-                              </div>
-
-                              {index < filterConditions.length - 1 && (
-                                <div className="pt-1">
-                                  <Select
-                                    value={filterConditions[index].logicOperator}
-                                    onValueChange={(value) =>
-                                      updateFilterCondition(index, "logicOperator", value as "AND" | "OR")
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Logic" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="AND">AND</SelectItem>
-                                      <SelectItem value="OR">OR</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              )}
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <PenTool className="h-4 w-4 mr-2" />
+                              <span className="text-sm font-medium">Add "Status"</span>
                             </div>
-                          ))}
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Set value to "Available" for all filtered units
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                          <Button variant="secondary" size="sm" onClick={applyFilter} className="w-full">
-                            <Filter className="h-4 w-4 mr-2" />
-                            Preview Filtered Rows
+                    {/* Preview Panel */}
+                    <div className="col-span-3 border rounded-md h-[400px] overflow-hidden flex flex-col">
+                      <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
+                        <h4 className="text-sm font-medium">Preview (5 units selected)</h4>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Preview Changes
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label>Apply To</Label>
-                      <RadioGroup
-                        value={transformScope}
-                        onValueChange={(value) => setTransformScope(value as "all" | "filtered")}
-                        className="flex flex-col space-y-1"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="all" id="conditional-all-records" />
-                          <Label htmlFor="conditional-all-records" className="flex items-center">
-                            <Database className="h-4 w-4 mr-1" />
-                            All Matching Records
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="filtered" id="conditional-filtered-records" />
-                          <Label htmlFor="conditional-filtered-records" className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" />
-                            Selected Records ({selectedRows.length})
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-
-                    <Button
-                      onClick={applyConditionalUpdate}
-                      disabled={
-                        !conditionalUpdateOptions.targetColumn ||
-                        conditionalUpdateOptions.value === "" ||
-                        (transformScope === "all" && filterConditions.length === 0) ||
-                        (transformScope === "filtered" && selectedRows.length === 0)
-                      }
-                      className="w-full"
-                    >
-                      Apply Update
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full flex items-center justify-center"
-                      onClick={() => {
-                        // AI suggestion for conditional update
-                      }}
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      AI Suggestions
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                {/* Same data table as in the other tabs */}
-                <div className="border rounded-md">
-                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">
-                      {showFilteredPreview
-                        ? `Filtered Data (${selectedRows.length} rows)`
-                        : showOriginal
-                          ? "Original Data"
-                          : "Transformed Data"}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {selectedRows.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowFilteredPreview(!showFilteredPreview)}
-                        >
-                          {showFilteredPreview ? "Show All Data" : "Show Filtered Data"}
-                        </Button>
-                      )}
-                      <Input
-                        placeholder="Search data..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value)
-                          setCurrentPage(1)
-                        }}
-                        className="w-40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12 text-center">#</TableHead>
-                          {transformedData.headers.map((header: string, index: number) => (
-                            <TableHead key={index}>
-                              <div className="flex items-center">
-                                <span>{header}</span>
-                                {columnMappings[header] && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {columnMappings[header]}
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedData.map((row: any, rowIndex: number) => {
-                          const absoluteIndex = showFilteredPreview
-                            ? selectedRows[(currentPage - 1) * rowsPerPage + rowIndex]
-                            : (currentPage - 1) * rowsPerPage + rowIndex
-
-                          return (
-                            <TableRow
-                              key={rowIndex}
-                              className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
-                            >
-                              <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
-                              {transformedData.headers.map((header: string, colIndex: number) => (
-                                <TableCell key={colIndex}>{row[header]}</TableCell>
+                      <div className="overflow-auto flex-grow">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-12 text-center">#</TableHead>
+                              {transformedData.headers.slice(0, 4).map((header: string, index: number) => (
+                                <TableHead key={index}>
+                                  <div className="flex items-center">
+                                    <span>{header}</span>
+                                  </div>
+                                </TableHead>
                               ))}
                             </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <div>Rows per page</div>
-                      <Select
-                        value={rowsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setRowsPerPage(Number.parseInt(value))
-                          setCurrentPage(1)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={rowsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[10, 20, 50, 100].map((pageSize) => (
-                            <SelectItem key={pageSize} value={pageSize.toString()}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-x-2 text-sm text-muted-foreground">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="filter" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1 space-y-4">
-                <div className="border rounded-md p-4">
-                  <h3 className="text-sm font-medium mb-3 flex items-center">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filter Builder
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <Label>Filter Conditions</Label>
-                      <Button variant="outline" size="sm" onClick={addFilterCondition}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Condition
-                      </Button>
-                    </div>
-
-                    {filterConditions.length === 0 ? (
-                      <div className="text-center py-4 border rounded-md bg-muted/30">
-                        <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">No conditions added yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">Add conditions to filter your data</p>
+                          </TableHeader>
+                          <TableBody>
+                            {transformedData.rows.slice(0, 5).map((row: any, rowIndex: number) => (
+                              <TableRow key={rowIndex}>
+                                <TableCell className="text-center font-medium">{rowIndex + 1}</TableCell>
+                                {transformedData.headers.slice(0, 4).map((header: string, colIndex: number) => (
+                                  <TableCell key={colIndex}>{row[header]}</TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filterConditions.map((condition, index) => (
-                          <div key={index} className="border rounded-md p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">Condition {index + 1}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeFilterCondition(index)}
-                                className="h-7 w-7 p-0"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                    </div>
+                  </div>
 
-                            <div className="grid grid-cols-3 gap-2">
-                              <Select
-                                value={condition.column}
-                                onValueChange={(value) => updateFilterCondition(index, "column", value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Column" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {transformedData.headers.map((header: string) => (
-                                    <SelectItem key={header} value={header}>
-                                      {header}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                  <DialogFooter className="mt-4">
+                    <Button variant="outline">Cancel</Button>
+                    <Button>Apply All Transformations</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
 
-                              <Select
-                                value={condition.operator}
-                                onValueChange={(value) => updateFilterCondition(index, "operator", value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Operator" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="equals">Equals</SelectItem>
-                                  <SelectItem value="contains">Contains</SelectItem>
-                                  <SelectItem value="greater-than">Greater than</SelectItem>
-                                  <SelectItem value="less-than">Less than</SelectItem>
-                                </SelectContent>
-                              </Select>
-
-                              <Input
-                                value={condition.value}
-                                onChange={(e) => updateFilterCondition(index, "value", e.target.value)}
-                                placeholder="Value"
-                              />
-                            </div>
-
-                            {index < filterConditions.length - 1 && (
-                              <div className="pt-1">
-                                <Select
-                                  value={filterConditions[index].logicOperator}
-                                  onValueChange={(value) =>
-                                    updateFilterCondition(index, "logicOperator", value as "AND" | "OR")
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Logic" />
+            <div className="border rounded-md p-4">
+              <h3 className="text-sm font-medium mb-3 flex items-center">
+                <ListFilter className="h-4 w-4 mr-2" />
+                Standardize Values
+              </h3>
+              <div className="space-y-3">
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Building className="mr-2 h-4 w-4" />
+                      <span>Property Types</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
+                        12/15 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sheet Value</TableHead>
+                            <TableHead>Mapped To</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>apartment</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <Check className="h-3 w-3 text-green-600 mr-1" />
+                                  <span>Apartment</span>
+                                </div>
+                                <Select defaultValue="Apartment">
+                                  <SelectTrigger className="h-6 w-24">
+                                    <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="AND">AND</SelectItem>
-                                    <SelectItem value="OR">OR</SelectItem>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <Button onClick={applyFilter} disabled={filterConditions.length === 0} className="w-full">
-                      Apply Filter
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full flex items-center justify-center"
-                      onClick={() => {
-                        // AI suggestion for filter
-                      }}
-                    >
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      AI Suggestions
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="md:col-span-2">
-                {/* Same data table as in the other tabs */}
-                <div className="border rounded-md">
-                  <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                    <h3 className="text-sm font-medium">
-                      {showFilteredPreview
-                        ? `Filtered Data (${selectedRows.length} rows)`
-                        : showOriginal
-                          ? "Original Data"
-                          : "Transformed Data"}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      {selectedRows.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowFilteredPreview(!showFilteredPreview)}
-                        >
-                          {showFilteredPreview ? "Show All Data" : "Show Filtered Data"}
-                        </Button>
-                      )}
-                      <Input
-                        placeholder="Search data..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                          setSearchTerm(e.target.value)
-                          setCurrentPage(1)
-                        }}
-                        className="w-40"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12 text-center">#</TableHead>
-                          {transformedData.headers.map((header: string, index: number) => (
-                            <TableHead key={index}>
-                              <div className="flex items-center">
-                                <span>{header}</span>
-                                {columnMappings[header] && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {columnMappings[header]}
-                                  </Badge>
-                                )}
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>villa</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <Check className="h-3 w-3 text-green-600 mr-1" />
+                                  <span>Villa</span>
+                                </div>
+                                <Select defaultValue="Villa">
+                                  <SelectTrigger className="h-6 w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedData.map((row: any, rowIndex: number) => {
-                          const absoluteIndex = showFilteredPreview
-                            ? selectedRows[(currentPage - 1) * rowsPerPage + rowIndex]
-                            : (currentPage - 1) * rowsPerPage + rowIndex
-
-                          return (
-                            <TableRow
-                              key={rowIndex}
-                              className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
-                            >
-                              <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
-                              {transformedData.headers.map((header: string, colIndex: number) => (
-                                <TableCell key={colIndex}>{row[header]}</TableCell>
-                              ))}
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <div>Rows per page</div>
-                      <Select
-                        value={rowsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setRowsPerPage(Number.parseInt(value))
-                          setCurrentPage(1)
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={rowsPerPage} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[10, 20, 50, 100].map((pageSize) => (
-                            <SelectItem key={pageSize} value={pageSize.toString()}>
-                              {pageSize}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>townhouse</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <Check className="h-3 w-3 text-green-600 mr-1" />
+                                  <span>Townhouse</span>
+                                </div>
+                                <Select defaultValue="Townhouse">
+                                  <SelectTrigger className="h-6 w-24">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>APT</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center text-yellow-600">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  <span>Not mapped</span>
+                                </div>
+                                <Select>
+                                  <SelectTrigger className="h-6 w-24">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>TH</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center text-yellow-600">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  <span>Not mapped</span>
+                                </div>
+                                <Select>
+                                  <SelectTrigger className="h-6 w-24">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
-                    <div className="space-x-2 text-sm text-muted-foreground">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm">Apply Mappings</Button>
                     </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Layers className="mr-2 h-4 w-4" />
+                      <span>Floor Numbers</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
+                        18/20 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
+                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Paintbrush className="mr-2 h-4 w-4" />
+                      <span>Finishing Types</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mr-2">
+                        5/12 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
+                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Tag className="mr-2 h-4 w-4" />
+                      <span>Status Values</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
+                        8/8 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
+                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Milestone className="mr-2 h-4 w-4" />
+                      <span>Phase Values</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
+                        6/7 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
+                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </div>
+
+            <div className="border rounded-md p-4">
+              <h3 className="text-sm font-medium mb-3 flex items-center">
+                <Brush className="h-4 w-4 mr-2" />
+                Cleanup Actions
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border rounded-md p-2">
+                  <div className="flex items-center">
+                    <TextCursorInput className="mr-2 h-4 w-4" />
+                    <span>Trim Whitespace</span>
                   </div>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Check className="h-3 w-3 mr-1" /> Applied
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between border rounded-md p-2">
+                  <div className="flex items-center">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    <span>Format Dates</span>
+                  </div>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Check className="h-3 w-3 mr-1" /> 8/10 Columns
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between border rounded-md p-2">
+                  <div className="flex items-center">
+                    <Hash className="mr-2 h-4 w-4" />
+                    <span>Format Numbers</span>
+                  </div>
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                    <AlertCircle className="h-3 w-3 mr-1" /> 5/12 Columns
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between border rounded-md p-2">
+                  <div className="flex items-center">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Remove Empty Rows</span>
+                  </div>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    <Check className="h-3 w-3 mr-1" /> 3 Removed
+                  </Badge>
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+
+          {/* Right Panel - Data Preview */}
+          <div className="md:col-span-2">
+            <div className="border rounded-md">
+              <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
+                <h3 className="text-sm font-medium">
+                  {showFilteredPreview
+                    ? `Filtered Data (${selectedRows.length} rows)`
+                    : showOriginal
+                      ? "Original Data"
+                      : "Transformed Data"}
+                </h3>
+                <div className="flex items-center gap-2">
+                  {selectedRows.length > 0 && (
+                    <Button variant="outline" size="sm" onClick={() => setShowFilteredPreview(!showFilteredPreview)}>
+                      {showFilteredPreview ? "Show All Data" : "Show Filtered Data"}
+                    </Button>
+                  )}
+                  <Input
+                    placeholder="Search data..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value)
+                      setCurrentPage(1)
+                    }}
+                    className="w-40"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12 text-center">#</TableHead>
+                      {transformedData.headers.map((header: string, index: number) => (
+                        <TableHead key={index}>
+                          <div className="flex items-center">
+                            <span>{header}</span>
+                            {columnMappings[header] && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {columnMappings[header]}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedData.map((row: any, rowIndex: number) => {
+                      const absoluteIndex = showFilteredPreview
+                        ? selectedRows[(currentPage - 1) * rowsPerPage + rowIndex]
+                        : (currentPage - 1) * rowsPerPage + rowIndex
+
+                      return (
+                        <TableRow
+                          key={rowIndex}
+                          className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
+                        >
+                          <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
+                          {transformedData.headers.map((header: string, colIndex: number) => (
+                            <TableCell key={colIndex}>{row[header]}</TableCell>
+                          ))}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div>Rows per page</div>
+                  <Select
+                    value={rowsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setRowsPerPage(Number.parseInt(value))
+                      setCurrentPage(1)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={rowsPerPage} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[10, 20, 50, 100].map((pageSize) => (
+                        <SelectItem key={pageSize} value={pageSize.toString()}>
+                          {pageSize}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-x-2 text-sm text-muted-foreground">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

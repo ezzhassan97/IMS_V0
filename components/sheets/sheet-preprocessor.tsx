@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SheetColumnMapper } from "./sheet-column-mapper"
 import { SheetDataValidator } from "./sheet-data-validator"
 import { SheetDataTransformer } from "./sheet-data-transformer"
-import { SheetDataCleanup } from "./sheet-data-cleanup"
 import { SheetFinalReview } from "./sheet-final-review"
 import { SheetInitialSetup } from "./sheet-initial-setup"
 import { AIAssistant } from "./ai-assistant"
@@ -40,6 +39,9 @@ import {
   RotateCcw,
   RefreshCw,
   ChevronRight,
+  DollarSign,
+  LampFloorIcon as FloorPlan,
+  LayoutGrid,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -47,6 +49,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SheetPaymentPlansAttachment } from "./sheet-payment-plans-attachment"
+import { SheetFloorPlanAttachment } from "./sheet-floor-plan-attachment"
+import { SheetRenderImageAttachment } from "./sheet-render-image-attachment"
+import { SheetGrouping } from "./sheet-grouping"
 
 // Mock data for sheet processing
 const MOCK_SHEET_DATA = {
@@ -152,15 +158,13 @@ const MOCK_OCR_TABLES = [
   },
 ]
 
-// Define steps without overview step and with conditional OCR step
 const getSteps = (needsOcr: boolean) => {
   const baseSteps = [
     { id: "upload", label: "Upload File", icon: FileUp },
     { id: "setup", label: "Initial Setup", icon: FileSpreadsheet },
     { id: "preparation", label: "Sheet Preparation", icon: Settings },
     { id: "mapping", label: "Map Columns", icon: MapPin },
-    { id: "transform", label: "Transform Data", icon: Wand2 },
-    { id: "cleanup", label: "Cleanup & Standardize", icon: Brush },
+    { id: "transform", label: "Transform & Cleanup", icon: Wand2 },
     { id: "validation", label: "Validate Data", icon: AlertTriangle },
     { id: "review", label: "Final Review", icon: CheckCircle },
     { id: "save", label: "Save Preset", icon: Save },
@@ -175,6 +179,26 @@ const getSteps = (needsOcr: boolean) => {
   }
 
   return baseSteps
+}
+
+// Update the getStepsWithoutCleanup function to include the Grouping step after Render Images
+const getStepsWithoutCleanup = (needsOcr: boolean) => {
+  const steps = getSteps(needsOcr)
+  return steps
+    .filter((step) => step.id !== "cleanup")
+    .flatMap((step) => {
+      // Add payment plans, floor plans, render images, and grouping steps after review
+      if (step.id === "review") {
+        return [
+          step,
+          { id: "payment-plans", label: "Payment Plans", icon: DollarSign },
+          { id: "floor-plans", label: "Floor Plans", icon: FloorPlan },
+          { id: "render-images", label: "Render Images", icon: ImageIcon },
+          { id: "grouping", label: "Grouping", icon: LayoutGrid },
+        ]
+      }
+      return step
+    })
 }
 
 // Helper function to get confidence color
@@ -212,10 +236,6 @@ export function SheetPreprocessor() {
   // Add a new state variable for editing mode at the top of the component with the other state variables
   const [isEditingExtractedData, setIsEditingExtractedData] = useState(false)
 
-  const STEPS = getSteps(needsOcr)
-  const [currentStep, setCurrentStep] = useState("upload")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [sheetData, setSheetData] = useState<any>(MOCK_SHEET_DATA) // Initialize with mock data
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>({})
   const [validationIssues, setValidationIssues] = useState<any[]>([])
   const [transformations, setTransformations] = useState<any[]>([])
@@ -317,6 +337,14 @@ export function SheetPreprocessor() {
   // Use initialSetup.projects instead of selectedProject
   const projects = initialSetup.projects
 
+  // Then initialize STEPS with the actual array by calling the function:
+  const [currentStep, setCurrentStep] = useState("upload")
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [sheetData, setSheetData] = useState<any>(MOCK_SHEET_DATA) // Initialize with mock data
+
+  // Use the function to get the steps based on the needsOcr value
+  const STEPS = getStepsWithoutCleanup(needsOcr)
+
   // Fetch mock sheet data
   useEffect(() => {
     // For demo purposes, we already have the data loaded
@@ -389,6 +417,8 @@ export function SheetPreprocessor() {
     const currentIndex = STEPS.findIndex((step) => step.id === currentStep)
     if (currentIndex > 0) {
       setCurrentStep(STEPS[currentIndex - 1].id)
+      // Scroll to top when changing steps
+      window.scrollTo(0, 0)
       // Scroll to top when changing steps
       window.scrollTo(0, 0)
     }
@@ -973,123 +1003,70 @@ export function SheetPreprocessor() {
                 <Card className="p-3">
                   <h3 className="text-sm font-medium mb-3">Sheet Preparation Actions</h3>
 
-                  {/* Headers Detection - Always show, but with different content based on detection status */}
-                  <div className="mb-3 border rounded-md overflow-hidden">
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
-                      onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
-                    >
-                      <div className="flex items-center">
-                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ? (
+                  {/* Headers Detection - Only show if any tab has undetected headers */}
+                  {Object.values(headerDetectionStatus).some((status) => status === "undetected") && (
+                    <div className="mb-3 border rounded-md overflow-hidden">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                        onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
+                      >
+                        <div className="flex items-center">
                           <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                        ) : (
-                          <Check className="h-4 w-4 mr-2 text-green-500" />
-                        )}
-                        Headers Detection
-                      </div>
-                      <ChevronRight
-                        className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "headers" ? "transform rotate-90" : ""}`}
-                      />
-                    </Button>
+                          Headers Detection
+                        </div>
+                        <ChevronRight
+                          className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "headers" ? "transform rotate-90" : ""}`}
+                        />
+                      </Button>
 
-                    {openAccordion === "headers" && (
-                      <div className="border-t p-3 space-y-3 bg-muted/10">
-                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ? (
-                          <>
-                            <div className="text-xs text-muted-foreground">
-                              {Object.values(headerDetectionStatus).filter((status) => status === "undetected").length}{" "}
-                              tab(s) need header detection
-                            </div>
-
-                            {Object.entries(headerDetectionStatus)
-                              .filter(([_, status]) => status === "undetected")
-                              .map(([tab]) => (
-                                <div key={tab} className="flex items-center justify-between">
-                                  <span className="text-sm">{tab}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setHeaderPositions({ ...headerPositions, [tab]: 0 })
-                                      setHeaderDetectionStatus({
-                                        ...headerDetectionStatus,
-                                        [tab]: "detected",
-                                      })
-
-                                      // Add to action history
-                                      setActionHistory([
-                                        ...actionHistory,
-                                        {
-                                          step: "Headers Detection",
-                                          action: `Auto-detected headers for ${tab}`,
-                                          timestamp: new Date().toISOString(),
-                                          details: "Row: 0",
-                                        },
-                                      ])
-
-                                      toast({
-                                        title: "Headers detected",
-                                        description: `Headers for ${tab} have been detected at row 0.`,
-                                      })
-                                    }}
-                                  >
-                                    Auto-detect
-                                  </Button>
-                                </div>
-                              ))}
-                          </>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="flex items-center text-green-600">
-                              <Check className="h-4 w-4 mr-2" />
-                              <span className="text-sm">All headers detected successfully</span>
-                            </div>
-
-                            <div className="space-y-2">
-                              {Object.entries(headerDetectionStatus).map(([tab, status]) => (
-                                <div key={tab} className="flex items-center justify-between">
-                                  <span className="text-sm">{tab}</span>
-                                  <div className="flex items-center">
-                                    <Badge variant="outline" className="mr-2 text-xs text-green-600">
-                                      Row: {headerPositions[tab]}
-                                    </Badge>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-xs"
-                                      onClick={() => {
-                                        setHeaderDetectionStatus({
-                                          ...headerDetectionStatus,
-                                          [tab]: "undetected",
-                                        })
-
-                                        setActionHistory([
-                                          ...actionHistory,
-                                          {
-                                            step: "Headers Detection",
-                                            action: `Reset header detection for ${tab}`,
-                                            timestamp: new Date().toISOString(),
-                                          },
-                                        ])
-
-                                        toast({
-                                          title: "Header detection reset",
-                                          description: `You can now re-detect headers for ${tab}.`,
-                                        })
-                                      }}
-                                    >
-                                      Re-detect
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                      {openAccordion === "headers" && (
+                        <div className="border-t p-3 space-y-3 bg-muted/10">
+                          <div className="text-xs text-muted-foreground">
+                            {Object.values(headerDetectionStatus).filter((status) => status === "undetected").length}{" "}
+                            tab(s) need header detection
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+
+                          {Object.entries(headerDetectionStatus)
+                            .filter(([_, status]) => status === "undetected")
+                            .map(([tab]) => (
+                              <div key={tab} className="flex items-center justify-between">
+                                <span className="text-sm">{tab}</span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setHeaderPositions({ ...headerPositions, [tab]: 0 })
+                                    setHeaderDetectionStatus({
+                                      ...headerDetectionStatus,
+                                      [tab]: "detected",
+                                    })
+
+                                    // Add to action history
+                                    setActionHistory([
+                                      ...actionHistory,
+                                      {
+                                        step: "Headers Detection",
+                                        action: `Auto-detected headers for ${tab}`,
+                                        timestamp: new Date().toISOString(),
+                                        details: "Row: 0",
+                                      },
+                                    ])
+
+                                    toast({
+                                      title: "Headers detected",
+                                      description: `Headers for ${tab} have been detected at row 0.`,
+                                    })
+                                  }}
+                                >
+                                  Auto-detect
+                                </Button>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Data Cleaning - Always show */}
                   <div className="mb-3 border rounded-md overflow-hidden">
@@ -1782,79 +1759,6 @@ export function SheetPreprocessor() {
           </div>
         </TabsContent>
 
-        <TabsContent value="cleanup" className="mt-0">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setShowActionSummary(!showActionSummary)}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Action Summary</span>
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
-              <SheetDataCleanup
-                data={sheetData}
-                columnMappings={columnMappings}
-                transformations={transformations}
-                onCleanupActionsChange={(actions) => {
-                  setCleanupActions(actions)
-
-                  // Add to action history when cleanup actions change
-                  if (actions.length > cleanupActions.length) {
-                    setActionHistory([
-                      ...actionHistory,
-                      {
-                        step: "Cleanup & Standardize",
-                        action: "Added cleanup action",
-                        timestamp: new Date().toISOString(),
-                        details: `Total cleanup actions: ${actions.length}`,
-                      },
-                    ])
-                  }
-                }}
-              />
-            </div>
-
-            {showActionSummary && (
-              <div className="md:col-span-1 border-l pl-4">
-                <div className="sticky top-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Action Summary</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowActionSummary(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => (
-                      <div key={index} className="border rounded-md p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {action.step}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(action.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="font-medium mt-1">{action.action}</p>
-                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
         <TabsContent value="validation" className="mt-0">
           <div className="flex justify-end mb-4">
             <Button
@@ -1997,6 +1901,58 @@ export function SheetPreprocessor() {
           </div>
         </TabsContent>
 
+        <TabsContent value="payment-plans" className="mt-0">
+          <SheetPaymentPlansAttachment
+            data={{
+              columns: sheetData?.headers || [],
+              rows: sheetData?.rows || [],
+              fileName: sheetData?.fileName || "sample-data.xlsx",
+              sheetName: sheetData?.sheetName || "Sheet1",
+              totalRows: sheetData?.totalRows || 0,
+            }}
+            mapping={columnMappings}
+          />
+        </TabsContent>
+
+        <TabsContent value="floor-plans" className="mt-0">
+          <SheetFloorPlanAttachment
+            data={{
+              columns: sheetData?.headers || [],
+              rows: sheetData?.rows || [],
+              fileName: sheetData?.fileName || "sample-data.xlsx",
+              sheetName: sheetData?.sheetName || "Sheet1",
+              totalRows: sheetData?.totalRows || 0,
+            }}
+            mapping={columnMappings}
+          />
+        </TabsContent>
+
+        <TabsContent value="render-images" className="mt-0">
+          <SheetRenderImageAttachment
+            data={{
+              columns: sheetData?.headers || [],
+              rows: sheetData?.rows || [],
+              fileName: sheetData?.fileName || "sample-data.xlsx",
+              sheetName: sheetData?.sheetName || "Sheet1",
+              totalRows: sheetData?.totalRows || 0,
+            }}
+            mapping={columnMappings}
+          />
+        </TabsContent>
+
+        <TabsContent value="grouping" className="mt-0">
+          <SheetGrouping
+            data={{
+              columns: sheetData?.headers || [],
+              rows: sheetData?.rows || [],
+              fileName: sheetData?.fileName || "sample-data.xlsx",
+              sheetName: sheetData?.sheetName || "Sheet1",
+              totalRows: sheetData?.totalRows || 0,
+            }}
+            mapping={columnMappings}
+          />
+        </TabsContent>
+
         <TabsContent value="save" className="mt-0">
           <Card className="p-6">
             <div className="mb-4">
@@ -2025,14 +1981,14 @@ export function SheetPreprocessor() {
                     <span className="font-medium">Developer:</span> {initialSetup.developer}
                   </p>
                   <p>
-                    <span className="font-medium">Projects:</span>
+                    <span className="font-medium">Projects:</span>{" "}
                     {initialSetup.projects.length > 0 ? initialSetup.projects.join(", ") : "None"}
                   </p>
                   <p>
                     <span className="font-medium">Property Type Category:</span> {initialSetup.propertyType}
                   </p>
                   <p>
-                    <span className="font-medium">Column Mappings:</span>
+                    <span className="font-medium">Column Mappings:</span>{" "}
                     {Object.keys(columnMappings).filter((k) => columnMappings[k]).length} fields
                   </p>
                   <p>

@@ -1,12 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertTriangle, CheckCircle2, WandIcon as MagicWand, Wrench } from "lucide-react"
+import { AlertTriangle, WandIcon as MagicWand } from "lucide-react"
 
 interface ValidationIssue {
   row: number
@@ -41,6 +39,12 @@ export function SheetDataValidator({
   onTransformationsChange,
 }: SheetDataValidatorProps) {
   const [activeTab, setActiveTab] = useState("issues")
+  const [localIssues, setLocalIssues] = useState<ValidationIssue[]>(issues)
+  const [activeRuleFilters, setActiveRuleFilters] = useState<number[]>([1, 2, 3])
+
+  const toggleRuleFilter = (ruleId: number) => {
+    setActiveRuleFilters((prev) => (prev.includes(ruleId) ? prev.filter((id) => id !== ruleId) : [...prev, ruleId]))
+  }
 
   // Mock validation - in a real app, this would be more sophisticated
   const runValidation = () => {
@@ -58,6 +62,8 @@ export function SheetDataValidator({
     if (priceColumnIndex !== -1) {
       // Check for non-numeric prices
       data.rows.forEach((row, rowIndex) => {
+        if (!Array.isArray(row)) return
+
         const price = row[priceColumnIndex]
         if (isNaN(Number(price))) {
           newIssues.push({
@@ -73,6 +79,8 @@ export function SheetDataValidator({
       // Check for invalid statuses
       const validStatuses = ["Available", "Reserved", "Sold"]
       data.rows.forEach((row, rowIndex) => {
+        if (!Array.isArray(row)) return
+
         const status = row[statusColumnIndex]
         if (!validStatuses.includes(status)) {
           newIssues.push({
@@ -87,6 +95,8 @@ export function SheetDataValidator({
     if (areaColumnIndex !== -1) {
       // Check for non-numeric areas
       data.rows.forEach((row, rowIndex) => {
+        if (!Array.isArray(row)) return
+
         const area = row[areaColumnIndex]
         if (isNaN(Number(area))) {
           newIssues.push({
@@ -98,13 +108,27 @@ export function SheetDataValidator({
       })
     }
 
-    onIssuesChange(newIssues)
+    return newIssues
   }
 
-  // Run validation on first render
-  useState(() => {
-    runValidation()
-  })
+  // Run validation when data or mapping changes and update local state first
+  useEffect(() => {
+    const newIssues = runValidation()
+
+    // Only update if issues have actually changed (deep comparison)
+    const issuesChanged = JSON.stringify(newIssues) !== JSON.stringify(localIssues)
+
+    if (issuesChanged) {
+      setLocalIssues(newIssues)
+
+      // Only update parent state after render is complete and only if issues changed
+      const timer = setTimeout(() => {
+        onIssuesChange(newIssues)
+      }, 0)
+
+      return () => clearTimeout(timer)
+    }
+  }, [data, mapping]) // Remove onIssuesChange from dependencies
 
   // Add a transformation
   const addTransformation = (column: string, type: string) => {
@@ -117,23 +141,16 @@ export function SheetDataValidator({
     onTransformationsChange([...transformations, newTransformation])
   }
 
-  // Remove a transformation
-  const removeTransformation = (index: number) => {
-    const newTransformations = [...transformations]
-    newTransformations.splice(index, 1)
-    onTransformationsChange(newTransformations)
-  }
-
   // Auto-fix common issues
   const handleAutoFix = () => {
     // Create transformations based on issues
     const newTransformations: Transformation[] = []
 
     // Find unique columns with issues
-    const columnsWithIssues = [...new Set(issues.map((issue) => issue.column))]
+    const columnsWithIssues = [...new Set(localIssues.map((issue) => issue.column))]
 
     columnsWithIssues.forEach((column) => {
-      const columnIssues = issues.filter((issue) => issue.column === column)
+      const columnIssues = localIssues.filter((issue) => issue.column === column)
       const mappedField = Object.entries(mapping).find(([col]) => col === column)?.[1]
 
       if (mappedField === "price" || mappedField === "area") {
@@ -167,141 +184,207 @@ export function SheetDataValidator({
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="issues" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Issues {issues.length > 0 && `(${issues.length})`}
-          </TabsTrigger>
-          <TabsTrigger value="transformations" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            Transformations {transformations.length > 0 && `(${transformations.length})`}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="issues" className="mt-4 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left panel: Validation rules and issues */}
+        <div className="lg:col-span-1 space-y-4">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle>Validation Issues</CardTitle>
-                <Button variant="outline" size="sm" onClick={handleAutoFix} disabled={issues.length === 0}>
+                <CardTitle>Validation Checks</CardTitle>
+                <Button variant="outline" size="sm" onClick={handleAutoFix} disabled={localIssues.length === 0}>
                   <MagicWand className="mr-2 h-4 w-4" />
-                  Auto-fix Common Issues
+                  Auto-fix Issues
                 </Button>
               </div>
               <CardDescription>
-                {issues.length === 0
+                {localIssues.length === 0
                   ? "No validation issues found. Your data looks good!"
-                  : `Found ${issues.length} issues that need to be resolved.`}
+                  : `Found ${localIssues.length} issues across ${
+                      new Set(localIssues.map((issue) => issue.column)).size
+                    } columns.`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {issues.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableCell className="w-[100px]">Row</TableCell>
-                        <TableCell className="w-[200px]">Column</TableCell>
-                        <TableCell>Issue</TableCell>
-                        <TableCell className="w-[120px]">Action</TableCell>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {issues.map((issue, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{issue.row}</TableCell>
-                          <TableCell>{issue.column}</TableCell>
-                          <TableCell>{issue.issue}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm" onClick={() => addTransformation(issue.column, "auto")}>
-                              Fix
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center p-8 text-center">
-                  <div>
-                    <CheckCircle2 className="mx-auto h-8 w-8 text-green-500" />
-                    <p className="mt-2 text-sm font-medium">All data is valid!</p>
-                    <p className="text-xs text-muted-foreground mt-1">You can proceed to the next step.</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="transformations" className="mt-4 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Data Transformations</CardTitle>
-              <CardDescription>Apply transformations to clean and standardize your data before import.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {transformations.length > 0 ? (
-                  transformations.map((transformation, index) => (
-                    <div key={index} className="flex items-center gap-4 p-3 border rounded-md">
-                      <div className="flex-1">
-                        <p className="font-medium">{transformation.column}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {transformation.type === "numeric" && "Convert to numeric"}
-                          {transformation.type === "standardize" && "Standardize values"}
-                          {transformation.type === "auto" && "Auto-fix issues"}
-                        </p>
+              <div className="space-y-3">
+                {[
+                  {
+                    id: 1,
+                    name: "Price Validation",
+                    description: 'Property type "Villa" must have price greater than 2,000,000',
+                    severity: "warning",
+                    count: localIssues.filter(
+                      (issue) => issue.column === data.columns.find((col) => mapping[col] === "price"),
+                    ).length,
+                    field: "price",
+                  },
+                  {
+                    id: 2,
+                    name: "Area Validation",
+                    description: 'Property type "Apartment" must have area between 50-500 sqm',
+                    severity: "warning",
+                    count: localIssues.filter(
+                      (issue) => issue.column === data.columns.find((col) => mapping[col] === "area"),
+                    ).length,
+                    field: "area",
+                  },
+                  {
+                    id: 3,
+                    name: "Status Validation",
+                    description: "Status must be one of: Available, Reserved, Sold",
+                    severity: "error",
+                    count: localIssues.filter(
+                      (issue) => issue.column === data.columns.find((col) => mapping[col] === "status"),
+                    ).length,
+                    field: "status",
+                  },
+                ].map((rule) => (
+                  <div
+                    key={rule.id}
+                    className={`p-3 border rounded-md ${
+                      rule.severity === "error" ? "bg-red-50" : "bg-amber-50"
+                    } cursor-pointer hover:border-gray-400 transition-colors`}
+                    onClick={() => toggleRuleFilter(rule.id)}
+                  >
+                    <div className="flex items-start">
+                      <div className="flex items-center h-5 mt-0.5">
+                        <input
+                          type="checkbox"
+                          checked={activeRuleFilters.includes(rule.id)}
+                          onChange={() => toggleRuleFilter(rule.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeTransformation(index)}>
-                        Remove
-                      </Button>
+                      <div className="ml-3 text-sm">
+                        <div className="flex items-center">
+                          <span className="font-medium mr-2">#{rule.id}:</span>
+                          <span className="font-medium">{rule.name}</span>
+                          {rule.count > 0 && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100">
+                              {rule.count} {rule.count === 1 ? "issue" : "issues"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{rule.description}</p>
+                      </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center p-8">
-                    <p className="text-sm text-muted-foreground">
-                      No transformations added yet. Add transformations to clean your data.
-                    </p>
                   </div>
-                )}
-
-                <div className="pt-4 border-t">
-                  <p className="text-sm font-medium mb-2">Add New Transformation</p>
-                  <div className="flex gap-2">
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select column" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {data.columns.map((column, index) => (
-                          <SelectItem key={index} value={column}>
-                            {column}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Transformation type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="numeric">Convert to numeric</SelectItem>
-                        <SelectItem value="standardize">Standardize values</SelectItem>
-                        <SelectItem value="format">Format values</SelectItem>
-                        <SelectItem value="replace">Find and replace</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button>Add</Button>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* Right panel: Sheet preview with highlighted issues */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Sheet Preview</CardTitle>
+              <CardDescription>Records with validation issues are highlighted</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-auto max-h-[600px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableCell className="font-medium">Row</TableCell>
+                      {data.columns.map((column, index) => (
+                        <TableCell key={index} className="font-medium">
+                          {column}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.rows.map((row, rowIndex) => {
+                      // Check if this row has any validation issues
+                      const rowIssues = localIssues.filter((issue) => issue.row === rowIndex + 1)
+
+                      // Map issues to rule IDs
+                      const rowRuleIds = rowIssues.map((issue) => {
+                        if (issue.column === data.columns.find((col) => mapping[col] === "status")) return 3
+                        if (issue.column === data.columns.find((col) => mapping[col] === "price")) return 1
+                        if (issue.column === data.columns.find((col) => mapping[col] === "area")) return 2
+                        return 0
+                      })
+
+                      // Only highlight if the rule is active in the filter
+                      const activeRowRuleIds = rowRuleIds.filter((id) => activeRuleFilters.includes(id))
+                      const hasCriticalIssue = activeRowRuleIds.includes(3)
+                      const hasWarningIssue = activeRowRuleIds.length > 0 && !hasCriticalIssue
+
+                      // Skip rows that don't match any active filters if we have filters
+                      if (activeRuleFilters.length > 0 && activeRowRuleIds.length === 0) {
+                        return null
+                      }
+
+                      return (
+                        <TableRow
+                          key={rowIndex}
+                          className={hasCriticalIssue ? "bg-red-50" : hasWarningIssue ? "bg-amber-50" : ""}
+                        >
+                          <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+                          {Array.isArray(row) ? (
+                            row.map((cell, cellIndex) => {
+                              // Check if this cell has any validation issues
+                              const cellIssue = localIssues.find(
+                                (issue) => issue.row === rowIndex + 1 && issue.column === data.columns[cellIndex],
+                              )
+
+                              // Only highlight if the rule is active
+                              let isActive = false
+                              if (cellIssue) {
+                                if (data.columns[cellIndex] === data.columns.find((col) => mapping[col] === "status")) {
+                                  isActive = activeRuleFilters.includes(3)
+                                } else if (
+                                  data.columns[cellIndex] === data.columns.find((col) => mapping[col] === "price")
+                                ) {
+                                  isActive = activeRuleFilters.includes(1)
+                                } else if (
+                                  data.columns[cellIndex] === data.columns.find((col) => mapping[col] === "area")
+                                ) {
+                                  isActive = activeRuleFilters.includes(2)
+                                }
+                              }
+
+                              return (
+                                <TableCell
+                                  key={cellIndex}
+                                  className={
+                                    cellIssue && isActive
+                                      ? cellIssue.issue.includes("Invalid status")
+                                        ? "text-red-600 font-medium"
+                                        : "text-amber-600 font-medium"
+                                      : ""
+                                  }
+                                >
+                                  {cell}
+                                  {cellIssue && isActive && (
+                                    <span className="ml-2">
+                                      {cellIssue.issue.includes("Invalid status") ? (
+                                        <AlertTriangle className="h-4 w-4 inline text-red-500" />
+                                      ) : (
+                                        <AlertTriangle className="h-4 w-4 inline text-amber-500" />
+                                      )}
+                                    </span>
+                                  )}
+                                </TableCell>
+                              )
+                            })
+                          ) : (
+                            <TableCell colSpan={data.columns.length} className="text-center text-muted-foreground">
+                              Invalid row data
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }
