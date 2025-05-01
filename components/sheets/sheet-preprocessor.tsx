@@ -282,6 +282,7 @@ export function SheetPreprocessor() {
       nonRevertible?: boolean
       expandable?: boolean
       expanded?: boolean
+      aiSuggested?: boolean
     }>
   >([
     {
@@ -290,6 +291,7 @@ export function SheetPreprocessor() {
       timestamp: new Date().toISOString(),
       details: "Developer: ABC Developers, Projects: Palm Heights, Metro Residences",
       expandable: true,
+      aiSuggested: false,
     },
     {
       step: "Headers Detection",
@@ -297,6 +299,7 @@ export function SheetPreprocessor() {
       timestamp: new Date().toISOString(),
       details: "Project 1: Row 0, Project 2: Row 1, Payment Sheet: Not detected",
       nonRevertible: true,
+      aiSuggested: true,
     },
     {
       step: "Data Cleaning",
@@ -304,6 +307,7 @@ export function SheetPreprocessor() {
       timestamp: new Date().toISOString(),
       details: "12 rows removed",
       expandable: true,
+      aiSuggested: true,
     },
   ])
 
@@ -611,6 +615,127 @@ export function SheetPreprocessor() {
 
   return (
     <div className="space-y-4 pb-20">
+      {/* Action Summary Expanded Container */}
+      {showActionSummary &&
+        (currentStep === "preparation" ||
+          currentStep === "mapping" ||
+          currentStep === "transform" ||
+          currentStep === "review") && (
+          <div className="fixed top-32 right-4 bottom-20 z-50 w-80 bg-background border rounded-md shadow-lg overflow-hidden flex flex-col">
+            <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
+              <h3 className="text-sm font-medium">Action Summary</h3>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowActionSummary(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto p-2">
+              <div className="space-y-2">
+                {actionHistory.map((action, index) => (
+                  <div key={index} className={`border rounded-md p-2 text-xs ${action.reverted ? "opacity-60" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-xs">
+                          {action.step}
+                        </Badge>
+                        {/* User or AI icon */}
+                        {action.aiSuggested ? (
+                          <span className="bg-blue-100 p-1 rounded-full" title="AI suggested">
+                            <Wand2 className="h-3 w-3 text-blue-600" />
+                          </span>
+                        ) : (
+                          <span className="bg-gray-100 p-1 rounded-full" title="User action">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="text-gray-600"
+                            >
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                              <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-muted-foreground text-[10px]">
+                          {new Date(action.timestamp).toLocaleTimeString()}
+                        </span>
+                        {!action.nonRevertible && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 w-5 p-0 ml-1"
+                            onClick={() => {
+                              // Toggle reverted state
+                              const updatedHistory = [...actionHistory]
+                              updatedHistory[index] = {
+                                ...updatedHistory[index],
+                                reverted: !updatedHistory[index].reverted,
+                              }
+                              setActionHistory(updatedHistory)
+
+                              // Show toast
+                              toast({
+                                title: updatedHistory[index].reverted ? "Action reverted" : "Action restored",
+                                description: action.action,
+                                variant: updatedHistory[index].reverted ? "destructive" : "default",
+                              })
+                            }}
+                          >
+                            {action.reverted ? <RefreshCw className="h-3 w-3" /> : <RotateCcw className="h-3 w-3" />}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <p className={`font-medium mt-1 ${action.reverted ? "line-through" : ""}`}>{action.action}</p>
+
+                    {action.details && (
+                      <div className="mt-1">
+                        {action.expandable ? (
+                          <div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-5 p-0 text-xs text-muted-foreground flex items-center gap-1"
+                              onClick={() => {
+                                // Toggle expanded state
+                                const updatedHistory = [...actionHistory]
+                                updatedHistory[index] = {
+                                  ...updatedHistory[index],
+                                  expanded: !updatedHistory[index].expanded,
+                                }
+                                setActionHistory(updatedHistory)
+                              }}
+                            >
+                              <ChevronRight className={`h-3 w-3 ${action.expanded ? "transform rotate-90" : ""}`} />
+                              Details
+                            </Button>
+                            {action.expanded && (
+                              <div className="text-muted-foreground mt-1 pl-3 border-l-2 border-muted">
+                                {action.details}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className={`text-muted-foreground mt-0.5 ${action.reverted ? "line-through" : ""}`}>
+                            {action.details}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Primary Availability Import</h2>
@@ -671,6 +796,23 @@ export function SheetPreprocessor() {
           ))}
         </div>
       </div>
+
+      {/* Action Summary Button - Now placed under the steps pipeline */}
+      {(currentStep === "preparation" ||
+        currentStep === "mapping" ||
+        currentStep === "transform" ||
+        currentStep === "review") && (
+        <div className="flex justify-center mb-4">
+          <Button
+            variant="outline"
+            className={`flex items-center gap-1 shadow-md ${showActionSummary ? "bg-primary text-primary-foreground" : "bg-background"}`}
+            onClick={() => setShowActionSummary(!showActionSummary)}
+          >
+            <Settings className="h-4 w-4" />
+            <span>Action Summary</span>
+          </Button>
+        </div>
+      )}
 
       <Tabs value={currentStep} onValueChange={setCurrentStep} className="w-full">
         <TabsList className="hidden">
@@ -1006,14 +1148,6 @@ export function SheetPreprocessor() {
                   Before mapping columns, make sure your sheet is properly structured.
                 </p>
               </div>
-              <Button
-                variant="outline"
-                className="flex items-center gap-1"
-                onClick={() => setShowActionSummary(!showActionSummary)}
-              >
-                <Settings className="h-4 w-4" />
-                <span>Action Summary</span>
-              </Button>
             </div>
 
             <div className="grid grid-cols-12 gap-4">
@@ -1386,120 +1520,119 @@ export function SheetPreprocessor() {
                         variant="ghost"
                         className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
                         onClick={() => setOpenAccordion(openAccordion === "projects" ? null : "projects")}
-                      >
-                        <div className="flex items-center">
-                          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
-                          Project Assignment
-                        </div>
-                        {useColumnForProjects ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        )}
-                      </Button>
-
-                      {openAccordion === "projects" && (
-                        <div className="border-t p-3 space-y-3 bg-muted/10">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="use-column"
-                              checked={useColumnForProjects}
-                              onCheckedChange={(checked) => {
-                                setUseColumnForProjects(!!checked)
-
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Project Assignment",
-                                    action: checked
-                                      ? "Enabled column-based project assignment"
-                                      : "Disabled column-based project assignment",
-                                    timestamp: new Date().toISOString(),
-                                  },
-                                ])
-
-                                toast({
-                                  title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
-                                  description: checked
-                                    ? "Projects will be assigned based on column values"
-                                    : "Projects will be assigned based on tabs",
-                                })
-                              }}
-                            />
-                            <label htmlFor="use-column" className="text-sm">
-                              Use a column to differentiate between projects
-                            </label>
-                          </div>
-
-                          {!useColumnForProjects && (
-                            <div className="space-y-2 pt-2">
-                              <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
-                              <div className="space-y-2">
-                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                                  .filter((sheet) => !ignoredTabs[sheet])
-                                  .map((sheet, index) => (
-                                    <div key={index} className="flex items-center justify-between">
-                                      <div className="flex items-center">
-                                        <span className="text-xs">{sheet}</span>
-                                        {highlightedTabs[sheet] && (
-                                          <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
-                                            {highlightedTabs[sheet]}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <Select
-                                        defaultValue={index === 0 ? "proj1" : "proj3"}
-                                        className="w-32"
-                                        onValueChange={(value) => {
-                                          // Update project assignments
-                                          const newProjectAssignments = { ...projectAssignments }
-                                          newProjectAssignments[sheet] = value
-                                          setProjectAssignments(newProjectAssignments)
-                                        }}
-                                      >
-                                        <SelectTrigger className="h-7 text-xs">
-                                          <SelectValue placeholder="Select project" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {projects.map((projId) => {
-                                            const project = PROJECTS.find((p) => p.id === projId)
-                                            return project ? (
-                                              <SelectItem key={projId} value={projId}>
-                                                {project.name}
-                                              </SelectItem>
-                                            ) : null
-                                          })}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  ))}
-                              </div>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-2"
-                                onClick={() => {
-                                  // Show merge confirmation dialog
-                                  setMergeDialogData({
-                                    tabs: Object.keys(projectAssignments),
-                                    compatible: true,
-                                    message: "All selected tabs are compatible for merging",
-                                  })
-
-                                  setShowMergeDialog(true)
-                                }}
-                              >
-                                Merge Tabs & Add Project Column
-                              </Button>
-                            </div>
-                          )}
-                        </div>
+                    >
+                      <div className="flex items-center">
+                        <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                        Project Assignment
+                      </div>
+                      {useColumnForProjects ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-amber-500" />
                       )}
-                    </div>
-                  )}
+                    </Button>
 
+                    {openAccordion === "projects" && (
+                      <div className="border-t p-3 space-y-3 bg-muted/10">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="use-column"
+                            checked={useColumnForProjects}
+                            onCheckedChange={(checked) => {
+                              setUseColumnForProjects(!!checked)
+
+                              // Add to action history
+                              setActionHistory([
+                                ...actionHistory,
+                                {
+                                  step: "Project Assignment",
+                                  action: checked
+                                    ? "Enabled column-based project assignment"
+                                    : "Disabled column-based project assignment",
+                                  timestamp: new Date().toISOString(),
+                                },
+                              ])
+
+                              toast({
+                                title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
+                                description: checked
+                                  ? "Projects will be assigned based on column values"
+                                  : "Projects will be assigned based on tabs",
+                              })
+                            }}
+                          />
+                          <label htmlFor="use-column" className="text-sm">
+                            Use a column to differentiate between projects
+                          </label>
+                        </div>
+
+                        {!useColumnForProjects && (
+                          <div className="space-y-2 pt-2">
+                            <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
+                            <div className="space-y-2">
+                              {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                                .filter((sheet) => !ignoredTabs[sheet])
+                                .map((sheet, index) => (
+                                  <div key={index} className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                      <span className="text-xs">{sheet}</span>
+                                      {highlightedTabs[sheet] && (
+                                        <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
+                                          {highlightedTabs[sheet]}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <Select
+                                      defaultValue={index === 0 ? "proj1" : "proj3"}
+                                      className="w-32"
+                                      onValueChange={(value) => {
+                                        // Update project assignments
+                                        const newProjectAssignments = { ...projectAssignments }
+                                        newProjectAssignments[sheet] = value
+                                        setProjectAssignments(newProjectAssignments)
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-7 text-xs">
+                                        <SelectValue placeholder="Select project" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {projects.map((projId) => {
+                                          const project = PROJECTS.find((p) => p.id === projId)
+                                          return project ? (
+                                            <SelectItem key={projId} value={projId}>
+                                              {project.name}
+                                            </SelectItem>
+                                          ) : null
+                                        })}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                ))}
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full mt-2"
+                              onClick={() => {
+                                // Show merge confirmation dialog
+                                setMergeDialogData({
+                                  tabs: Object.keys(projectAssignments),
+                                  compatible: true,
+                                  message: "All selected tabs are compatible for merging",
+                                })
+
+                                setShowMergeDialog(true)
+                              }}
+                            >
+                              Merge Tabs & Add Project Column
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+\
                   {/* Tab Merging - Only show if multiple tabs */}
                   {sheetData.sheets.length > 1 && (
                     <div className="mb-3 border rounded-md overflow-hidden">
@@ -1751,110 +1884,6 @@ export function SheetPreprocessor() {
               </div>
 
               {/* Right side - Action Summary (conditionally shown) */}
-              {showActionSummary && (
-                <div className="col-span-12 md:col-span-3 border-l pl-4">
-                  <div className="sticky top-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium">Action Summary</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => setShowActionSummary(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                      {actionHistory.map((action, index) => (
-                        <div
-                          key={index}
-                          className={`border rounded-md p-2 text-xs ${action.reverted ? "opacity-60" : ""}`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <Badge variant="outline" className="text-xs">
-                              {action.step}
-                            </Badge>
-                            <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground">
-                                {new Date(action.timestamp).toLocaleTimeString()}
-                              </span>
-                              {!action.nonRevertible && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-5 w-5 p-0 ml-1"
-                                  onClick={() => {
-                                    // Toggle reverted state
-                                    const updatedHistory = [...actionHistory]
-                                    updatedHistory[index] = {
-                                      ...updatedHistory[index],
-                                      reverted: !updatedHistory[index].reverted,
-                                    }
-                                    setActionHistory(updatedHistory)
-
-                                    // Show toast
-                                    toast({
-                                      title: updatedHistory[index].reverted ? "Action reverted" : "Action restored",
-                                      description: action.action,
-                                      variant: updatedHistory[index].reverted ? "destructive" : "default",
-                                    })
-                                  }}
-                                >
-                                  {action.reverted ? (
-                                    <RefreshCw className="h-3 w-3" />
-                                  ) : (
-                                    <RotateCcw className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <p className={`font-medium mt-1 ${action.reverted ? "line-through" : ""}`}>{action.action}</p>
-
-                          {action.details && (
-                            <div className="mt-1">
-                              {action.expandable ? (
-                                <div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-5 p-0 text-xs text-muted-foreground flex items-center gap-1"
-                                    onClick={() => {
-                                      // Toggle expanded state
-                                      const updatedHistory = [...actionHistory]
-                                      updatedHistory[index] = {
-                                        ...updatedHistory[index],
-                                        expanded: !updatedHistory[index].expanded,
-                                      }
-                                      setActionHistory(updatedHistory)
-                                    }}
-                                  >
-                                    <ChevronRight
-                                      className={`h-3 w-3 ${action.expanded ? "transform rotate-90" : ""}`}
-                                    />
-                                    Details
-                                  </Button>
-                                  {action.expanded && (
-                                    <div className="text-muted-foreground mt-1 pl-3 border-l-2 border-muted">
-                                      {action.details}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <p className={`text-muted-foreground mt-0.5 ${action.reverted ? "line-through" : ""}`}>
-                                  {action.details}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Action Summary Panel - Conditionally shown */}
@@ -1862,69 +1891,16 @@ export function SheetPreprocessor() {
         </TabsContent>
 
         <TabsContent value="mapping" className="mt-0">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setShowActionSummary(!showActionSummary)}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Action Summary</span>
-            </Button>
-          </div>
+          <div className="mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
               <SheetColumnMapper data={sheetData} onMappingChange={setColumnMappings} />
             </div>
-
-            {showActionSummary && (
-              <div className="md:col-span-1 border-l pl-4">
-                <div className="sticky top-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Action Summary</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowActionSummary(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => (
-                      <div key={index} className="border rounded-md p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {action.step}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(action.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="font-medium mt-1">{action.action}</p>
-                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
         <TabsContent value="transform" className="mt-0">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setShowActionSummary(!showActionSummary)}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Action Summary</span>
-            </Button>
-          </div>
+          <div className="mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
               <SheetDataTransformer
@@ -1948,41 +1924,6 @@ export function SheetPreprocessor() {
                 }}
               />
             </div>
-
-            {showActionSummary && (
-              <div className="md:col-span-1 border-l pl-4">
-                <div className="sticky top-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Action Summary</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowActionSummary(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => (
-                      <div key={index} className="border rounded-md p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {action.step}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(action.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="font-medium mt-1">{action.action}</p>
-                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </TabsContent>
 
@@ -1990,14 +1931,7 @@ export function SheetPreprocessor() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Final Review & Analysis</h2>
-              <Button
-                variant="outline"
-                className="flex items-center gap-1"
-                onClick={() => setShowActionSummary(!showActionSummary)}
-              >
-                <Settings className="h-4 w-4" />
-                <span>Action Summary</span>
-              </Button>
+              {/* Action Summary button moved to fixed position */}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2393,40 +2327,6 @@ export function SheetPreprocessor() {
               </div>
 
               {/* Action Summary Sidebar */}
-              {showActionSummary && (
-                <div className="md:col-span-1 border-l pl-4">
-                  <div className="sticky top-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-medium">Action Summary</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => setShowActionSummary(false)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                      {actionHistory.map((action, index) => (
-                        <div key={index} className="border rounded-md p-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <Badge variant="outline" className="text-xs">
-                              {action.step}
-                            </Badge>
-                            <span className="text-muted-foreground">
-                              {new Date(action.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          <p className="font-medium mt-1">{action.action}</p>
-                          {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </TabsContent>
