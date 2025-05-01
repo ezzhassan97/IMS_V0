@@ -615,13 +615,30 @@ export function SheetPreprocessor() {
 
   return (
     <div className="space-y-4 pb-20">
+      {/* Fixed Action Summary Button */}
+      {(currentStep === "preparation" ||
+        currentStep === "mapping" ||
+        currentStep === "transform" ||
+        currentStep === "review") && (
+        <div className="fixed top-20 right-4 z-50">
+          <Button
+            variant="outline"
+            className={`flex items-center gap-1 shadow-md ${showActionSummary ? "bg-primary text-primary-foreground" : "bg-background"}`}
+            onClick={() => setShowActionSummary(!showActionSummary)}
+          >
+            <Settings className="h-4 w-4" />
+            <span>Action Summary</span>
+          </Button>
+        </div>
+      )}
+
       {/* Action Summary Expanded Container */}
       {showActionSummary &&
         (currentStep === "preparation" ||
           currentStep === "mapping" ||
           currentStep === "transform" ||
           currentStep === "review") && (
-          <div className="fixed top-32 right-4 bottom-20 z-50 w-80 bg-background border rounded-md shadow-lg overflow-hidden flex flex-col">
+          <div className="fixed top-32 right-4 bottom-20 z-40 w-80 bg-background border rounded-md shadow-lg overflow-hidden flex flex-col">
             <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
               <h3 className="text-sm font-medium">Action Summary</h3>
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setShowActionSummary(false)}>
@@ -796,23 +813,6 @@ export function SheetPreprocessor() {
           ))}
         </div>
       </div>
-
-      {/* Action Summary Button - Now placed under the steps pipeline */}
-      {(currentStep === "preparation" ||
-        currentStep === "mapping" ||
-        currentStep === "transform" ||
-        currentStep === "review") && (
-        <div className="flex justify-center mb-4">
-          <Button
-            variant="outline"
-            className={`flex items-center gap-1 shadow-md ${showActionSummary ? "bg-primary text-primary-foreground" : "bg-background"}`}
-            onClick={() => setShowActionSummary(!showActionSummary)}
-          >
-            <Settings className="h-4 w-4" />
-            <span>Action Summary</span>
-          </Button>
-        </div>
-      )}
 
       <Tabs value={currentStep} onValueChange={setCurrentStep} className="w-full">
         <TabsList className="hidden">
@@ -1520,119 +1520,120 @@ export function SheetPreprocessor() {
                         variant="ghost"
                         className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
                         onClick={() => setOpenAccordion(openAccordion === "projects" ? null : "projects")}
-                    >
-                      <div className="flex items-center">
-                        <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
-                        Project Assignment
-                      </div>
-                      {useColumnForProjects ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      )}
-                    </Button>
-
-                    {openAccordion === "projects" && (
-                      <div className="border-t p-3 space-y-3 bg-muted/10">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="use-column"
-                            checked={useColumnForProjects}
-                            onCheckedChange={(checked) => {
-                              setUseColumnForProjects(!!checked)
-
-                              // Add to action history
-                              setActionHistory([
-                                ...actionHistory,
-                                {
-                                  step: "Project Assignment",
-                                  action: checked
-                                    ? "Enabled column-based project assignment"
-                                    : "Disabled column-based project assignment",
-                                  timestamp: new Date().toISOString(),
-                                },
-                              ])
-
-                              toast({
-                                title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
-                                description: checked
-                                  ? "Projects will be assigned based on column values"
-                                  : "Projects will be assigned based on tabs",
-                              })
-                            }}
-                          />
-                          <label htmlFor="use-column" className="text-sm">
-                            Use a column to differentiate between projects
-                          </label>
+                      >
+                        <div className="flex items-center">
+                          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                          Project Assignment
                         </div>
-
-                        {!useColumnForProjects && (
-                          <div className="space-y-2 pt-2">
-                            <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
-                            <div className="space-y-2">
-                              {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                                .filter((sheet) => !ignoredTabs[sheet])
-                                .map((sheet, index) => (
-                                  <div key={index} className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                      <span className="text-xs">{sheet}</span>
-                                      {highlightedTabs[sheet] && (
-                                        <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
-                                          {highlightedTabs[sheet]}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <Select
-                                      defaultValue={index === 0 ? "proj1" : "proj3"}
-                                      className="w-32"
-                                      onValueChange={(value) => {
-                                        // Update project assignments
-                                        const newProjectAssignments = { ...projectAssignments }
-                                        newProjectAssignments[sheet] = value
-                                        setProjectAssignments(newProjectAssignments)
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-7 text-xs">
-                                        <SelectValue placeholder="Select project" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {projects.map((projId) => {
-                                          const project = PROJECTS.find((p) => p.id === projId)
-                                          return project ? (
-                                            <SelectItem key={projId} value={projId}>
-                                              {project.name}
-                                            </SelectItem>
-                                          ) : null
-                                        })}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                ))}
-                            </div>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full mt-2"
-                              onClick={() => {
-                                // Show merge confirmation dialog
-                                setMergeDialogData({
-                                  tabs: Object.keys(projectAssignments),
-                                  compatible: true,
-                                  message: "All selected tabs are compatible for merging",
-                                })
-
-                                setShowMergeDialog(true)
-                              }}
-                            >
-                              Merge Tabs & Add Project Column
-                            </Button>
-                          </div>
+                        {useColumnForProjects ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-amber-500" />
                         )}
-                      </div>
-                    )}
-                  </div>
-      
+                      </Button>
+
+                      {openAccordion === "projects" && (
+                        <div className="border-t p-3 space-y-3 bg-muted/10">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="use-column"
+                              checked={useColumnForProjects}
+                              onCheckedChange={(checked) => {
+                                setUseColumnForProjects(!!checked)
+
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Project Assignment",
+                                    action: checked
+                                      ? "Enabled column-based project assignment"
+                                      : "Disabled column-based project assignment",
+                                    timestamp: new Date().toISOString(),
+                                  },
+                                ])
+
+                                toast({
+                                  title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
+                                  description: checked
+                                    ? "Projects will be assigned based on column values"
+                                    : "Projects will be assigned based on tabs",
+                                })
+                              }}
+                            />
+                            <label htmlFor="use-column" className="text-sm">
+                              Use a column to differentiate between projects
+                            </label>
+                          </div>
+
+                          {!useColumnForProjects && (
+                            <div className="space-y-2 pt-2">
+                              <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
+                              <div className="space-y-2">
+                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
+                                  .filter((sheet) => !ignoredTabs[sheet])
+                                  .map((sheet, index) => (
+                                    <div key={index} className="flex items-center justify-between">
+                                      <div className="flex items-center">
+                                        <span className="text-xs">{sheet}</span>
+                                        {highlightedTabs[sheet] && (
+                                          <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
+                                            {highlightedTabs[sheet]}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <Select
+                                        defaultValue={index === 0 ? "proj1" : "proj3"}
+                                        className="w-32"
+                                        onValueChange={(value) => {
+                                          // Update project assignments
+                                          const newProjectAssignments = { ...projectAssignments }
+                                          newProjectAssignments[sheet] = value
+                                          setProjectAssignments(newProjectAssignments)
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-7 text-xs">
+                                          <SelectValue placeholder="Select project" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {projects.map((projId) => {
+                                            const project = PROJECTS.find((p) => p.id === projId)
+                                            return project ? (
+                                              <SelectItem key={projId} value={projId}>
+                                                {project.name}
+                                              </SelectItem>
+                                            ) : null
+                                          })}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  ))}
+                              </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-2"
+                                onClick={() => {
+                                  // Show merge confirmation dialog
+                                  setMergeDialogData({
+                                    tabs: Object.keys(projectAssignments),
+                                    compatible: true,
+                                    message: "All selected tabs are compatible for merging",
+                                  })
+
+                                  setShowMergeDialog(true)
+                                }}
+                              >
+                                Merge Tabs & Add Project Column
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Tab Merging - Only show if multiple tabs */}
                   {sheetData.sheets.length > 1 && (
                     <div className="mb-3 border rounded-md overflow-hidden">

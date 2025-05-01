@@ -58,7 +58,7 @@ const mockFloorPlans: ExtractedImage[] = [
   {
     id: "fp1",
     type: "floor_plan",
-    url: "/placeholder.svg?key=vh5v2",
+    url: "/open-concept-studio.png",
     status: "needs_review",
     metadata: {
       floorName: "Studio A",
@@ -79,7 +79,7 @@ const mockFloorPlans: ExtractedImage[] = [
   {
     id: "fp2",
     type: "floor_plan",
-    url: "/placeholder.svg?height=200&width=300&query=cozy+one+bedroom+apartment",
+    url: "/cozy-one-bedroom-apartment.png",
     status: "needs_review",
     metadata: {
       floorName: "Type B",
@@ -102,7 +102,7 @@ const mockFloorPlans: ExtractedImage[] = [
   {
     id: "fp3",
     type: "floor_plan",
-    url: "/placeholder.svg?height=200&width=300&query=one+bedroom+deluxe+apartment",
+    url: "/one-bedroom-deluxe-apartment.png",
     status: "saved",
     metadata: {
       floorName: "Type C",
@@ -126,7 +126,7 @@ const mockFloorPlans: ExtractedImage[] = [
   {
     id: "fp4",
     type: "floor_plan",
-    url: "/placeholder.svg?height=200&width=300&query=two+bedroom+apartment+layout",
+    url: "/two-bedroom-apartment-layout.png",
     status: "needs_review",
     metadata: {
       floorName: "Type D",
@@ -151,7 +151,7 @@ const mockFloorPlans: ExtractedImage[] = [
   {
     id: "fp5",
     type: "floor_plan",
-    url: "/placeholder.svg?height=200&width=300&query=corner+two+bedroom+apartment",
+    url: "/corner-two-bedroom-apartment.png",
     status: "saved",
     metadata: {
       floorName: "Type E",
@@ -181,7 +181,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri1",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=minimalist+studio+living",
+    url: "/minimalist-studio-living.png",
     status: "needs_review",
     metadata: {
       propertyType: "Studio",
@@ -192,7 +192,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri2",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=urban+loft",
+    url: "/urban-loft.png",
     status: "saved",
     metadata: {
       propertyType: "Studio",
@@ -203,7 +203,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri3",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=minimalist+urban+living",
+    url: "/minimalist-urban-living.png",
     status: "needs_review",
     metadata: {
       propertyType: "Apartment",
@@ -215,7 +215,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri4",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=sleek+city+kitchen",
+    url: "/sleek-city-kitchen.png",
     status: "needs_review",
     metadata: {
       propertyType: "Apartment",
@@ -226,7 +226,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri5",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=modern+city+loft",
+    url: "/modern-city-loft.png",
     status: "saved",
     metadata: {
       propertyType: "Apartment",
@@ -238,7 +238,7 @@ const mockRenderImages: ExtractedImage[] = [
   {
     id: "ri6",
     type: "render",
-    url: "/placeholder.svg?height=200&width=300&query=city+corner+view",
+    url: "/city-corner-view.png",
     status: "needs_review",
     metadata: {
       propertyType: "Apartment",
@@ -403,15 +403,9 @@ export function ExtractionResults({ brochure, onClose }: ExtractionResultsProps)
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="aspect-video bg-muted relative">
                     <img
-                      src={
-                        floorPlans[currentFloorPlanIndex].url ||
-                        "/placeholder.svg?height=200&width=300&query=floor+plan"
-                      }
+                      src={floorPlans[currentFloorPlanIndex].url || "/placeholder.svg"}
                       alt={floorPlans[currentFloorPlanIndex].metadata.description || "Floor plan"}
                       className="object-contain w-full h-full"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg?height=200&width=300&query=floor+plan"
-                      }}
                     />
                     <Badge
                       className={`absolute top-2 right-2 ${
@@ -786,15 +780,9 @@ export function ExtractionResults({ brochure, onClose }: ExtractionResultsProps)
                 <div className="relative overflow-hidden rounded-lg">
                   <div className="aspect-video bg-muted relative">
                     <img
-                      src={
-                        renderImages[currentRenderImageIndex].url ||
-                        "/placeholder.svg?height=200&width=300&query=render+image"
-                      }
+                      src={renderImages[currentRenderImageIndex].url || "/placeholder.svg"}
                       alt={renderImages[currentRenderImageIndex].metadata.description || "Render image"}
                       className="object-contain w-full h-full"
-                      onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg?height=200&width=300&query=render+image"
-                      }}
                     />
                     <Badge
                       className={`absolute top-2 right-2 ${
