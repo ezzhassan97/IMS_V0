@@ -20,7 +20,7 @@ const MOCK_FLOOR_PLANS = [
     name: "Studio Floor Plan",
     type: "Studio",
     area: "45-55",
-    imageUrl: "/open-concept-studio.png",
+    imageUrl: "/placeholder.svg?key=lqbtj",
     assignedUnits: 8,
     tags: ["Studio", "Compact"],
   },
@@ -29,7 +29,7 @@ const MOCK_FLOOR_PLANS = [
     name: "1BR Standard Floor Plan",
     type: "1BR",
     area: "65-75",
-    imageUrl: "/cozy-one-bedroom-apartment.png",
+    imageUrl: "/placeholder.svg?key=ijb6g",
     assignedUnits: 12,
     tags: ["1BR", "Standard"],
   },
@@ -38,7 +38,7 @@ const MOCK_FLOOR_PLANS = [
     name: "1BR Deluxe Floor Plan",
     type: "1BR",
     area: "75-85",
-    imageUrl: "/one-bedroom-deluxe-apartment.png",
+    imageUrl: "/placeholder.svg?key=lk3k7",
     assignedUnits: 6,
     tags: ["1BR", "Deluxe"],
   },
@@ -47,7 +47,7 @@ const MOCK_FLOOR_PLANS = [
     name: "2BR Standard Floor Plan",
     type: "2BR",
     area: "85-95",
-    imageUrl: "/two-bedroom-apartment-layout.png",
+    imageUrl: "/placeholder.svg?key=ghgzc",
     assignedUnits: 10,
     tags: ["2BR", "Standard"],
   },
@@ -56,7 +56,7 @@ const MOCK_FLOOR_PLANS = [
     name: "2BR Corner Floor Plan",
     type: "2BR",
     area: "95-105",
-    imageUrl: "/corner-two-bedroom-apartment.png",
+    imageUrl: "/placeholder.svg?key=e3v8l",
     assignedUnits: 4,
     tags: ["2BR", "Corner"],
   },
@@ -452,9 +452,12 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
                     >
                       <div className="aspect-[3/2] relative">
                         <img
-                          src={plan.imageUrl || "/placeholder.svg"}
+                          src={plan.imageUrl || "/placeholder.svg?height=200&width=300&query=floor+plan"}
                           alt={plan.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg?height=200&width=300&query=floor+plan"
+                          }}
                         />
                         {selectedFloorPlan === plan.id && (
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">

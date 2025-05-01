@@ -485,9 +485,12 @@ export function SheetRenderImageAttachment({ data, mapping }: SheetRenderImageAt
                     >
                       <div className="aspect-[3/2] relative">
                         <img
-                          src={image.imageUrl || "/placeholder.svg"}
+                          src={image.imageUrl || "/placeholder.svg?height=200&width=300&query=render+image"}
                           alt={image.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg?height=200&width=300&query=render+image"
+                          }}
                         />
                         {selectedRenderImage === image.id && (
                           <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
