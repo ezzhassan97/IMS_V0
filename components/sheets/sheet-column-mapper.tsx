@@ -1,16 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { MapPin, AlertCircle, Check, X, ArrowRight, TableIcon, Wand2 } from "lucide-react"
+import { MapPin, AlertCircle, Check, X, TableIcon, Wand2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Input } from "@/components/ui/input"
 
 interface SheetColumnMapperProps {
@@ -36,7 +32,7 @@ const SYSTEM_FIELDS = [
   { id: "net_bua", label: "Net BUA", required: false, importance: "important" },
   { id: "gross_bua", label: "Gross BUA", required: false, importance: "important" },
   { id: "area_sqm", label: "Area (sqm)", required: false, importance: "important" },
-  { id: "price_per_sqm", label: "Price per sqm", required: false, importance: "important" },
+  { id: "price_per_sqm", label: "Price per sqm", required: false, importance: "optional" },
   { id: "price", label: "Price", required: true, importance: "mandatory" },
   { id: "status", label: "Status", required: false, importance: "important" },
   { id: "floor", label: "Floor", required: false, importance: "important" },
@@ -157,18 +153,118 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
 
   if (!data || !data.headers || data.headers.length === 0) {
     return (
-      <Card className="p-6">
+      <div className="p-6 border rounded-md">
         <div className="text-center py-8">
           <MapPin className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No headers available</h3>
           <p className="text-muted-foreground mt-2">Could not detect column headers in your sheet.</p>
         </div>
-      </Card>
+      </div>
     )
   }
 
+  // Prepare example data for the table headers
+  const tableHeaderExamples = data.headers.map((header: string, i: number) => {
+    let bgClass = ""
+    let badgeContent = null
+
+    // Example: First column is mapped
+    if (i === 0) {
+      bgClass = "bg-green-50 border-green-100"
+      badgeContent = (
+        <div className="flex items-center gap-1">
+          <svg width="10" height="10" viewBox="0 0 24 24" className="text-green-600">
+            <path fill="currentColor" d="M20 12l-8 8-8-8h5V4h6v8z" />
+          </svg>
+          <Badge variant="outline" className="text-[10px] py-0 h-4 bg-green-50 text-green-600">
+            unit_code
+          </Badge>
+        </div>
+      )
+    }
+    // Example: Second column is mandatory unmapped (red)
+    else if (i === 1) {
+      bgClass = "bg-red-50 border-red-100"
+      badgeContent = (
+        <div className="flex items-center gap-1">
+          <svg width="10" height="10" viewBox="0 0 24 24" className="text-red-600">
+            <path
+              fill="currentColor"
+              d="M12 5V3l-4 4 4 4V9c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-600">
+            Unmapped
+          </Badge>
+        </div>
+      )
+    }
+    // Example: Third column is important unmapped (yellow)
+    else if (i === 2) {
+      bgClass = "bg-amber-50 border-amber-100"
+      badgeContent = (
+        <div className="flex items-center gap-1">
+          <svg width="10" height="10" viewBox="0 0 24 24" className="text-amber-600">
+            <path
+              fill="currentColor"
+              d="M12 5V3l-4 4 4 4V9c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          <Badge variant="outline" className="text-[10px] py-0 h-4 bg-amber-50 text-amber-600">
+            Unmapped
+          </Badge>
+        </div>
+      )
+    }
+    // Example: Fourth column is mapped
+    else if (i === 3) {
+      bgClass = "bg-green-50 border-green-100"
+      badgeContent = (
+        <div className="flex items-center gap-1">
+          <svg width="10" height="10" viewBox="0 0 24 24" className="text-green-600">
+            <path fill="currentColor" d="M20 12l-8 8-8-8h5V4h6v8z" />
+          </svg>
+          <Badge variant="outline" className="text-[10px] py-0 h-4 bg-green-50 text-green-600">
+            price
+          </Badge>
+        </div>
+      )
+    }
+    // Example: Fifth column is mandatory unmapped (red)
+    else if (i === 4) {
+      bgClass = "bg-red-50 border-red-100"
+      badgeContent = (
+        <div className="flex items-center gap-1">
+          <svg width="10" height="10" viewBox="0 0 24 24" className="text-red-600">
+            <path
+              fill="currentColor"
+              d="M12 5V3l-4 4 4 4V9c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8z"
+            />
+          </svg>
+          <Badge variant="outline" className="text-[10px] py-0 h-4 bg-red-50 text-red-600">
+            Unmapped
+          </Badge>
+        </div>
+      )
+    }
+    // Default: regular unmapped
+    else {
+      badgeContent = (
+        <Badge variant="outline" className="text-[10px] py-0 h-4 bg-gray-50 text-gray-600">
+          Unmapped
+        </Badge>
+      )
+    }
+
+    return {
+      header,
+      bgClass,
+      badgeContent,
+    }
+  })
+
   return (
-    <Card className="p-4">
+    <div className="p-4 border rounded-md">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="text-lg font-medium mb-1">Map Sheet Columns</h3>
@@ -177,38 +273,31 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Switch id="auto-detect" checked={autoDetectEnabled} onCheckedChange={setAutoDetectEnabled} />
-          <Label htmlFor="auto-detect">Auto-detect</Label>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const detectedMappings = autoDetectColumnMappings(data.headers)
-              setColumnMappings(detectedMappings)
-              onMappingChange(detectedMappings)
-            }}
-          >
-            Re-detect
-          </Button>
           <Button variant="outline" size="icon" onClick={() => setShowMappingPanel(!showMappingPanel)}>
             {showMappingPanel ? <TableIcon className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
-      {missingRequiredFields.length > 0 && (
-        <Alert variant="destructive" className="mb-3">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Missing required mappings</AlertTitle>
-          <AlertDescription>
-            The following required fields are not mapped: {missingRequiredFields.map((f) => f.label).join(", ")}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {showMappingPanel && (
           <div className="space-y-1 border rounded-md p-3 max-h-[70vh] overflow-y-auto">
+            <div className="flex justify-between items-center text-xs mb-2 pb-2 border-b">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">10/15</span>
+                  <span className="text-muted-foreground">Total fields mapped</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium text-red-500">3/4</span>
+                  <span className="text-muted-foreground">Mandatory fields mapped</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-medium">12/14</span>
+                <span className="text-muted-foreground ml-1">Columns used</span>
+              </div>
+            </div>
             <div className="flex justify-between items-center sticky top-0 bg-white z-10 pb-2">
               <h4 className="font-medium text-sm">System Fields</h4>
               <Button variant="outline" size="sm" onClick={handleAutoMap} className="flex items-center">
@@ -413,119 +502,132 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
         )}
 
         <div className={`border rounded-md ${showMappingPanel ? "md:col-span-2" : "md:col-span-3"}`}>
-          <div className="p-2 border-b bg-muted/30">
+          <div className="p-1 border-b bg-muted/30 flex justify-between items-center">
             <h4 className="font-medium text-sm">Sheet Preview with Mapping</h4>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs"
+              onClick={() => {
+                const detectedMappings = autoDetectColumnMappings(data.headers)
+                setColumnMappings(detectedMappings)
+                onMappingChange(detectedMappings)
+              }}
+            >
+              <Wand2 className="h-3 w-3 mr-1" />
+              Auto-detect
+            </Button>
           </div>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">#</TableHead>
-                  {data.headers.map((header: string, i: number) => {
-                    // Find if this header is mapped to any system field
-                    const mappedField = Object.entries(columnMappings).find(([_, val]) => val === header)
-                    const mappedFieldInfo = mappedField
-                      ? [...SYSTEM_FIELDS, ...customFields].find((f) => f.id === mappedField[0])
-                      : null
-
-                    return (
+            <div className="min-w-max">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10 py-2 sticky top-0 bg-white">#</TableHead>
+                    {tableHeaderExamples.map((item, i) => (
                       <TableHead
                         key={i}
-                        className={
-                          mappedField
-                            ? mappedFieldInfo && "id" in mappedFieldInfo && mappedFieldInfo.importance === "mandatory"
-                              ? "bg-green-50 border-green-100"
-                              : mappedFieldInfo && "id" in mappedFieldInfo && mappedFieldInfo.importance === "important"
-                                ? "bg-green-50 border-green-100"
-                                : mappedFieldInfo && customFields.some((cf) => cf.id === mappedFieldInfo.id)
-                                  ? "bg-purple-50 border-purple-100"
-                                  : "bg-green-50 border-green-100"
-                            : ""
-                        }
+                        className={`py-2 h-12 sticky top-0 ${item.bgClass}`}
+                        style={{ minWidth: "180px", width: "auto", whiteSpace: "normal" }}
                       >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            {mappedField && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Check className="h-4 w-4 text-green-500" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>Mapped to system field</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                            <span>{header}</span>
-                          </div>
-                          {mappedField ? (
-                            <div className="flex items-center text-xs text-green-600">
-                              <ArrowRight className="h-3 w-3 mr-1" />
-                              {mappedFieldInfo?.label || mappedField[0]}
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50">
-                              Unmapped
-                            </Badge>
-                          )}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium">{item.header}</span>
+                          {item.badgeContent}
                         </div>
                       </TableHead>
-                    )
-                  })}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.rows.slice(0, 5).map((row: any, rowIndex: number) => (
-                  <TableRow key={rowIndex}>
-                    <TableCell className="font-medium">{rowIndex + 1}</TableCell>
-                    {data.headers.map((header: string, colIndex: number) => {
-                      const mappedField = Object.entries(columnMappings).find(([_, val]) => val === header)
-                      const mappedFieldInfo = mappedField
-                        ? [...SYSTEM_FIELDS, ...customFields].find((f) => f.id === mappedField[0])
-                        : null
-
-                      return (
-                        <TableCell
-                          key={colIndex}
-                          className={
-                            mappedField
-                              ? mappedFieldInfo && "id" in mappedFieldInfo && mappedFieldInfo.importance === "mandatory"
-                                ? "bg-green-50"
-                                : mappedFieldInfo &&
-                                    "id" in mappedFieldInfo &&
-                                    mappedFieldInfo.importance === "important"
-                                  ? "bg-green-50"
-                                  : mappedFieldInfo && customFields.some((cf) => cf.id === mappedFieldInfo.id)
-                                    ? "bg-purple-50"
-                                    : "bg-green-50"
-                              : ""
-                          }
-                        >
-                          {row[header]}
-                        </TableCell>
-                      )
-                    })}
+                    ))}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.rows.slice(0, 11).map((row: any, rowIndex: number) => (
+                    <TableRow key={rowIndex} className={rowIndex % 2 === 0 ? "bg-muted/5" : ""}>
+                      <TableCell className="font-medium py-1 text-xs">{rowIndex + 1}</TableCell>
+                      {data.headers.map((header: string, colIndex: number) => {
+                        // Match the styling from the headers
+                        let bgClass = ""
+
+                        // Example: First column is mapped (green)
+                        if (colIndex === 0) {
+                          bgClass = "bg-green-50"
+                        }
+                        // Example: Second column is mandatory unmapped (red)
+                        else if (colIndex === 1) {
+                          bgClass = "bg-red-50"
+                        }
+                        // Example: Third column is important unmapped (yellow)
+                        else if (colIndex === 2) {
+                          bgClass = "bg-amber-50"
+                        }
+                        // Example: Fourth column is mapped (green)
+                        else if (colIndex === 3) {
+                          bgClass = "bg-green-50"
+                        }
+                        // Example: Fifth column is mandatory unmapped (red)
+                        else if (colIndex === 4) {
+                          bgClass = "bg-red-50"
+                        }
+
+                        return (
+                          <TableCell
+                            key={colIndex}
+                            className={`py-1 text-xs ${bgClass}`}
+                            style={{ minWidth: "180px", width: "auto", whiteSpace: "normal" }}
+                          >
+                            {row[header]}
+                          </TableCell>
+                        )
+                      })}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
-          <div className="p-2 border-t bg-muted/30 text-xs text-muted-foreground">
-            Showing first 5 rows of {data.rows.length} total rows
+          <div className="p-1 border-t bg-muted/30 text-xs text-muted-foreground">
+            <div className="flex justify-between items-center">
+              <span>Showing first 11 rows of {data.rows.length} total rows</span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-green-50 border border-green-100"></div>
+                  <span>Mapped</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-amber-50 border border-amber-100"></div>
+                  <span>Important</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-50 border border-red-100"></div>
+                  <span>Required</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div>
-          <Badge variant="outline" className="mr-2">
-            {Object.keys(columnMappings).filter((k) => columnMappings[k]).length} of{" "}
-            {SYSTEM_FIELDS.length + customFields.length} fields mapped
-          </Badge>
-          <Badge variant="outline" className="text-amber-600">
-            {unmappedColumns.length} columns unmapped
-          </Badge>
+      <div className="mt-3 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <Badge variant="outline" className="mr-2">
+              {Object.keys(columnMappings).filter((k) => columnMappings[k]).length} of{" "}
+              {SYSTEM_FIELDS.length + customFields.length} fields mapped
+            </Badge>
+            <Badge variant="outline" className="text-amber-600">
+              {unmappedColumns.length} columns unmapped
+            </Badge>
+          </div>
         </div>
+
+        {missingRequiredFields.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Missing required mappings</AlertTitle>
+            <AlertDescription>
+              The following required fields are not mapped: {missingRequiredFields.map((f) => f.label).join(", ")}
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
-    </Card>
+    </div>
   )
 }

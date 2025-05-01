@@ -6,7 +6,19 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Check, ChevronsUpDown, X, PenSquare, Wand2, Eye } from "lucide-react"
+import {
+  Building2,
+  Check,
+  ChevronsUpDown,
+  X,
+  PenSquare,
+  Wand2,
+  Eye,
+  ArrowRight,
+  Scissors,
+  TextCursorInput,
+  PenTool,
+} from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -15,6 +27,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // Mock data for developers
 const DEVELOPERS = [
@@ -124,6 +144,7 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
     comparisonState: "changes", // Add this line to initialize with 'changes' state
   })
   const [ignoredTabs, setIgnoredTabs] = useState<string[]>([])
+  const [showTransformationsModal, setShowTransformationsModal] = useState(false)
 
   const handleDeveloperChange = (value: string) => {
     setDeveloper(value)
@@ -635,13 +656,7 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
               ) : (
                 <div
                   className="mt-3 border rounded-md p-2 bg-background hover:bg-muted/20 cursor-pointer transition-colors"
-                  onClick={() => {
-                    // This would open a modal in a real implementation
-                    toast({
-                      title: "Smart Transformations Preview",
-                      description: "This would open a preview modal in a real implementation",
-                    })
-                  }}
+                  onClick={() => setShowTransformationsModal(true)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -757,6 +772,282 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
             Save and Continue
           </Button>
         </div>
+        {/* Smart Transformations Modal */}
+        <Dialog open={showTransformationsModal} onOpenChange={setShowTransformationsModal}>
+          <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Smart Transformations</DialogTitle>
+              <DialogDescription>AI-suggested improvements to standardize and clean your data</DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-grow overflow-hidden">
+              {/* Left side: Sheet Preview */}
+              <div className="border rounded-md flex flex-col overflow-hidden md:col-span-2">
+                <div className="bg-muted/30 p-2 border-b flex justify-between items-center">
+                  <h3 className="text-sm font-medium">Sheet Preview with Suggested Changes</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-xs">
+                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                      <span>Added</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <div className="h-2 w-2 rounded-full bg-amber-500"></div>
+                      <span>Modified</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                      <span>Mapped</span>
+                    </div>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      <Eye className="h-3 w-3 mr-1" />
+                      View Original
+                    </Button>
+                  </div>
+                </div>
+
+                <ScrollArea className="flex-grow">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8 py-2">#</TableHead>
+                        {sheetData.headers.map((header: string, i: number) => (
+                          <TableHead key={i} className="py-2 text-xs bg-blue-50 border-b border-blue-200">
+                            {header}
+                            <Badge variant="outline" className="ml-1 text-[10px] bg-blue-50 border-blue-200">
+                              {["Unit ID", "Project", "Type"].includes(header) ? "Mapped" : ""}
+                            </Badge>
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sheetData.rows.slice(0, 10).map((row: any, rowIndex: number) => (
+                        <TableRow key={rowIndex}>
+                          <TableCell className="font-medium py-1 text-xs">{rowIndex + 1}</TableCell>
+                          {sheetData.headers.map((header: string, colIndex: number) => {
+                            // Simulate different transformation types for demo
+                            const isModified = header === "Type" && rowIndex % 3 === 0
+                            const isAdded = header === "Status" && rowIndex % 4 === 0
+                            const cellClass = isModified ? "bg-amber-50" : isAdded ? "bg-green-50" : ""
+
+                            return (
+                              <TableCell key={colIndex} className={`py-1 text-xs ${cellClass}`}>
+                                {row[header]}
+                                {isModified && (
+                                  <span className="text-[10px] text-amber-600 block">
+                                    Was: {["Studio", "1BR", "2BR"][Math.floor(Math.random() * 3)]}
+                                  </span>
+                                )}
+                                {isAdded && <span className="text-[10px] text-green-600 block">Added</span>}
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </div>
+
+              {/* Right side: Transformation Actions */}
+              <div className="border rounded-md flex flex-col overflow-hidden">
+                <div className="bg-muted/30 p-2 border-b">
+                  <h3 className="text-sm font-medium">Transformation Actions</h3>
+                </div>
+
+                <ScrollArea className="flex-grow">
+                  <div className="p-3 space-y-4">
+                    {/* Sheet Preparation */}
+                    <div className="border rounded-md p-2">
+                      <h4 className="text-xs font-medium mb-2">Sheet Preparation</h4>
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span>Headers Detected</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            8/8
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Tabs Ignored</span>
+                          <span className="text-muted-foreground">2 tabs</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Merged Tabs</span>
+                          <span className="text-muted-foreground">None</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Project Tabs Mapping</span>
+                          <Badge variant="outline" className="bg-blue-50">
+                            3 mapped
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Column Mappings */}
+                    <div className="border rounded-md p-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-medium">Column Mappings</h4>
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          10/12 mapped
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span>"Unit ID"</span>
+                          <div className="flex items-center">
+                            <ArrowRight className="h-3 w-3 mx-1" />
+                            <Badge variant="outline" className="bg-blue-50">
+                              unit_id
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span>"Project"</span>
+                          <div className="flex items-center">
+                            <ArrowRight className="h-3 w-3 mx-1" />
+                            <Badge variant="outline" className="bg-blue-50">
+                              project_name
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span>"Type"</span>
+                          <div className="flex items-center">
+                            <ArrowRight className="h-3 w-3 mx-1" />
+                            <Badge variant="outline" className="bg-blue-50">
+                              property_type
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button variant="link" size="sm" className="text-xs p-0 h-auto">
+                          Show all mappings
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Value Standardizations */}
+                    <div className="border rounded-md p-2">
+                      <h4 className="text-xs font-medium mb-2">Value Standardization</h4>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span>Property Types</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            15/15 Mapped
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span>Status Values</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            8/8 Mapped
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span>Finishing Types</span>
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                            5/12 Mapped
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cleanups */}
+                    <div className="border rounded-md p-2">
+                      <h4 className="text-xs font-medium mb-2">Cleanups</h4>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-xs">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Trim whitespace from all text fields</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Format numeric fields with separators</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Format dates to YYYY-MM-DD</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span>Remove empty rows (3 found)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Transformations */}
+                    <div className="border rounded-md p-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-xs font-medium">Transformations</h4>
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                          12 actions
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="border rounded-md p-1.5 bg-muted/20">
+                          <div className="flex items-center gap-1 text-xs">
+                            <Scissors className="h-3 w-3" />
+                            <span className="font-medium">Split "Unit ID"</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground ml-4">
+                            Split by "-" into "Building" and "Unit Number"
+                          </p>
+                        </div>
+                        <div className="border rounded-md p-1.5 bg-muted/20">
+                          <div className="flex items-center gap-1 text-xs">
+                            <TextCursorInput className="h-3 w-3" />
+                            <span className="font-medium">Standardize "Type" values</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground ml-4">
+                            Map "1BR" → "1 Bedroom", "2BR" → "2 Bedroom"
+                          </p>
+                        </div>
+                        <div className="border rounded-md p-1.5 bg-muted/20">
+                          <div className="flex items-center gap-1 text-xs">
+                            <PenTool className="h-3 w-3" />
+                            <span className="font-medium">Add "Status" column</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground ml-4">
+                            Set default value to "Available" for all units
+                          </p>
+                        </div>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs p-0 h-auto"
+                          onClick={() => {
+                            toast({
+                              title: "All Transformations",
+                              description: "This would show a detailed list of all 12 transformation actions.",
+                            })
+                          }}
+                        >
+                          Show all transformations
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setShowTransformationsModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  toast({
+                    title: "Transformations Applied",
+                    description: "All suggested transformations have been applied to your data.",
+                  })
+                  setShowTransformationsModal(false)
+                }}
+              >
+                Transform
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   )
