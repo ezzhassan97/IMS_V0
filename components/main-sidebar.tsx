@@ -16,6 +16,7 @@ import {
   ChevronRight,
   ClipboardList,
   FileSpreadsheet,
+  FileText,
   Home,
   LayoutDashboard,
   LogOut,
@@ -74,6 +75,15 @@ const sidebarItems: SidebarItem[] = [
     submenu: [
       { title: "Processing", href: "/sheets/processing" },
       { title: "Presets", href: "/sheets/templates" },
+    ],
+  },
+  {
+    title: "Brochures",
+    href: "/brochures",
+    icon: FileText,
+    submenu: [
+      { title: "All Brochures", href: "/brochures" },
+      { title: "Media Library", href: "/brochures/media-library" },
     ],
   },
   {

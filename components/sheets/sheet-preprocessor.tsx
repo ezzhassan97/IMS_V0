@@ -8,9 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SheetColumnMapper } from "./sheet-column-mapper"
-import { SheetDataValidator } from "./sheet-data-validator"
 import { SheetDataTransformer } from "./sheet-data-transformer"
-import { SheetFinalReview } from "./sheet-final-review"
 import { SheetInitialSetup } from "./sheet-initial-setup"
 import { AIAssistant } from "./ai-assistant"
 import { useToast } from "@/components/ui/use-toast"
@@ -27,7 +25,6 @@ import {
   Wand2,
   Settings,
   Brush,
-  Save,
   FileText,
   ImageIcon,
   FileUp,
@@ -42,6 +39,7 @@ import {
   DollarSign,
   LampFloorIcon as FloorPlan,
   LayoutGrid,
+  Scissors,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -165,9 +163,7 @@ const getSteps = (needsOcr: boolean) => {
     { id: "preparation", label: "Sheet Preparation", icon: Settings },
     { id: "mapping", label: "Map Columns", icon: MapPin },
     { id: "transform", label: "Transform & Cleanup", icon: Wand2 },
-    { id: "validation", label: "Validate Data", icon: AlertTriangle },
     { id: "review", label: "Final Review", icon: CheckCircle },
-    { id: "save", label: "Save Preset", icon: Save },
   ]
 
   if (needsOcr) {
@@ -590,6 +586,29 @@ export function SheetPreprocessor() {
     message: string
   }>({ tabs: [], compatible: false, message: "" })
 
+  // Add these new state variables at the top of the component with the other state variables:
+  const [isCleaningInProgress, setIsCleaningInProgress] = useState(false)
+  const [cleaningStatus, setCleaningStatus] = useState({
+    emptyRows: true,
+    emptyColumns: true,
+    emptyRowCount: 12,
+    emptyColumnCount: 2,
+    removedEmptyRows: false,
+    removedEmptyColumns: false,
+    removedEmptyRowCount: 0,
+    removedEmptyColumnCount: 0,
+  })
+  const [selectedColumnToRemove, setSelectedColumnToRemove] = useState("")
+  const [highlightedTabs, setHighlightedTabs] = useState({
+    "Project 2": "Inconsistent Headers",
+    "Payment Sheet": "Missing Headers",
+  })
+  const [projectAssignments, setProjectAssignments] = useState({
+    "Project 1": "proj1",
+    "Project 2": "proj3",
+    "Payment Sheet": "proj1",
+  })
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex items-center justify-between">
@@ -620,14 +639,14 @@ export function SheetPreprocessor() {
           <Button variant="outline" onClick={() => router.push("/sheets")}>
             Cancel
           </Button>
-          {currentStep === "save" && (
+          {currentStep === "grouping" && (
             <Button onClick={handleFinish} disabled={isProcessing} className="bg-green-600 hover:bg-green-700">
               {isProcessing ? (
                 "Processing..."
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Finalize Import
+                  Import
                 </>
               )}
             </Button>
@@ -1004,69 +1023,88 @@ export function SheetPreprocessor() {
                   <h3 className="text-sm font-medium mb-3">Sheet Preparation Actions</h3>
 
                   {/* Headers Detection - Only show if any tab has undetected headers */}
-                  {Object.values(headerDetectionStatus).some((status) => status === "undetected") && (
-                    <div className="mb-3 border rounded-md overflow-hidden">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
-                        onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
-                      >
-                        <div className="flex items-center">
+                  <div className="mb-3 border rounded-md overflow-hidden">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                      onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
+                    >
+                      <div className="flex items-center">
+                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ||
+                        Object.values(headerDetectionStatus).some((status) => status === "inconsistent") ? (
                           <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-                          Headers Detection
+                        ) : (
+                          <Check className="h-4 w-4 mr-2 text-green-500" />
+                        )}
+                        Headers Detection
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "headers" ? "transform rotate-90" : ""}`}
+                      />
+                    </Button>
+
+                    {openAccordion === "headers" && (
+                      <div className="border-t p-3 space-y-3 bg-muted/10">
+                        <div className="text-xs text-muted-foreground">
+                          {
+                            Object.values(headerDetectionStatus).filter(
+                              (status) => status === "undetected" || status === "inconsistent",
+                            ).length
+                          }{" "}
+                          tab(s) need header detection or have inconsistent headers
                         </div>
-                        <ChevronRight
-                          className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "headers" ? "transform rotate-90" : ""}`}
-                        />
-                      </Button>
 
-                      {openAccordion === "headers" && (
-                        <div className="border-t p-3 space-y-3 bg-muted/10">
-                          <div className="text-xs text-muted-foreground">
-                            {Object.values(headerDetectionStatus).filter((status) => status === "undetected").length}{" "}
-                            tab(s) need header detection
-                          </div>
-
-                          {Object.entries(headerDetectionStatus)
-                            .filter(([_, status]) => status === "undetected")
-                            .map(([tab]) => (
-                              <div key={tab} className="flex items-center justify-between">
+                        {Object.entries(headerDetectionStatus)
+                          .filter(([_, status]) => status === "undetected" || status === "inconsistent")
+                          .map(([tab]) => (
+                            <div key={tab} className="flex items-center justify-between">
+                              <div className="flex items-center">
                                 <span className="text-sm">{tab}</span>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setHeaderPositions({ ...headerPositions, [tab]: 0 })
-                                    setHeaderDetectionStatus({
-                                      ...headerDetectionStatus,
-                                      [tab]: "detected",
-                                    })
-
-                                    // Add to action history
-                                    setActionHistory([
-                                      ...actionHistory,
-                                      {
-                                        step: "Headers Detection",
-                                        action: `Auto-detected headers for ${tab}`,
-                                        timestamp: new Date().toISOString(),
-                                        details: "Row: 0",
-                                      },
-                                    ])
-
-                                    toast({
-                                      title: "Headers detected",
-                                      description: `Headers for ${tab} have been detected at row 0.`,
-                                    })
-                                  }}
-                                >
-                                  Auto-detect
-                                </Button>
+                                {headerDetectionStatus[tab] === "inconsistent" && (
+                                  <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
+                                    Inconsistent
+                                  </Badge>
+                                )}
                               </div>
-                            ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setHeaderPositions({ ...headerPositions, [tab]: 0 })
+                                  setHeaderDetectionStatus({
+                                    ...headerDetectionStatus,
+                                    [tab]: "detected",
+                                  })
+
+                                  // Highlight the tab in the sheet preview
+                                  const updatedHighlightedTabs = { ...highlightedTabs }
+                                  delete updatedHighlightedTabs[tab] // Remove highlight after fixing
+                                  setHighlightedTabs(updatedHighlightedTabs)
+
+                                  // Add to action history
+                                  setActionHistory([
+                                    ...actionHistory,
+                                    {
+                                      step: "Headers Detection",
+                                      action: `Auto-detected headers for ${tab}`,
+                                      timestamp: new Date().toISOString(),
+                                      details: "Row: 0",
+                                    },
+                                  ])
+
+                                  toast({
+                                    title: "Headers detected",
+                                    description: `Headers for ${tab} have been detected at row 0.`,
+                                  })
+                                }}
+                              >
+                                Auto-detect
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Data Cleaning - Always show */}
                   <div className="mb-3 border rounded-md overflow-hidden">
@@ -1079,7 +1117,9 @@ export function SheetPreprocessor() {
                         <Brush className="h-4 w-4 mr-2 text-blue-500" />
                         Data Cleaning
                       </div>
-                      {sheetData.emptyCells > 0 || sheetData.emptyColumns > 0 ? (
+                      {isCleaningInProgress ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                      ) : cleaningStatus.emptyRows || cleaningStatus.emptyColumns ? (
                         <AlertTriangle className="h-4 w-4 text-amber-500" />
                       ) : (
                         <Check className="h-4 w-4 text-green-500" />
@@ -1088,73 +1128,173 @@ export function SheetPreprocessor() {
 
                     {openAccordion === "cleaning" && (
                       <div className="border-t p-3 space-y-3 bg-muted/10">
-                        {sheetData.emptyCells > 0 && (
+                        {cleaningStatus.emptyRows && (
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Empty Rows</span>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-red-600">
-                                12 detected
+                                {cleaningStatus.emptyRowCount} detected
                               </Badge>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="text-xs"
+                                disabled={isCleaningInProgress}
                                 onClick={() => {
-                                  // Add to action history
-                                  setActionHistory([
-                                    ...actionHistory,
-                                    {
-                                      step: "Data Cleaning",
-                                      action: "Removed empty rows",
-                                      timestamp: new Date().toISOString(),
-                                      details: "12 rows removed",
-                                    },
-                                  ])
+                                  // Set cleaning in progress
+                                  setIsCleaningInProgress(true)
 
-                                  toast({
-                                    title: "Empty rows removed",
-                                    description: "12 empty rows have been removed from the sheet.",
-                                  })
+                                  // Simulate cleaning process
+                                  setTimeout(() => {
+                                    // Update cleaning status
+                                    setCleaningStatus({
+                                      ...cleaningStatus,
+                                      emptyRows: false,
+                                      removedEmptyRows: true,
+                                      removedEmptyRowCount: cleaningStatus.emptyRowCount,
+                                    })
+
+                                    setIsCleaningInProgress(false)
+
+                                    // Add to action history
+                                    setActionHistory([
+                                      ...actionHistory,
+                                      {
+                                        step: "Data Cleaning",
+                                        action: "Removed empty rows",
+                                        timestamp: new Date().toISOString(),
+                                        details: `${cleaningStatus.emptyRowCount} rows removed`,
+                                      },
+                                    ])
+
+                                    toast({
+                                      title: "Empty rows removed",
+                                      description: `${cleaningStatus.emptyRowCount} empty rows have been removed from the sheet.`,
+                                    })
+                                  }, 1000)
                                 }}
                               >
-                                Remove
+                                {isCleaningInProgress ? (
+                                  <div className="flex items-center">
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                    Fixing...
+                                  </div>
+                                ) : (
+                                  "Remove"
+                                )}
                               </Button>
                             </div>
                           </div>
                         )}
 
-                        {sheetData.emptyColumns > 0 && (
+                        {cleaningStatus.emptyColumns && (
                           <div className="flex items-center justify-between">
                             <span className="text-sm">Empty Columns</span>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-red-600">
-                                2 detected
+                                {cleaningStatus.emptyColumnCount} detected
                               </Badge>
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="text-xs"
+                                disabled={isCleaningInProgress}
                                 onClick={() => {
-                                  // Add to action history
-                                  setActionHistory([
-                                    ...actionHistory,
-                                    {
-                                      step: "Data Cleaning",
-                                      action: "Removed empty columns",
-                                      timestamp: new Date().toISOString(),
-                                      details: "2 columns removed",
-                                    },
-                                  ])
+                                  // Set cleaning in progress
+                                  setIsCleaningInProgress(true)
 
-                                  toast({
-                                    title: "Empty columns removed",
-                                    description: "2 empty columns have been removed from the sheet.",
-                                  })
+                                  // Simulate cleaning process
+                                  setTimeout(() => {
+                                    // Update cleaning status
+                                    setCleaningStatus({
+                                      ...cleaningStatus,
+                                      emptyColumns: false,
+                                      removedEmptyColumns: true,
+                                      removedEmptyColumnCount: cleaningStatus.emptyColumnCount,
+                                    })
+
+                                    setIsCleaningInProgress(false)
+
+                                    // Add to action history
+                                    setActionHistory([
+                                      ...actionHistory,
+                                      {
+                                        step: "Data Cleaning",
+                                        action: "Removed empty columns",
+                                        timestamp: new Date().toISOString(),
+                                        details: `${cleaningStatus.emptyColumnCount} columns removed`,
+                                      },
+                                    ])
+
+                                    toast({
+                                      title: "Empty columns removed",
+                                      description: `${cleaningStatus.emptyColumnCount} empty columns have been removed from the sheet.`,
+                                    })
+                                  }, 1000)
                                 }}
                               >
-                                Remove
+                                {isCleaningInProgress ? (
+                                  <div className="flex items-center">
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                    Fixing...
+                                  </div>
+                                ) : (
+                                  "Remove"
+                                )}
                               </Button>
                             </div>
+                          </div>
+                        )}
+
+                        {cleaningStatus.removedEmptyRows && (
+                          <div className="flex items-center justify-between bg-green-50 p-2 rounded-md">
+                            <div className="flex items-center">
+                              <Check className="h-4 w-4 mr-2 text-green-600" />
+                              <span className="text-sm text-green-700">
+                                Removed {cleaningStatus.removedEmptyRowCount} empty rows
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                // For demo purposes, toggle back to show empty rows
+                                setCleaningStatus({
+                                  ...cleaningStatus,
+                                  emptyRows: true,
+                                  removedEmptyRows: false,
+                                })
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+
+                        {cleaningStatus.removedEmptyColumns && (
+                          <div className="flex items-center justify-between bg-green-50 p-2 rounded-md">
+                            <div className="flex items-center">
+                              <Check className="h-4 w-4 mr-2 text-green-600" />
+                              <span className="text-sm text-green-700">
+                                Removed {cleaningStatus.removedEmptyColumnCount} empty columns
+                              </span>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                // For demo purposes, toggle back to show empty columns
+                                setCleaningStatus({
+                                  ...cleaningStatus,
+                                  emptyColumns: true,
+                                  removedEmptyColumns: false,
+                                })
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                            </Button>
                           </div>
                         )}
 
@@ -1187,6 +1327,51 @@ export function SheetPreprocessor() {
                               }}
                             >
                               Unmerge
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-dashed">
+                          <h4 className="text-xs font-medium mb-2">Manual Column Selection</h4>
+                          <div className="flex items-center gap-2">
+                            <Select value={selectedColumnToRemove} onValueChange={setSelectedColumnToRemove}>
+                              <SelectTrigger className="h-7 text-xs flex-1">
+                                <SelectValue placeholder="Select column to remove" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {sheetData?.headers?.map((header, index) => (
+                                  <SelectItem key={index} value={header}>
+                                    {header}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={!selectedColumnToRemove}
+                              onClick={() => {
+                                toast({
+                                  title: "Column removed",
+                                  description: `Column "${selectedColumnToRemove}" has been removed.`,
+                                })
+
+                                // Add to action history
+                                setActionHistory([
+                                  ...actionHistory,
+                                  {
+                                    step: "Data Cleaning",
+                                    action: "Manually removed column",
+                                    timestamp: new Date().toISOString(),
+                                    details: `Column: ${selectedColumnToRemove}`,
+                                  },
+                                ])
+
+                                setSelectedColumnToRemove("")
+                              }}
+                            >
+                              Remove Column
                             </Button>
                           </div>
                         </div>
@@ -1255,8 +1440,24 @@ export function SheetPreprocessor() {
                                   .filter((sheet) => !ignoredTabs[sheet])
                                   .map((sheet, index) => (
                                     <div key={index} className="flex items-center justify-between">
-                                      <span className="text-xs">{sheet}</span>
-                                      <Select defaultValue={index === 0 ? "proj1" : "proj3"} className="w-32">
+                                      <div className="flex items-center">
+                                        <span className="text-xs">{sheet}</span>
+                                        {highlightedTabs[sheet] && (
+                                          <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
+                                            {highlightedTabs[sheet]}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <Select
+                                        defaultValue={index === 0 ? "proj1" : "proj3"}
+                                        className="w-32"
+                                        onValueChange={(value) => {
+                                          // Update project assignments
+                                          const newProjectAssignments = { ...projectAssignments }
+                                          newProjectAssignments[sheet] = value
+                                          setProjectAssignments(newProjectAssignments)
+                                        }}
+                                      >
                                         <SelectTrigger className="h-7 text-xs">
                                           <SelectValue placeholder="Select project" />
                                         </SelectTrigger>
@@ -1274,12 +1475,31 @@ export function SheetPreprocessor() {
                                     </div>
                                   ))}
                               </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-2"
+                                onClick={() => {
+                                  // Show merge confirmation dialog
+                                  setMergeDialogData({
+                                    tabs: Object.keys(projectAssignments),
+                                    compatible: true,
+                                    message: "All selected tabs are compatible for merging",
+                                  })
+
+                                  setShowMergeDialog(true)
+                                }}
+                              >
+                                Merge Tabs & Add Project Column
+                              </Button>
                             </div>
                           )}
                         </div>
                       )}
                     </div>
                   )}
+
                   {/* Tab Merging - Only show if multiple tabs */}
                   {sheetData.sheets.length > 1 && (
                     <div className="mb-3 border rounded-md overflow-hidden">
@@ -1370,6 +1590,11 @@ export function SheetPreprocessor() {
                                         }}
                                       />
                                       <label className="text-sm">{sheet}</label>
+                                      {highlightedTabs[sheet] && (
+                                        <Badge variant="outline" className="text-amber-600 text-xs">
+                                          {highlightedTabs[sheet]}
+                                        </Badge>
+                                      )}
                                     </div>
                                   ))}
                               </div>
@@ -1426,6 +1651,7 @@ export function SheetPreprocessor() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Update the sheet preview section to highlight tabs based on validation state: */}
                       <div className="flex gap-1">
                         {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
                           .filter((sheet) => !ignoredTabs[sheet])
@@ -1434,9 +1660,10 @@ export function SheetPreprocessor() {
                               key={index}
                               variant={sheet === (sheetData.sheetName || "Project 1") ? "secondary" : "ghost"}
                               size="sm"
-                              className="h-6 text-xs px-2"
+                              className={`h-6 text-xs px-2 ${highlightedTabs[sheet] ? "bg-amber-50 border border-amber-200" : ""}`}
                             >
                               {sheet}
+                              {highlightedTabs[sheet] && <AlertTriangle className="h-3 w-3 ml-1 text-amber-500" />}
                             </Button>
                           ))}
                       </div>
@@ -1759,145 +1986,448 @@ export function SheetPreprocessor() {
           </div>
         </TabsContent>
 
-        <TabsContent value="validation" className="mt-0">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setShowActionSummary(!showActionSummary)}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Action Summary</span>
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
-              <SheetDataValidator
-                data={{
-                  columns: sheetData?.headers || [],
-                  rows: sheetData?.rows || [],
-                }}
-                mapping={columnMappings}
-                issues={validationIssues}
-                onIssuesChange={(issues) => {
-                  setValidationIssues(issues)
-
-                  // Add to action history when validation is performed
-                  setActionHistory([
-                    ...actionHistory,
-                    {
-                      step: "Validate Data",
-                      action: "Performed data validation",
-                      timestamp: new Date().toISOString(),
-                      details: `Found ${issues.length} issues`,
-                    },
-                  ])
-                }}
-                transformations={transformations}
-                onTransformationsChange={setTransformations}
-              />
-            </div>
-
-            {showActionSummary && (
-              <div className="md:col-span-1 border-l pl-4">
-                <div className="sticky top-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Action Summary</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowActionSummary(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => (
-                      <div key={index} className="border rounded-md p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {action.step}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(action.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="font-medium mt-1">{action.action}</p>
-                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
         <TabsContent value="review" className="mt-0">
-          <div className="flex justify-end mb-4">
-            <Button
-              variant="outline"
-              className="flex items-center gap-1"
-              onClick={() => setShowActionSummary(!showActionSummary)}
-            >
-              <Settings className="h-4 w-4" />
-              <span>Action Summary</span>
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className={`md:col-span-${showActionSummary ? "2" : "3"}`}>
-              <SheetFinalReview
-                data={{
-                  columns: sheetData?.headers || [],
-                  rows: sheetData?.rows || [],
-                  fileName: sheetData?.fileName || "sample-data.xlsx",
-                  sheetName: sheetData?.sheetName || "Sheet1",
-                  totalRows: sheetData?.totalRows || 0,
-                }}
-                mapping={columnMappings}
-                transformations={transformations}
-                cleanupActions={cleanupActions}
-                validationIssues={validationIssues}
-                initialSetup={initialSetup}
-              />
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Final Review & Analysis</h2>
+              <Button
+                variant="outline"
+                className="flex items-center gap-1"
+                onClick={() => setShowActionSummary(!showActionSummary)}
+              >
+                <Settings className="h-4 w-4" />
+                <span>Action Summary</span>
+              </Button>
             </div>
 
-            {showActionSummary && (
-              <div className="md:col-span-1 border-l pl-4">
-                <div className="sticky top-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium">Action Summary</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                      onClick={() => setShowActionSummary(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Main content area */}
+              <div className={`md:col-span-${showActionSummary ? "2" : "3"} space-y-6`}>
+                {/* Analytics Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Health Score */}
+                  <div className="border rounded-md p-4 flex flex-col items-center justify-center">
+                    <div className="text-3xl font-bold text-green-600">92%</div>
+                    <div className="text-sm font-medium mt-1">Health Score</div>
+                    <div className="text-xs text-muted-foreground mt-1">Based on data quality checks</div>
                   </div>
 
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                    {actionHistory.map((action, index) => (
-                      <div key={index} className="border rounded-md p-2 text-xs">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {action.step}
-                          </Badge>
-                          <span className="text-muted-foreground">
-                            {new Date(action.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="font-medium mt-1">{action.action}</p>
-                        {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                  {/* Issues Summary */}
+                  <div className="border rounded-md p-4">
+                    <h4 className="text-sm font-medium mb-2">Issues Found</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Unmapped columns</span>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                          3
+                        </Badge>
                       </div>
-                    ))}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Duplicate unit IDs</span>
+                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                          2
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Missing values</span>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                          8
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Inconsistent formats</span>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                          5
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Completeness */}
+                  <div className="border rounded-md p-4">
+                    <h4 className="text-sm font-medium mb-2">Data Completeness</h4>
+                    <div className="space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Unit IDs</span>
+                          <span className="text-xs font-medium">100%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "100%" }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Prices</span>
+                          <span className="text-xs font-medium">98%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "98%" }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Property Types</span>
+                          <span className="text-xs font-medium">95%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "95%" }}></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Areas</span>
+                          <span className="text-xs font-medium">92%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-1.5">
+                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "92%" }}></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Distribution and Mapping */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Property Types Distribution */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Property Types Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Apartment</span>
+                            <span className="text-xs font-medium">42% (21 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: "42%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Villa</span>
+                            <span className="text-xs font-medium">28% (14 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Townhouse</span>
+                            <span className="text-xs font-medium">16% (8 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-amber-500 h-2 rounded-full" style={{ width: "16%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Studio</span>
+                            <span className="text-xs font-medium">10% (5 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Penthouse</span>
+                            <span className="text-xs font-medium">4% (2 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-red-500 h-2 rounded-full" style={{ width: "4%" }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Bedroom Distribution */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Bedroom Distribution</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-2">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">Studio</span>
+                            <span className="text-xs font-medium">10% (5 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-slate-500 h-2 rounded-full" style={{ width: "10%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">1 Bedroom</span>
+                            <span className="text-xs font-medium">24% (12 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: "24%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">2 Bedrooms</span>
+                            <span className="text-xs font-medium">36% (18 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "36%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">3 Bedrooms</span>
+                            <span className="text-xs font-medium">20% (10 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-amber-500 h-2 rounded-full" style={{ width: "20%" }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs">4+ Bedrooms</span>
+                            <span className="text-xs font-medium">10% (5 units)</span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-2">
+                            <div className="bg-red-500 h-2 rounded-full" style={{ width: "10%" }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Transformation and Mapping Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Transformation Summary */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Transformation Summary</CardTitle>
+                      <CardDescription className="text-xs">All changes applied to the sheet</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ScrollArea className="h-[180px] pr-4">
+                        <div className="space-y-3">
+                          {transformations.length > 0 ? (
+                            transformations.map((transform, index) => (
+                              <div key={index} className="flex items-start gap-2 pb-2 border-b">
+                                <div className="mt-0.5">
+                                  {transform.type === "split" && <Scissors className="h-4 w-4 text-blue-500" />}
+                                  {transform.type === "merge" && <Merge className="h-4 w-4 text-purple-500" />}
+                                  {transform.type === "standardize" && <Check className="h-4 w-4 text-green-500" />}
+                                  {transform.type === "conditional-update" && (
+                                    <Wand2 className="h-4 w-4 text-amber-500" />
+                                  )}
+                                  {!["split", "merge", "standardize", "conditional-update"].includes(
+                                    transform.type,
+                                  ) && <Brush className="h-4 w-4 text-gray-500" />}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {transform.description || `${transform.type} on ${transform.column}`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {new Date(transform.timestamp).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p>No transformations applied</p>
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  {/* Column Mapping Summary */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm">Column Mapping</CardTitle>
+                      <CardDescription className="text-xs">Sheet columns to system fields mapping</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ScrollArea className="h-[180px] pr-4">
+                        <div className="space-y-1">
+                          {Object.entries(columnMappings).length > 0 ? (
+                            Object.entries(columnMappings).map(([originalColumn, systemField], index) => (
+                              <div key={index} className="flex items-center justify-between py-1 border-b">
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-blue-500" />
+                                  <span className="text-sm">{originalColumn}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                  <Badge variant="outline">{systemField}</Badge>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                              <p>No column mappings defined</p>
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Sheet Preview */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm">Sheet Preview</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Checkbox
+                            id="show-original"
+                            defaultChecked
+                            onCheckedChange={(checked) => {
+                              const originalSection = document.getElementById("original-sheet")
+                              if (originalSection) {
+                                originalSection.style.display = checked ? "block" : "none"
+                              }
+                            }}
+                          />
+                          <label htmlFor="show-original" className="text-xs">
+                            Original
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Checkbox
+                            id="show-transformed"
+                            defaultChecked
+                            onCheckedChange={(checked) => {
+                              const transformedSection = document.getElementById("transformed-sheet")
+                              if (transformedSection) {
+                                transformedSection.style.display = checked ? "block" : "none"
+                              }
+                            }}
+                          />
+                          <label htmlFor="show-transformed" className="text-xs">
+                            Transformed
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-2 gap-0">
+                      <div id="original-sheet" className="border-r">
+                        <div className="p-2 bg-muted/30 border-b">
+                          <h3 className="text-xs font-medium">Original Data</h3>
+                        </div>
+                        <ScrollArea className="h-[250px]">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">#</TableHead>
+                                {sheetData?.headers?.map((header: string, i: number) => (
+                                  <TableHead key={i}>{header}</TableHead>
+                                ))}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                                <TableRow key={rowIndex}>
+                                  <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+                                  {sheetData.headers.map((header: string, colIndex: number) => (
+                                    <TableCell key={colIndex}>{row[header]}</TableCell>
+                                  ))}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
+                      <div id="transformed-sheet">
+                        <div className="p-2 bg-muted/30 border-b">
+                          <h3 className="text-xs font-medium">Transformed Data</h3>
+                        </div>
+                        <ScrollArea className="h-[250px]">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="w-12">#</TableHead>
+                                {sheetData?.headers?.map((header: string, i: number) => (
+                                  <TableHead key={i} className={columnMappings[header] ? "bg-green-50" : ""}>
+                                    {header}
+                                    {columnMappings[header] && (
+                                      <Badge variant="outline" className="ml-2 text-xs">
+                                        {columnMappings[header]}
+                                      </Badge>
+                                    )}
+                                  </TableHead>
+                                ))}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
+                                <TableRow key={rowIndex}>
+                                  <TableCell className="font-medium">{rowIndex + 1}</TableCell>
+                                  {sheetData.headers.map((header: string, colIndex: number) => (
+                                    <TableCell
+                                      key={colIndex}
+                                      className={transformations.some((t) => t.column === header) ? "bg-blue-50" : ""}
+                                    >
+                                      {row[header]}
+                                    </TableCell>
+                                  ))}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            )}
+
+              {/* Action Summary Sidebar */}
+              {showActionSummary && (
+                <div className="md:col-span-1 border-l pl-4">
+                  <div className="sticky top-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-medium">Action Summary</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setShowActionSummary(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                      {actionHistory.map((action, index) => (
+                        <div key={index} className="border rounded-md p-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <Badge variant="outline" className="text-xs">
+                              {action.step}
+                            </Badge>
+                            <span className="text-muted-foreground">
+                              {new Date(action.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          <p className="font-medium mt-1">{action.action}</p>
+                          {action.details && <p className="text-muted-foreground mt-0.5">{action.details}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
 
@@ -1951,61 +2481,6 @@ export function SheetPreprocessor() {
             }}
             mapping={columnMappings}
           />
-        </TabsContent>
-
-        <TabsContent value="save" className="mt-0">
-          <Card className="p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-medium mb-1">Save Processing Preset</h3>
-              <p className="text-muted-foreground text-sm">
-                Save your processing steps as a preset to reuse with similar sheets in the future.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Preset Name</label>
-                <input
-                  type="text"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors"
-                  placeholder="Enter preset name"
-                />
-              </div>
-
-              <div className="border rounded-md p-4 space-y-2">
-                <h4 className="text-sm font-medium">Preset Summary</h4>
-                <div className="space-y-1 text-sm">
-                  <p>
-                    <span className="font-medium">Developer:</span> {initialSetup.developer}
-                  </p>
-                  <p>
-                    <span className="font-medium">Projects:</span>{" "}
-                    {initialSetup.projects.length > 0 ? initialSetup.projects.join(", ") : "None"}
-                  </p>
-                  <p>
-                    <span className="font-medium">Property Type Category:</span> {initialSetup.propertyType}
-                  </p>
-                  <p>
-                    <span className="font-medium">Column Mappings:</span>{" "}
-                    {Object.keys(columnMappings).filter((k) => columnMappings[k]).length} fields
-                  </p>
-                  <p>
-                    <span className="font-medium">Transformations:</span> {transformations.length} actions
-                  </p>
-                  <p>
-                    <span className="font-medium">Cleanup Actions:</span> {cleanupActions.length} actions
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <Button className="mr-2">Save Preset</Button>
-                <Button variant="outline">Save & Apply to Similar Sheets</Button>
-              </div>
-            </div>
-          </Card>
         </TabsContent>
       </Tabs>
 
@@ -2079,7 +2554,7 @@ export function SheetPreprocessor() {
             Step {STEPS.findIndex((step) => step.id === currentStep) + 1} of {STEPS.length}
           </div>
 
-          {currentStep !== STEPS[STEPS.length - 1].id ? (
+          {currentStep !== "grouping" ? (
             <Button
               onClick={handleNext}
               disabled={
@@ -2097,7 +2572,7 @@ export function SheetPreprocessor() {
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Finalize
+                  Import
                 </>
               )}
             </Button>

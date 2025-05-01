@@ -4,10 +4,9 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Check, ChevronsUpDown, X, PenSquare } from "lucide-react"
+import { Building2, Check, ChevronsUpDown, X, PenSquare, Wand2, Eye } from "lucide-react"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -634,36 +633,32 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
                   </div>
                 </div>
               ) : (
-                <div className="mt-3 border rounded-md p-2 bg-background">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs font-medium">Suggested Transformation</h4>
-                    <span className="text-xs text-muted-foreground">Last used: 2023-05-10 • 12 entries</span>
-                  </div>
-
+                <div
+                  className="mt-3 border rounded-md p-2 bg-background hover:bg-muted/20 cursor-pointer transition-colors"
+                  onClick={() => {
+                    // This would open a modal in a real implementation
+                    toast({
+                      title: "Smart Transformations Preview",
+                      description: "This would open a preview modal in a real implementation",
+                    })
+                  }}
+                >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <Select defaultValue={sheetData.suggestedPreset}>
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="Select preset" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={sheetData.suggestedPreset}>
-                            {sheetData.suggestedPreset} (Suggested)
-                          </SelectItem>
-                          {(sheetData.availablePresets || []).map((preset, i) => (
-                            <SelectItem key={i} value={preset}>
-                              {preset}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Maps 8 columns • Transforms 3 fields • Validates 5 rules • Standardizes 4 fields
+                    <div className="flex items-center gap-2">
+                      <div className="bg-purple-100 p-1.5 rounded-full">
+                        <Wand2 className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium">Smart Transformations</h4>
+                        <p className="text-xs text-muted-foreground">AI suggested improvements</p>
                       </div>
                     </div>
-                    <Button size="sm" className="h-8 ml-2">
-                      Apply Preset
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        12 suggestions
+                      </Badge>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
               )}
