@@ -1632,7 +1632,7 @@ export function SheetPreprocessor() {
                       </div>
                     )}
                   </div>
-\
+
                   {/* Tab Merging - Only show if multiple tabs */}
                   {sheetData.sheets.length > 1 && (
                     <div className="mb-3 border rounded-md overflow-hidden">
