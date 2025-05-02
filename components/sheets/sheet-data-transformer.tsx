@@ -2258,13 +2258,11 @@ export function SheetDataTransformer({
                       <span className="text-xs">Trim Whitespace</span>
                     </div>
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      <Check className="h-3 w-3 mr-1" /> Applied to All Columns
+                      <Check className="h-3 w-3 mr-1" /> 7/7 columns
                     </Badge>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
-                    <div className="text-xs text-muted-foreground mb-2">
-                      <em>Note: This is a UI demo for frontend purposes only</em>
-                    </div>
+
                     <div className="max-h-[200px] overflow-y-auto pr-2">
                       <Table className="text-xs">
                         <TableHeader>

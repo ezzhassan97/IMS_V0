@@ -44,7 +44,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SheetPaymentPlansAttachment } from "./sheet-payment-plans-attachment"
@@ -1156,16 +1155,15 @@ export function SheetPreprocessor() {
                 <Card className="p-3">
                   <h3 className="text-sm font-medium mb-3">Sheet Preparation Actions</h3>
 
-                  {/* Headers Detection - Only show if any tab has undetected headers */}
+                  {/* Headers Detection */}
                   <div className="mb-3 border rounded-md overflow-hidden">
                     <Button
                       variant="ghost"
-                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                      className="w-full justify-between text-left p-2 font-medium rounded-none hover:bg-muted/50"
                       onClick={() => setOpenAccordion(openAccordion === "headers" ? null : "headers")}
                     >
                       <div className="flex items-center">
-                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ||
-                        Object.values(headerDetectionStatus).some((status) => status === "inconsistent") ? (
+                        {Object.values(headerDetectionStatus).some((status) => status === "undetected") ? (
                           <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
                         ) : (
                           <Check className="h-4 w-4 mr-2 text-green-500" />
@@ -1178,599 +1176,156 @@ export function SheetPreprocessor() {
                     </Button>
 
                     {openAccordion === "headers" && (
-                      <div className="border-t p-3 space-y-3 bg-muted/10">
-                        <div className="text-xs text-muted-foreground">
-                          {
-                            Object.values(headerDetectionStatus).filter(
-                              (status) => status === "undetected" || status === "inconsistent",
-                            ).length
-                          }{" "}
-                          tab(s) need header detection or have inconsistent headers
-                        </div>
-
-                        {Object.entries(headerDetectionStatus)
-                          .filter(([_, status]) => status === "undetected" || status === "inconsistent")
-                          .map(([tab]) => (
-                            <div key={tab} className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <span className="text-sm">{tab}</span>
-                                {headerDetectionStatus[tab] === "inconsistent" && (
-                                  <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
-                                    Inconsistent
-                                  </Badge>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setHeaderPositions({ ...headerPositions, [tab]: 0 })
-                                  setHeaderDetectionStatus({
-                                    ...headerDetectionStatus,
-                                    [tab]: "detected",
-                                  })
-
-                                  // Highlight the tab in the sheet preview
-                                  const updatedHighlightedTabs = { ...highlightedTabs }
-                                  delete updatedHighlightedTabs[tab] // Remove highlight after fixing
-                                  setHighlightedTabs(updatedHighlightedTabs)
-
-                                  // Add to action history
-                                  setActionHistory([
-                                    ...actionHistory,
-                                    {
-                                      step: "Headers Detection",
-                                      action: `Auto-detected headers for ${tab}`,
-                                      timestamp: new Date().toISOString(),
-                                      details: "Row: 0",
-                                    },
-                                  ])
-
-                                  toast({
-                                    title: "Headers detected",
-                                    description: `Headers for ${tab} have been detected at row 0.`,
-                                  })
-                                }}
-                              >
-                                Auto-detect
-                              </Button>
+                      <div className="border-t p-2 space-y-2 bg-muted/10">
+                        {Object.entries(headerDetectionStatus).map(([tab, status]) => (
+                          <div key={tab} className="flex items-center justify-between text-xs">
+                            <span>{tab}</span>
+                            <div className="flex items-center gap-2">
+                              {status === "detected" ? (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                                  12 headers detected
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-red-50 text-red-700 text-xs">
+                                  No headers
+                                </Badge>
+                              )}
+                              {status === "undetected" && (
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                                    Auto-detect
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                                    Select manually
+                                  </Button>
+                                </div>
+                              )}
                             </div>
-                          ))}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
 
-                  {/* Data Cleaning - Always show */}
+                  {/* Data Cleaning */}
                   <div className="mb-3 border rounded-md overflow-hidden">
                     <Button
                       variant="ghost"
-                      className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
+                      className="w-full justify-between text-left p-2 font-medium rounded-none hover:bg-muted/50"
                       onClick={() => setOpenAccordion(openAccordion === "cleaning" ? null : "cleaning")}
                     >
                       <div className="flex items-center">
                         <Brush className="h-4 w-4 mr-2 text-blue-500" />
                         Data Cleaning
                       </div>
-                      {isCleaningInProgress ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
-                      ) : cleaningStatus.emptyRows || cleaningStatus.emptyColumns ? (
-                        <AlertTriangle className="h-4 w-4 text-amber-500" />
-                      ) : (
-                        <Check className="h-4 w-4 text-green-500" />
-                      )}
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "cleaning" ? "transform rotate-90" : ""}`}
+                      />
                     </Button>
 
                     {openAccordion === "cleaning" && (
-                      <div className="border-t p-3 space-y-3 bg-muted/10">
-                        {cleaningStatus.emptyRows && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Empty Rows</span>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-red-600">
-                                {cleaningStatus.emptyRowCount} detected
-                              </Badge>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs"
-                                disabled={isCleaningInProgress}
-                                onClick={() => {
-                                  // Set cleaning in progress
-                                  setIsCleaningInProgress(true)
-
-                                  // Simulate cleaning process
-                                  setTimeout(() => {
-                                    // Update cleaning status
-                                    setCleaningStatus({
-                                      ...cleaningStatus,
-                                      emptyRows: false,
-                                      removedEmptyRows: true,
-                                      removedEmptyRowCount: cleaningStatus.emptyRowCount,
-                                    })
-
-                                    setIsCleaningInProgress(false)
-
-                                    // Add to action history
-                                    setActionHistory([
-                                      ...actionHistory,
-                                      {
-                                        step: "Data Cleaning",
-                                        action: "Removed empty rows",
-                                        timestamp: new Date().toISOString(),
-                                        details: `${cleaningStatus.emptyRowCount} rows removed`,
-                                      },
-                                    ])
-
-                                    toast({
-                                      title: "Empty rows removed",
-                                      description: `${cleaningStatus.emptyRowCount} empty rows have been removed from the sheet.`,
-                                    })
-                                  }, 1000)
-                                }}
-                              >
-                                {isCleaningInProgress ? (
-                                  <div className="flex items-center">
-                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                    Fixing...
-                                  </div>
-                                ) : (
-                                  "Remove"
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {cleaningStatus.emptyColumns && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">Empty Columns</span>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-red-600">
-                                {cleaningStatus.emptyColumnCount} detected
-                              </Badge>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-xs"
-                                disabled={isCleaningInProgress}
-                                onClick={() => {
-                                  // Set cleaning in progress
-                                  setIsCleaningInProgress(true)
-
-                                  // Simulate cleaning process
-                                  setTimeout(() => {
-                                    // Update cleaning status
-                                    setCleaningStatus({
-                                      ...cleaningStatus,
-                                      emptyColumns: false,
-                                      removedEmptyColumns: true,
-                                      removedEmptyColumnCount: cleaningStatus.emptyColumnCount,
-                                    })
-
-                                    setIsCleaningInProgress(false)
-
-                                    // Add to action history
-                                    setActionHistory([
-                                      ...actionHistory,
-                                      {
-                                        step: "Data Cleaning",
-                                        action: "Removed empty columns",
-                                        timestamp: new Date().toISOString(),
-                                        details: `${cleaningStatus.emptyColumnCount} columns removed`,
-                                      },
-                                    ])
-
-                                    toast({
-                                      title: "Empty columns removed",
-                                      description: `${cleaningStatus.emptyColumnCount} empty columns have been removed from the sheet.`,
-                                    })
-                                  }, 1000)
-                                }}
-                              >
-                                {isCleaningInProgress ? (
-                                  <div className="flex items-center">
-                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                                    Fixing...
-                                  </div>
-                                ) : (
-                                  "Remove"
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
-                        {cleaningStatus.removedEmptyRows && (
-                          <div className="flex items-center justify-between bg-green-50 p-2 rounded-md">
-                            <div className="flex items-center">
-                              <Check className="h-4 w-4 mr-2 text-green-600" />
-                              <span className="text-sm text-green-700">
-                                Removed {cleaningStatus.removedEmptyRowCount} empty rows
-                              </span>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {
-                                // For demo purposes, toggle back to show empty rows
-                                setCleaningStatus({
-                                  ...cleaningStatus,
-                                  emptyRows: true,
-                                  removedEmptyRows: false,
-                                })
-                              }}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-
-                        {cleaningStatus.removedEmptyColumns && (
-                          <div className="flex items-center justify-between bg-green-50 p-2 rounded-md">
-                            <div className="flex items-center">
-                              <Check className="h-4 w-4 mr-2 text-green-600" />
-                              <span className="text-sm text-green-700">
-                                Removed {cleaningStatus.removedEmptyColumnCount} empty columns
-                              </span>
-                            </div>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {
-                                // For demo purposes, toggle back to show empty columns
-                                setCleaningStatus({
-                                  ...cleaningStatus,
-                                  emptyColumns: true,
-                                  removedEmptyColumns: false,
-                                })
-                              }}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm">Merged Cells</span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-amber-600">
-                              3 detected
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs"
-                              onClick={() => {
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Data Cleaning",
-                                    action: "Unmerged cells",
-                                    timestamp: new Date().toISOString(),
-                                    details: "3 merged cells unmerged",
-                                  },
-                                ])
-
-                                toast({
-                                  title: "Cells unmerged",
-                                  description: "3 merged cells have been unmerged.",
-                                })
-                              }}
-                            >
-                              Unmerge
-                            </Button>
-                          </div>
+                      <div className="border-t p-2 space-y-2 bg-muted/10">
+                        <div className="flex items-center justify-between text-xs mb-2">
+                          <span className="font-medium">Select tab:</span>
+                          <Select defaultValue="Project 1" className="w-24 h-7">
+                            <SelectTrigger className="h-6 text-xs">
+                              <SelectValue placeholder="Select tab" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Project 1">Project 1</SelectItem>
+                              <SelectItem value="Project 2">Project 2</SelectItem>
+                              <SelectItem value="Payment Sheet">Payment Sheet</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-dashed">
-                          <h4 className="text-xs font-medium mb-2">Manual Column Selection</h4>
-                          <div className="flex items-center gap-2">
-                            <Select value={selectedColumnToRemove} onValueChange={setSelectedColumnToRemove}>
-                              <SelectTrigger className="h-7 text-xs flex-1">
-                                <SelectValue placeholder="Select column to remove" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {sheetData?.headers?.map((header, index) => (
-                                  <SelectItem key={index} value={header}>
-                                    {header}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs"
-                              disabled={!selectedColumnToRemove}
-                              onClick={() => {
-                                toast({
-                                  title: "Column removed",
-                                  description: `Column "${selectedColumnToRemove}" has been removed.`,
-                                })
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs">Empty Rows</span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-red-600 text-xs">
+                                12 detected
+                              </Badge>
+                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
 
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Data Cleaning",
-                                    action: "Manually removed column",
-                                    timestamp: new Date().toISOString(),
-                                    details: `Column: ${selectedColumnToRemove}`,
-                                  },
-                                ])
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs">Empty Columns</span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-red-600 text-xs">
+                                2 detected
+                              </Badge>
+                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                                Remove
+                              </Button>
+                            </div>
+                          </div>
 
-                                setSelectedColumnToRemove("")
-                              }}
-                            >
-                              Remove Column
-                            </Button>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs">Merged Cells</span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-amber-600 text-xs">
+                                3 detected
+                              </Badge>
+                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                                Unmerge
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Project Assignment - Only show if multiple projects and tabs */}
-                  {projects.length > 1 && sheetData.sheets.length > 1 && (
-                    <div className="mb-3 border rounded-md overflow-hidden">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
-                        onClick={() => setOpenAccordion(openAccordion === "projects" ? null : "projects")}
-                      >
-                        <div className="flex items-center">
-                          <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
-                          Project Assignment
-                        </div>
-                        {useColumnForProjects ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        )}
-                      </Button>
+                  {/* Project Assignment */}
+                  <div className="mb-3 border rounded-md overflow-hidden">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-left p-2 font-medium rounded-none hover:bg-muted/50"
+                      onClick={() => setOpenAccordion(openAccordion === "projects" ? null : "projects")}
+                    >
+                      <div className="flex items-center">
+                        <FileSpreadsheet className="h-4 w-4 mr-2 text-green-500" />
+                        Project Assignment
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "projects" ? "transform rotate-90" : ""}`}
+                      />
+                    </Button>
 
-                      {openAccordion === "projects" && (
-                        <div className="border-t p-3 space-y-3 bg-muted/10">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              id="use-column"
-                              checked={useColumnForProjects}
-                              onCheckedChange={(checked) => {
-                                setUseColumnForProjects(!!checked)
-
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Project Assignment",
-                                    action: checked
-                                      ? "Enabled column-based project assignment"
-                                      : "Disabled column-based project assignment",
-                                    timestamp: new Date().toISOString(),
-                                  },
-                                ])
-
-                                toast({
-                                  title: checked ? "Column-based assignment enabled" : "Tab-based assignment enabled",
-                                  description: checked
-                                    ? "Projects will be assigned based on column values"
-                                    : "Projects will be assigned based on tabs",
-                                })
-                              }}
-                            />
-                            <label htmlFor="use-column" className="text-sm">
-                              Use a column to differentiate between projects
-                            </label>
-                          </div>
-
-                          {!useColumnForProjects && (
-                            <div className="space-y-2 pt-2">
-                              <h5 className="text-xs font-medium">Assign tabs to projects:</h5>
-                              <div className="space-y-2">
-                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                                  .filter((sheet) => !ignoredTabs[sheet])
-                                  .map((sheet, index) => (
-                                    <div key={index} className="flex items-center justify-between">
-                                      <div className="flex items-center">
-                                        <span className="text-xs">{sheet}</span>
-                                        {highlightedTabs[sheet] && (
-                                          <Badge variant="outline" className="ml-2 text-amber-600 text-xs">
-                                            {highlightedTabs[sheet]}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <Select
-                                        defaultValue={index === 0 ? "proj1" : "proj3"}
-                                        className="w-32"
-                                        onValueChange={(value) => {
-                                          // Update project assignments
-                                          const newProjectAssignments = { ...projectAssignments }
-                                          newProjectAssignments[sheet] = value
-                                          setProjectAssignments(newProjectAssignments)
-                                        }}
-                                      >
-                                        <SelectTrigger className="h-7 text-xs">
-                                          <SelectValue placeholder="Select project" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          {projects.map((projId) => {
-                                            const project = PROJECTS.find((p) => p.id === projId)
-                                            return project ? (
-                                              <SelectItem key={projId} value={projId}>
-                                                {project.name}
-                                              </SelectItem>
-                                            ) : null
-                                          })}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  ))}
-                              </div>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-2"
-                                onClick={() => {
-                                  // Show merge confirmation dialog
-                                  setMergeDialogData({
-                                    tabs: Object.keys(projectAssignments),
-                                    compatible: true,
-                                    message: "All selected tabs are compatible for merging",
-                                  })
-
-                                  setShowMergeDialog(true)
-                                }}
-                              >
-                                Merge Tabs & Add Project Column
-                              </Button>
+                    {openAccordion === "projects" && (
+                      <div className="border-t p-2 space-y-2 bg-muted/10">
+                        {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map((sheet, index) => (
+                          <div key={index} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1">
+                              <Checkbox id={`ignore-${sheet}`} className="h-3 w-3" />
+                              <label htmlFor={`ignore-${sheet}`}>{sheet}</label>
                             </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Tab Merging - Only show if multiple tabs */}
-                  {sheetData.sheets.length > 1 && (
-                    <div className="mb-3 border rounded-md overflow-hidden">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between text-left p-3 font-medium rounded-none hover:bg-muted/50"
-                        onClick={() => setOpenAccordion(openAccordion === "merging" ? null : "merging")}
-                      >
-                        <div className="flex items-center">
-                          <Merge className="h-4 w-4 mr-2 text-purple-500" />
-                          Tab Merging
-                        </div>
-                        {mergeTabsEnabled ? (
-                          Object.values(tabsToMerge).some((value) => value) ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <AlertTriangle className="h-4 w-4 text-amber-500" />
-                          )
-                        ) : (
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        )}
-                      </Button>
-
-                      {openAccordion === "merging" && (
-                        <div className="border-t p-3 space-y-3 bg-muted/10">
-                          <div className="flex items-center justify-between">
-                            <label className="text-sm">Merge Multiple Tabs</label>
-                            <Switch
-                              checked={mergeTabsEnabled}
-                              onCheckedChange={(checked) => {
-                                setMergeTabsEnabled(checked)
-
-                                // Add to action history
-                                setActionHistory([
-                                  ...actionHistory,
-                                  {
-                                    step: "Tab Merging",
-                                    action: checked ? "Enabled tab merging" : "Disabled tab merging",
-                                    timestamp: new Date().toISOString(),
-                                  },
-                                ])
-
-                                toast({
-                                  title: checked ? "Tab merging enabled" : "Tab merging disabled",
-                                  description: checked
-                                    ? "You can now select tabs to merge"
-                                    : "Tab merging has been disabled",
-                                })
-                              }}
-                            />
+                            <Select defaultValue={index === 0 ? "proj1" : "proj3"} className="w-24">
+                              <SelectTrigger className="h-6 text-xs">
+                                <SelectValue placeholder="Project" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {PROJECTS.map((project) => (
+                                  <SelectItem key={project.id} value={project.id}>
+                                    {project.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
+                        ))}
 
-                          {mergeTabsEnabled && (
-                            <>
-                              <div className="text-xs text-muted-foreground">Select tabs to merge:</div>
-                              <div className="space-y-1">
-                                {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"])
-                                  .filter((sheet) => !ignoredTabs[sheet])
-                                  .map((sheet, index) => (
-                                    <div key={index} className="flex items-center gap-2">
-                                      <Checkbox
-                                        checked={tabsToMerge[sheet]}
-                                        onCheckedChange={(checked) => {
-                                          const newTabsToMerge = { ...tabsToMerge }
-                                          newTabsToMerge[sheet] = !!checked
-                                          setTabsToMerge(newTabsToMerge)
-
-                                          // Add to action history
-                                          if (checked) {
-                                            setActionHistory([
-                                              ...actionHistory,
-                                              {
-                                                step: "Tab Merging",
-                                                action: `Selected tab for merging: ${sheet}`,
-                                                timestamp: new Date().toISOString(),
-                                              },
-                                            ])
-                                          } else {
-                                            setActionHistory([
-                                              ...actionHistory,
-                                              {
-                                                step: "Tab Merging",
-                                                action: `Deselected tab from merging: ${sheet}`,
-                                                timestamp: new Date().toISOString(),
-                                              },
-                                            ])
-                                          }
-                                        }}
-                                      />
-                                      <label className="text-sm">{sheet}</label>
-                                      {highlightedTabs[sheet] && (
-                                        <Badge variant="outline" className="text-amber-600 text-xs">
-                                          {highlightedTabs[sheet]}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  ))}
-                              </div>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-2"
-                                disabled={!Object.values(tabsToMerge).some((value) => value)}
-                                onClick={() => {
-                                  // Collect selected tabs
-                                  const selectedTabs = Object.entries(tabsToMerge)
-                                    .filter(([_, selected]) => selected)
-                                    .map(([tab]) => tab)
-
-                                  // Simulate validation
-                                  const isCompatible = true // In a real app, you'd check compatibility
-
-                                  // Set dialog data
-                                  setMergeDialogData({
-                                    tabs: selectedTabs,
-                                    compatible: isCompatible,
-                                    message: isCompatible
-                                      ? "All selected tabs are compatible for merging"
-                                      : "Cannot merge tabs with different column structures",
-                                  })
-
-                                  // Show dialog
-                                  setShowMergeDialog(true)
-
-                                  // Close accordion
-                                  setOpenAccordion(null)
-                                }}
-                              >
-                                Validate & Merge Selected Tabs
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        <Button variant="outline" size="sm" className="w-full mt-1 text-xs h-7">
+                          <Merge className="h-3 w-3 mr-1" />
+                          Merge Selected Tabs
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </Card>
               </div>
 
