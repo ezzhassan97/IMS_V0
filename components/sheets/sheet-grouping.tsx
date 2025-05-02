@@ -7,17 +7,13 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
 import {
   Plus,
-  Trash2,
-  ChevronRight,
   ChevronDown,
+  ChevronUp,
   LayoutGrid,
   ListFilter,
   ImageIcon,
@@ -213,10 +209,7 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
         area: [120, 140],
         price: [1200000, 1400000],
         floorPlan: "/corner-two-bedroom-apartment.png",
-        renderImages: [
-          "/city-corner-view.png",
-          "/placeholder.svg?height=200&width=300&query=modern+apartment+panoramic+windows",
-        ],
+        renderImages: ["/city-corner-view.png", "/placeholder.svg?key=vb4tp"],
         units: Array(4)
           .fill(0)
           .map((_, i) => ({
@@ -420,14 +413,245 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="groups">
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+            <p className="text-sm text-blue-700">
+              <strong>Default System Grouping:</strong> Units are grouped by Developer, Project, Phase, Property
+              Category, Property Type, Number of Bedrooms, Floor Plan, and Garden/Roof access.
+            </p>
+          </div>
+
+          <Tabs defaultValue="groupLogic">
             <TabsList className="mb-4">
+              <TabsTrigger value="groupLogic">Grouping Logic</TabsTrigger>
               <TabsTrigger value="groups">Groups ({groups.length})</TabsTrigger>
-              <TabsTrigger value="configuration">Grouping Configuration</TabsTrigger>
               <TabsTrigger value="new-units" className="relative">
                 New Units ({newUnits.length}){newUnits.length > 0 && <Badge className="ml-2 bg-red-500">New</Badge>}
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="groupLogic">
+              <div className="space-y-6">
+                {/* Projects selection for grouping logic */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Project-specific Grouping</h3>
+                  <p className="text-sm text-muted-foreground">Customize how units are grouped for each project.</p>
+
+                  <div className="space-y-6">
+                    {/* Palm Heights Project Grouping */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle>Palm Heights</CardTitle>
+                          <Badge variant="outline">20 Units</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-6">
+                          {/* Left side - Group By */}
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Group By (Drag to Reorder)</label>
+                              <div className="p-4 border rounded-md bg-muted/30">
+                                <div className="space-y-2">
+                                  {["Property Type", "Number of Bedrooms", "Floor Plan", "Garden/Roof Access"].map(
+                                    (field, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center justify-between p-2 bg-background border rounded-md shadow-sm"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                                            {index + 1}
+                                          </span>
+                                          <span>{field}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                            <ChevronUp className="h-3 w-3" />
+                                          </Button>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                            <ChevronDown className="h-3 w-3" />
+                                          </Button>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Add Grouping Fields</label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select field to add..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="floor">Floor</SelectItem>
+                                  <SelectItem value="view">View Type</SelectItem>
+                                  <SelectItem value="price_range">Price Range</SelectItem>
+                                  <SelectItem value="orientation">Orientation</SelectItem>
+                                  <SelectItem value="balcony">Has Balcony</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Right side - Area Range */}
+                          <div className="flex-1 border-l pl-6">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium">Area Range Breakdown</h4>
+                                <Switch defaultChecked id="area-ranges-palm" />
+                              </div>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="text-xs">Default Area Increment (m²)</label>
+                                    <span className="text-xs font-medium">25 m²</span>
+                                  </div>
+                                  <Input type="number" defaultValue="25" className="h-8" />
+                                </div>
+
+                                <div className="space-y-2">
+                                  <h5 className="text-xs font-medium">Property Type Specific Increments</h5>
+                                  <div className="border rounded-md p-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Home className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm">Apartments</span>
+                                      </div>
+                                      <Input type="number" defaultValue="10" className="h-7 w-24" />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Home className="h-4 w-4 text-muted-foreground" />
+                                        <span className="text-sm">Villas</span>
+                                      </div>
+                                      <Input type="number" defaultValue="50" className="h-7 w-24" />
+                                    </div>
+                                    <Button variant="outline" size="sm" className="flex items-center gap-1 w-full">
+                                      <Plus className="h-3 w-3" />
+                                      Add Property Type
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="outline" size="sm" className="ml-auto">
+                          Save Grouping Logic
+                        </Button>
+                      </CardFooter>
+                    </Card>
+
+                    {/* Metro Residences Project Grouping */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle>Metro Residences</CardTitle>
+                          <Badge variant="outline">16 Units</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex gap-6">
+                          {/* Left side - Group By */}
+                          <div className="flex-1 space-y-4">
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Group By (Drag to Reorder)</label>
+                              <div className="p-4 border rounded-md bg-muted/30">
+                                <div className="space-y-2">
+                                  {["Property Type", "Number of Bedrooms", "Phase"].map((field, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center justify-between p-2 bg-background border rounded-md shadow-sm"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
+                                          {index + 1}
+                                        </span>
+                                        <span>{field}</span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                          <ChevronUp className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                          <ChevronDown className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Add Grouping Fields</label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select field to add..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="floor_plan">Floor Plan</SelectItem>
+                                  <SelectItem value="garden">Garden/Roof Access</SelectItem>
+                                  <SelectItem value="view">View Type</SelectItem>
+                                  <SelectItem value="price_range">Price Range</SelectItem>
+                                  <SelectItem value="orientation">Orientation</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          {/* Right side - Area Range */}
+                          <div className="flex-1 border-l pl-6">
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium">Area Range Breakdown</h4>
+                                <Switch defaultChecked id="area-ranges-metro" />
+                              </div>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="text-xs">Default Area Increment (m²)</label>
+                                    <span className="text-xs font-medium">20 m²</span>
+                                  </div>
+                                  <Input type="number" defaultValue="20" className="h-8" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter>
+                        <Button variant="outline" size="sm" className="ml-auto">
+                          Save Grouping Logic
+                        </Button>
+                      </CardFooter>
+                    </Card>
+
+                    <Button className="w-full">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Project
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button variant="outline">Reset to Defaults</Button>
+                  <Button onClick={applyGrouping}>Apply Grouping</Button>
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="groups">
               <div className="space-y-4">
@@ -438,547 +662,491 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
                     onChange={(e) => setFilterValue(e.target.value)}
                     className="max-w-sm"
                   />
+                  <Select>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Projects</SelectItem>
+                      <SelectItem value="palm">Palm Heights</SelectItem>
+                      <SelectItem value="metro">Metro Residences</SelectItem>
+                      <SelectItem value="green">Green Valley</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button variant="outline" size="sm" onClick={() => setFilterValue("")}>
                     Clear
                   </Button>
                 </div>
 
-                {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredGroups.map((group) => (
-                      <Card
-                        key={group.id}
-                        className={`overflow-hidden ${selectedGroup === group.id ? "ring-2 ring-primary" : ""}`}
-                      >
-                        <div className="relative h-40 bg-muted">
-                          {group.renderImages && group.renderImages.length > 0 ? (
-                            <img
-                              src={group.renderImages[0] || "/placeholder.svg"}
-                              alt={group.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2 flex gap-1">
-                            {group.stats.added > 0 && <Badge className="bg-green-500">+{group.stats.added}</Badge>}
-                            {group.stats.removed > 0 && <Badge className="bg-red-500">-{group.stats.removed}</Badge>}
-                            {group.stats.edited > 0 && <Badge className="bg-blue-500">~{group.stats.edited}</Badge>}
-                          </div>
-                        </div>
-                        <CardHeader className="p-4">
-                          <CardTitle className="text-base">{group.name}</CardTitle>
-                          <CardDescription className="line-clamp-2">{group.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-1">
-                              <Building className="h-4 w-4 text-muted-foreground" />
-                              <span>{group.project}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Home className="h-4 w-4 text-muted-foreground" />
-                              <span>{group.unitType}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Bed className="h-4 w-4 text-muted-foreground" />
-                              <span>{group.bedrooms} BR</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Bath className="h-4 w-4 text-muted-foreground" />
-                              <span>
-                                {group.bathrooms[0]}-{group.bathrooms[1]} Bath
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <SquareIcon className="h-4 w-4 text-muted-foreground" />
-                              <span>
-                                {group.area[0]}-{group.area[1]} m²
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="h-4 w-4 text-muted-foreground" />
-                              <span>
-                                {(group.price[0] / 1000000).toFixed(1)}-{(group.price[1] / 1000000).toFixed(1)}M
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="p-4 pt-0 flex justify-between">
-                          <Badge variant="outline">{group.units.length} Units</Badge>
-                          <Button variant="ghost" size="sm" onClick={() => toggleGroupExpansion(group.id)}>
-                            {expandedGroups[group.id] ? "Hide Units" : "Show Units"}
-                          </Button>
-                        </CardFooter>
+                {/* Project sections with groups */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                      <Building className="h-5 w-5" />
+                      Palm Heights
+                    </h3>
 
-                        {expandedGroups[group.id] && (
-                          <div className="border-t p-4">
-                            <h4 className="text-sm font-medium mb-2">Units in this group</h4>
-                            <ScrollArea className="h-48">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Code</TableHead>
-                                    <TableHead>Area</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>Floor</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {group.units.map((unit: any) => (
-                                    <TableRow
-                                      key={unit.id}
-                                      className={
-                                        unit.delta === "added"
-                                          ? "bg-green-50"
-                                          : unit.delta === "removed"
-                                            ? "bg-red-50"
-                                            : unit.delta === "edited"
-                                              ? "bg-blue-50"
-                                              : ""
-                                      }
-                                    >
-                                      <TableCell>{unit.code}</TableCell>
-                                      <TableCell>{unit.area} m²</TableCell>
-                                      <TableCell>{(unit.price / 1000000).toFixed(2)}M</TableCell>
-                                      <TableCell>{unit.floor}</TableCell>
-                                      <TableCell>
-                                        <Badge
-                                          variant={
-                                            unit.status === "Available"
-                                              ? "outline"
-                                              : unit.status === "Reserved"
-                                                ? "secondary"
-                                                : "default"
-                                          }
-                                        >
-                                          {unit.status}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        {unit.delta && (
-                                          <Badge
-                                            className={
-                                              unit.delta === "added"
-                                                ? "bg-green-500"
-                                                : unit.delta === "removed"
-                                                  ? "bg-red-500"
-                                                  : "bg-blue-500"
-                                            }
-                                          >
-                                            {unit.delta === "added"
-                                              ? "New"
-                                              : unit.delta === "removed"
-                                                ? "Removed"
-                                                : "Edited"}
-                                          </Badge>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </ScrollArea>
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredGroups.map((group) => (
-                      <div key={group.id} className="border rounded-md overflow-hidden">
-                        <div
-                          className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleGroupExpansion(group.id)}
-                        >
-                          <div className="flex items-center gap-3">
-                            {expandedGroups[group.id] ? (
-                              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                            ) : (
-                              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                            )}
-                            <div>
-                              <h3 className="font-medium">{group.name}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {group.project} • {group.unitType} • {group.bedrooms} BR • {group.area[0]}-
-                                {group.area[1]} m²
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{group.units.length} Units</Badge>
-                            {group.stats.added > 0 && <Badge className="bg-green-500">+{group.stats.added}</Badge>}
-                            {group.stats.removed > 0 && <Badge className="bg-red-500">-{group.stats.removed}</Badge>}
-                            {group.stats.edited > 0 && <Badge className="bg-blue-500">~{group.stats.edited}</Badge>}
-                          </div>
-                        </div>
-
-                        {expandedGroups[group.id] && (
-                          <div className="border-t p-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div>
-                                <h4 className="text-sm font-medium mb-2">Group Details</h4>
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                  <div className="flex items-center gap-1">
-                                    <Building className="h-4 w-4 text-muted-foreground" />
-                                    <span>{group.project}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Home className="h-4 w-4 text-muted-foreground" />
-                                    <span>{group.unitType}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Bed className="h-4 w-4 text-muted-foreground" />
-                                    <span>{group.bedrooms} BR</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Bath className="h-4 w-4 text-muted-foreground" />
-                                    <span>
-                                      {group.bathrooms[0]}-{group.bathrooms[1]} Bath
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <SquareIcon className="h-4 w-4 text-muted-foreground" />
-                                    <span>
-                                      {group.area[0]}-{group.area[1]} m²
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                    <span>
-                                      {(group.price[0] / 1000000).toFixed(1)}-{(group.price[1] / 1000000).toFixed(1)}M
-                                    </span>
-                                  </div>
+                    <div className="flex flex-col space-y-4">
+                      {filteredGroups
+                        .filter((g) => g.project === "Palm Heights")
+                        .map((group) => (
+                          <Card
+                            key={group.id}
+                            className={`overflow-hidden ${selectedGroup === group.id ? "ring-2 ring-primary" : ""}`}
+                          >
+                            <div className="relative h-40 bg-muted">
+                              {group.renderImages && group.renderImages.length > 0 ? (
+                                <img
+                                  src={group.renderImages[0] || "/placeholder.svg"}
+                                  alt={group.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
                                 </div>
-                              </div>
-
-                              <div>
-                                <h4 className="text-sm font-medium mb-2">Floor Plan & Images</h4>
-                                <div className="flex gap-2">
-                                  {group.floorPlan ? (
-                                    <div className="border rounded-md overflow-hidden w-24 h-24">
-                                      <img
-                                        src={group.floorPlan || "/placeholder.svg"}
-                                        alt="Floor Plan"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className="border rounded-md flex items-center justify-center w-24 h-24 bg-muted">
-                                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                  )}
-
-                                  {group.renderImages &&
-                                    group.renderImages.map((img: string, i: number) => (
-                                      <div key={i} className="border rounded-md overflow-hidden w-24 h-24">
-                                        <img
-                                          src={img || "/placeholder.svg"}
-                                          alt={`Render ${i + 1}`}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            <h4 className="text-sm font-medium mb-2">Units in this group</h4>
-                            <ScrollArea className="h-48">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Code</TableHead>
-                                    <TableHead>Area</TableHead>
-                                    <TableHead>Price</TableHead>
-                                    <TableHead>Floor</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {group.units.map((unit: any) => (
-                                    <TableRow
-                                      key={unit.id}
-                                      className={
-                                        unit.delta === "added"
-                                          ? "bg-green-50"
-                                          : unit.delta === "removed"
-                                            ? "bg-red-50"
-                                            : unit.delta === "edited"
-                                              ? "bg-blue-50"
-                                              : ""
-                                      }
-                                    >
-                                      <TableCell>{unit.code}</TableCell>
-                                      <TableCell>{unit.area} m²</TableCell>
-                                      <TableCell>{(unit.price / 1000000).toFixed(2)}M</TableCell>
-                                      <TableCell>{unit.floor}</TableCell>
-                                      <TableCell>
-                                        <Badge
-                                          variant={
-                                            unit.status === "Available"
-                                              ? "outline"
-                                              : unit.status === "Reserved"
-                                                ? "secondary"
-                                                : "default"
-                                          }
-                                        >
-                                          {unit.status}
-                                        </Badge>
-                                      </TableCell>
-                                      <TableCell>
-                                        {unit.delta && (
-                                          <Badge
-                                            className={
-                                              unit.delta === "added"
-                                                ? "bg-green-500"
-                                                : unit.delta === "removed"
-                                                  ? "bg-red-500"
-                                                  : "bg-blue-500"
-                                            }
-                                          >
-                                            {unit.delta === "added"
-                                              ? "New"
-                                              : unit.delta === "removed"
-                                                ? "Removed"
-                                                : "Edited"}
-                                          </Badge>
-                                        )}
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
-                                </TableBody>
-                              </Table>
-                            </ScrollArea>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="configuration">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Default Grouping Fields</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Units are automatically grouped by these fields. You can enable or disable them.
-                  </p>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="project"
-                        checked={groupingFields.includes("project_name")}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setGroupingFields([...groupingFields, "project_name"])
-                          } else {
-                            setGroupingFields(groupingFields.filter((f) => f !== "project_name"))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="project"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Project
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="unit-type"
-                        checked={groupingFields.includes("unit_type")}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setGroupingFields([...groupingFields, "unit_type"])
-                          } else {
-                            setGroupingFields(groupingFields.filter((f) => f !== "unit_type"))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="unit-type"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Property Type
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="bedrooms"
-                        checked={groupingFields.includes("bedrooms")}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setGroupingFields([...groupingFields, "bedrooms"])
-                          } else {
-                            setGroupingFields(groupingFields.filter((f) => f !== "bedrooms"))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="bedrooms"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Number of Bedrooms
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="floor-plan"
-                        checked={groupingFields.includes("floor_plan")}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setGroupingFields([...groupingFields, "floor_plan"])
-                          } else {
-                            setGroupingFields(groupingFields.filter((f) => f !== "floor_plan"))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="floor-plan"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Floor Plan
-                      </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="garden-roof"
-                        checked={groupingFields.includes("has_garden_or_roof")}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setGroupingFields([...groupingFields, "has_garden_or_roof"])
-                          } else {
-                            setGroupingFields(groupingFields.filter((f) => f !== "has_garden_or_roof"))
-                          }
-                        }}
-                      />
-                      <label
-                        htmlFor="garden-roof"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Has Garden or Roof
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-medium mb-2">Custom Grouping Fields</h3>
-                  <p className="text-sm text-muted-foreground mb-4">Add additional fields to group units by.</p>
-
-                  <div className="flex items-center gap-2 mb-4">
-                    <Select onValueChange={(value) => addCustomGroupingField(value)}>
-                      <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Select field" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="floor">Floor</SelectItem>
-                        <SelectItem value="building">Building</SelectItem>
-                        <SelectItem value="phase">Phase</SelectItem>
-                        <SelectItem value="bathrooms">Number of Bathrooms</SelectItem>
-                        <SelectItem value="view_type">View Type</SelectItem>
-                        <SelectItem value="orientation">Orientation</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Button variant="outline" size="sm">
-                      Add Field
-                    </Button>
-                  </div>
-
-                  {customGroupingFields.length > 0 ? (
-                    <div className="space-y-2">
-                      {customGroupingFields.map((field) => (
-                        <div key={field} className="flex items-center justify-between p-2 border rounded-md">
-                          <span className="text-sm font-medium">
-                            {field.charAt(0).toUpperCase() + field.slice(1).replace("_", " ")}
-                          </span>
-                          <Button variant="ghost" size="sm" onClick={() => removeCustomGroupingField(field)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No custom grouping fields added.</p>
-                  )}
-                </div>
-
-                <Separator />
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-medium">Area Range Segmentation</h3>
-                    <div className="flex items-center space-x-2">
-                      <Switch id="area-ranges" checked={showAreaRanges} onCheckedChange={setShowAreaRanges} />
-                      <label htmlFor="area-ranges" className="text-sm font-medium leading-none">
-                        Enable Area Ranges
-                      </label>
-                    </div>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Segment groups by area ranges to create more specific listings.
-                  </p>
-
-                  {showAreaRanges && (
-                    <div className="space-y-4">
-                      {areaRanges.map((range, index) => (
-                        <div key={index} className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm">
-                                {range[0]} m² - {range[1]} m²
-                              </span>
-                              {index > 0 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeAreaRange(index)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
                               )}
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {group.stats.added > 0 && <Badge className="bg-green-500">+{group.stats.added}</Badge>}
+                                {group.stats.removed > 0 && (
+                                  <Badge className="bg-red-500">-{group.stats.removed}</Badge>
+                                )}
+                                {group.stats.edited > 0 && <Badge className="bg-blue-500">~{group.stats.edited}</Badge>}
+                              </div>
                             </div>
-                            <Slider
-                              value={range}
-                              min={0}
-                              max={500}
-                              step={5}
-                              onValueChange={(values) => updateAreaRange(index, values as [number, number])}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                            <CardHeader className="p-4">
+                              <CardTitle className="text-base">{group.name}</CardTitle>
+                              <CardDescription className="line-clamp-2">{group.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <Building className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.project}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Home className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.unitType}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bed className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.bedrooms} BR</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bath className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.bathrooms[0]}-{group.bathrooms[1]} Bath
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <SquareIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.area[0]}-{group.area[1]} m²
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {(group.price[0] / 1000000).toFixed(1)}-{(group.price[1] / 1000000).toFixed(1)}M
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-4 pt-0 flex justify-between">
+                              <Badge variant="outline">{group.units.length} Units</Badge>
+                              <Button variant="ghost" size="sm" onClick={() => toggleGroupExpansion(group.id)}>
+                                {expandedGroups[group.id] ? "Hide Units" : "Show Units"}
+                              </Button>
+                            </CardFooter>
 
-                      <Button variant="outline" size="sm" onClick={addAreaRange} className="flex items-center gap-1">
-                        <Plus className="h-4 w-4" />
-                        Add Range
-                      </Button>
+                            {expandedGroups[group.id] && (
+                              <div className="border-t p-4">
+                                <h4 className="text-sm font-medium mb-2">Units in this group</h4>
+                                <ScrollArea className="h-48">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Code</TableHead>
+                                        <TableHead>Area</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Floor</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead></TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {group.units.map((unit: any) => (
+                                        <TableRow
+                                          key={unit.id}
+                                          className={
+                                            unit.delta === "added"
+                                              ? "bg-green-50"
+                                              : unit.delta === "removed"
+                                                ? "bg-red-50"
+                                                : unit.delta === "edited"
+                                                  ? "bg-blue-50"
+                                                  : ""
+                                          }
+                                        >
+                                          <TableCell>{unit.code}</TableCell>
+                                          <TableCell>{unit.area} m²</TableCell>
+                                          <TableCell>{(unit.price / 1000000).toFixed(2)}M</TableCell>
+                                          <TableCell>{unit.floor}</TableCell>
+                                          <TableCell>
+                                            <Badge
+                                              variant={
+                                                unit.status === "Available"
+                                                  ? "outline"
+                                                  : unit.status === "Reserved"
+                                                    ? "secondary"
+                                                    : "default"
+                                              }
+                                            >
+                                              {unit.status}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                            {unit.delta && (
+                                              <Badge
+                                                className={
+                                                  unit.delta === "added"
+                                                    ? "bg-green-500"
+                                                    : unit.delta === "removed"
+                                                      ? "bg-red-500"
+                                                      : "bg-blue-500"
+                                                }
+                                              >
+                                                {unit.delta === "added"
+                                                  ? "New"
+                                                  : unit.delta === "removed"
+                                                    ? "Removed"
+                                                    : "Edited"}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </ScrollArea>
+                              </div>
+                            )}
+                          </Card>
+                        ))}
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline">Reset to Defaults</Button>
-                  <Button onClick={applyGrouping}>Apply Grouping</Button>
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                      <Building className="h-5 w-5" />
+                      Metro Residences
+                    </h3>
+
+                    <div className="flex flex-col space-y-4">
+                      {filteredGroups
+                        .filter((g) => g.project === "Metro Residences")
+                        .map((group) => (
+                          <Card
+                            key={group.id}
+                            className={`overflow-hidden ${selectedGroup === group.id ? "ring-2 ring-primary" : ""}`}
+                          >
+                            <div className="relative h-40 bg-muted">
+                              {group.renderImages && group.renderImages.length > 0 ? (
+                                <img
+                                  src={group.renderImages[0] || "/placeholder.svg"}
+                                  alt={group.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {group.stats.added > 0 && <Badge className="bg-green-500">+{group.stats.added}</Badge>}
+                                {group.stats.removed > 0 && (
+                                  <Badge className="bg-red-500">-{group.stats.removed}</Badge>
+                                )}
+                                {group.stats.edited > 0 && <Badge className="bg-blue-500">~{group.stats.edited}</Badge>}
+                              </div>
+                            </div>
+                            <CardHeader className="p-4">
+                              <CardTitle className="text-base">{group.name}</CardTitle>
+                              <CardDescription className="line-clamp-2">{group.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <Building className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.project}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Home className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.unitType}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bed className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.bedrooms} BR</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bath className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.bathrooms[0]}-{group.bathrooms[1]} Bath
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <SquareIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.area[0]}-{group.area[1]} m²
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {(group.price[0] / 1000000).toFixed(1)}-{(group.price[1] / 1000000).toFixed(1)}M
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-4 pt-0 flex justify-between">
+                              <Badge variant="outline">{group.units.length} Units</Badge>
+                              <Button variant="ghost" size="sm" onClick={() => toggleGroupExpansion(group.id)}>
+                                {expandedGroups[group.id] ? "Hide Units" : "Show Units"}
+                              </Button>
+                            </CardFooter>
+
+                            {expandedGroups[group.id] && (
+                              <div className="border-t p-4">
+                                <h4 className="text-sm font-medium mb-2">Units in this group</h4>
+                                <ScrollArea className="h-48">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Code</TableHead>
+                                        <TableHead>Area</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Floor</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead></TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {group.units.map((unit: any) => (
+                                        <TableRow
+                                          key={unit.id}
+                                          className={
+                                            unit.delta === "added"
+                                              ? "bg-green-50"
+                                              : unit.delta === "removed"
+                                                ? "bg-red-50"
+                                                : unit.delta === "edited"
+                                                  ? "bg-blue-50"
+                                                  : ""
+                                          }
+                                        >
+                                          <TableCell>{unit.code}</TableCell>
+                                          <TableCell>{unit.area} m²</TableCell>
+                                          <TableCell>{(unit.price / 1000000).toFixed(2)}M</TableCell>
+                                          <TableCell>{unit.floor}</TableCell>
+                                          <TableCell>
+                                            <Badge
+                                              variant={
+                                                unit.status === "Available"
+                                                  ? "outline"
+                                                  : unit.status === "Reserved"
+                                                    ? "secondary"
+                                                    : "default"
+                                              }
+                                            >
+                                              {unit.status}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                            {unit.delta && (
+                                              <Badge
+                                                className={
+                                                  unit.delta === "added"
+                                                    ? "bg-green-500"
+                                                    : unit.delta === "removed"
+                                                      ? "bg-red-500"
+                                                      : "bg-blue-500"
+                                                }
+                                              >
+                                                {unit.delta === "added"
+                                                  ? "New"
+                                                  : unit.delta === "removed"
+                                                    ? "Removed"
+                                                    : "Edited"}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </ScrollArea>
+                              </div>
+                            )}
+                          </Card>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold flex items-center gap-2 mb-3">
+                      <Building className="h-5 w-5" />
+                      Green Valley
+                    </h3>
+
+                    <div className="flex flex-col space-y-4">
+                      {filteredGroups
+                        .filter((g) => g.project === "Green Valley")
+                        .map((group) => (
+                          <Card
+                            key={group.id}
+                            className={`overflow-hidden ${selectedGroup === group.id ? "ring-2 ring-primary" : ""}`}
+                          >
+                            <div className="relative h-40 bg-muted">
+                              {group.renderImages && group.renderImages.length > 0 ? (
+                                <img
+                                  src={group.renderImages[0] || "/placeholder.svg"}
+                                  alt={group.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center h-full">
+                                  <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                                </div>
+                              )}
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                {group.stats.added > 0 && <Badge className="bg-green-500">+{group.stats.added}</Badge>}
+                                {group.stats.removed > 0 && (
+                                  <Badge className="bg-red-500">-{group.stats.removed}</Badge>
+                                )}
+                                {group.stats.edited > 0 && <Badge className="bg-blue-500">~{group.stats.edited}</Badge>}
+                              </div>
+                            </div>
+                            <CardHeader className="p-4">
+                              <CardTitle className="text-base">{group.name}</CardTitle>
+                              <CardDescription className="line-clamp-2">{group.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="flex items-center gap-1">
+                                  <Building className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.project}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Home className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.unitType}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bed className="h-4 w-4 text-muted-foreground" />
+                                  <span>{group.bedrooms} BR</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Bath className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.bathrooms[0]}-{group.bathrooms[1]} Bath
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <SquareIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {group.area[0]}-{group.area[1]} m²
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                  <span>
+                                    {(group.price[0] / 1000000).toFixed(1)}-{(group.price[1] / 1000000).toFixed(1)}M
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                            <CardFooter className="p-4 pt-0 flex justify-between">
+                              <Badge variant="outline">{group.units.length} Units</Badge>
+                              <Button variant="ghost" size="sm" onClick={() => toggleGroupExpansion(group.id)}>
+                                {expandedGroups[group.id] ? "Hide Units" : "Show Units"}
+                              </Button>
+                            </CardFooter>
+
+                            {expandedGroups[group.id] && (
+                              <div className="border-t p-4">
+                                <h4 className="text-sm font-medium mb-2">Units in this group</h4>
+                                <ScrollArea className="h-48">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Code</TableHead>
+                                        <TableHead>Area</TableHead>
+                                        <TableHead>Price</TableHead>
+                                        <TableHead>Floor</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead></TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {group.units.map((unit: any) => (
+                                        <TableRow
+                                          key={unit.id}
+                                          className={
+                                            unit.delta === "added"
+                                              ? "bg-green-50"
+                                              : unit.delta === "removed"
+                                                ? "bg-red-50"
+                                                : unit.delta === "edited"
+                                                  ? "bg-blue-50"
+                                                  : ""
+                                          }
+                                        >
+                                          <TableCell>{unit.code}</TableCell>
+                                          <TableCell>{unit.area} m²</TableCell>
+                                          <TableCell>{(unit.price / 1000000).toFixed(2)}M</TableCell>
+                                          <TableCell>{unit.floor}</TableCell>
+                                          <TableCell>
+                                            <Badge
+                                              variant={
+                                                unit.status === "Available"
+                                                  ? "outline"
+                                                  : unit.status === "Reserved"
+                                                    ? "secondary"
+                                                    : "default"
+                                              }
+                                            >
+                                              {unit.status}
+                                            </Badge>
+                                          </TableCell>
+                                          <TableCell>
+                                            {unit.delta && (
+                                              <Badge
+                                                className={
+                                                  unit.delta === "added"
+                                                    ? "bg-green-500"
+                                                    : unit.delta === "removed"
+                                                      ? "bg-red-500"
+                                                      : "bg-blue-500"
+                                                }
+                                              >
+                                                {unit.delta === "added"
+                                                  ? "New"
+                                                  : unit.delta === "removed"
+                                                    ? "Removed"
+                                                    : "Edited"}
+                                              </Badge>
+                                            )}
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                </ScrollArea>
+                              </div>
+                            )}
+                          </Card>
+                        ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -1016,6 +1184,7 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
                               <TableHead>Area</TableHead>
                               <TableHead>Price</TableHead>
                               <TableHead>Status</TableHead>
+                              <TableHead>Suggested Group</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1030,6 +1199,18 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
                                 <TableCell>
                                   <Badge variant="outline">{unit.status}</Badge>
                                 </TableCell>
+                                <TableCell>
+                                  <Select>
+                                    <SelectTrigger className="w-full max-w-[180px]">
+                                      <SelectValue placeholder="Select group" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="create">Create New Group</SelectItem>
+                                      <SelectItem value="similar">Similar to Group #3</SelectItem>
+                                      <SelectItem value="force">Force into Group #5</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -1037,7 +1218,10 @@ export function SheetGrouping({ data, mapping }: SheetGroupingProps) {
                       </CardContent>
                       <CardFooter className="flex justify-between">
                         <Button variant="outline">Modify Grouping Rules</Button>
-                        <Button onClick={createNewGroup}>Create New Groups</Button>
+                        <div className="flex gap-2">
+                          <Button variant="secondary">Create Individual Groups</Button>
+                          <Button onClick={createNewGroup}>Create New Groups</Button>
+                        </div>
                       </CardFooter>
                     </Card>
                   </>

@@ -1,13 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -44,6 +43,7 @@ interface SheetPaymentPlansAttachmentProps {
     totalRows: number
   }
   mapping: Record<string, string>
+  priceColumns?: string[] // Added to support multiple price columns
 }
 
 // Mock payment plans data
@@ -120,7 +120,7 @@ const MOCK_PAYMENT_PLANS = [
   },
 ]
 
-export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlansAttachmentProps) {
+export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: SheetPaymentPlansAttachmentProps) {
   const [paymentPlans, setPaymentPlans] = useState(MOCK_PAYMENT_PLANS)
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -141,6 +141,23 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [activeTab, setActiveTab] = useState("all")
   const [showAssignmentSummary, setShowAssignmentSummary] = useState(false)
+  const [planForPrice2, setPlanForPrice2] = useState<Record<number, string>>({})
+
+  // Function to handle plan selection for Price 2
+  const handlePlanForPrice2 = useCallback(
+    (rowIndex: number, planId: string | null) => {
+      setPlanForPrice2((prev) => {
+        const updatedPlans = { ...prev }
+        if (planId) {
+          updatedPlans[rowIndex] = planId
+        } else {
+          delete updatedPlans[rowIndex]
+        }
+        return updatedPlans
+      })
+    },
+    [setPlanForPrice2],
+  )
 
   // Filter payment plans based on search term and active tab
   const filteredPaymentPlans = paymentPlans.filter((plan) => {
@@ -240,9 +257,24 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
           <p className="text-sm text-muted-foreground">Attach payment plans to units before finalizing the import</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowAssignmentSummary(!showAssignmentSummary)}>
-            {showAssignmentSummary ? "Hide" : "Show"} Assignment Summary
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select defaultValue="all">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Projects</SelectItem>
+                <SelectItem value="palm-hills">Palm Hills October</SelectItem>
+                <SelectItem value="marassi">Marassi North Coast</SelectItem>
+                <SelectItem value="mountain-view">Mountain View iCity</SelectItem>
+                <SelectItem value="zed-east">Zed East</SelectItem>
+                <SelectItem value="sodic-east">SODIC East</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => setShowAssignmentSummary(!showAssignmentSummary)}>
+              {showAssignmentSummary ? "Hide" : "Show"} Summary
+            </Button>
+          </div>
           <Dialog open={autoAssignDialogOpen} onOpenChange={setAutoAssignDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -438,11 +470,15 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      {data.columns.slice(0, 5).map((column, index) => (
-                        <TableHead key={index}>{column}</TableHead>
+                      <TableHead className="w-[40px]"></TableHead>
+                      {data.columns.slice(0, 3).map((column, index) => (
+                        <TableHead key={index} className="whitespace-nowrap">
+                          {column}
+                        </TableHead>
                       ))}
-                      <TableHead>Payment Plan</TableHead>
+                      <TableHead>Price 1</TableHead>
+                      <TableHead>Price 2</TableHead>
+                      <TableHead>Payment Plans</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -451,54 +487,90 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
                       const assignedPlanId = rowPaymentPlans[absoluteRowIndex]
                       const assignedPlan = paymentPlans.find((plan) => plan.id === assignedPlanId)
 
+                      // Mock data for second price column - in real implementation this would come from the data
+                      const price1 = row["Price"] || row["Price (EGP)"] || "N/A"
+                      const price2 = Number(price1) * 0.9 // Just for demonstration - 10% discount
+
                       return (
-                        <TableRow key={rowIndex}>
-                          <TableCell>
+                        <TableRow key={rowIndex} className="h-[60px]">
+                          <TableCell className="p-2">
                             <Checkbox
                               checked={selectedRows.includes(absoluteRowIndex)}
                               onCheckedChange={() => toggleRowSelection(absoluteRowIndex)}
                             />
                           </TableCell>
-                          {data.columns.slice(0, 5).map((column, colIndex) => (
-                            <TableCell key={colIndex}>{row[column]}</TableCell>
+                          {data.columns.slice(0, 3).map((column, colIndex) => (
+                            <TableCell key={colIndex} className="p-2">
+                              {row[column]}
+                            </TableCell>
                           ))}
-                          <TableCell>
+                          <TableCell className="p-2 font-medium">
+                            {typeof price1 === "number"
+                              ? new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price1)
+                              : price1}
+                          </TableCell>
+                          <TableCell className="p-2 font-medium">
+                            {typeof price2 === "number"
+                              ? new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price2)
+                              : price2}
+                          </TableCell>
+                          <TableCell className="p-2">
                             {assignedPlan ? (
-                              <div className="flex items-center justify-between">
-                                <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-                                  {assignedPlan.name}
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    const newRowPaymentPlans = { ...rowPaymentPlans }
-                                    delete newRowPaymentPlans[absoluteRowIndex]
-                                    setRowPaymentPlans(newRowPaymentPlans)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                  <Badge className="bg-green-100 text-green-800 hover:bg-green-200 text-xs">
+                                    {assignedPlan.name}
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => {
+                                      const newRowPaymentPlans = { ...rowPaymentPlans }
+                                      delete newRowPaymentPlans[absoluteRowIndex]
+                                      setRowPaymentPlans(newRowPaymentPlans)
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <Button variant="ghost" size="sm" className="h-6 text-xs justify-start px-1">
+                                  <Plus className="h-3 w-3 mr-1" /> Add plan for Price 2
                                 </Button>
                               </div>
                             ) : (
-                              <Select
-                                onValueChange={(value) => {
-                                  const newRowPaymentPlans = { ...rowPaymentPlans }
-                                  newRowPaymentPlans[absoluteRowIndex] = value
-                                  setRowPaymentPlans(newRowPaymentPlans)
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select plan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {paymentPlans.map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.id}>
-                                      {plan.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex flex-col gap-1">
+                                <Select
+                                  onValueChange={(value) => {
+                                    const newRowPaymentPlans = { ...rowPaymentPlans }
+                                    newRowPaymentPlans[absoluteRowIndex] = value
+                                    setRowPaymentPlans(newRowPaymentPlans)
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Select plan for Price 1" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {paymentPlans.map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.id}>
+                                        {plan.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Select onValueChange={(value) => handlePlanForPrice2(absoluteRowIndex, value)}>
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Select plan for Price 2" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {paymentPlans.map((plan) => (
+                                      <SelectItem key={plan.id} value={plan.id}>
+                                        {plan.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             )}
                           </TableCell>
                         </TableRow>
@@ -602,20 +674,23 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
                 </Dialog>
               </div>
               <CardDescription>Available payment plans for assignment</CardDescription>
-              <div className="flex items-center mt-2">
+              <div className="flex items-center mt-2 gap-2">
                 <Input
                   placeholder="Search plans..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="mr-2"
+                  className="flex-1"
                 />
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="all">All</TabsTrigger>
-                    <TabsTrigger value="assigned">Assigned</TabsTrigger>
-                    <TabsTrigger value="unassigned">Unassigned</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <Select defaultValue="all" onValueChange={(value) => setActiveTab(value)}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Plans</SelectItem>
+                    <SelectItem value="assigned">Assigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -625,6 +700,14 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
                     filteredPaymentPlans.map((plan) => {
                       const isAssigned = Object.values(rowPaymentPlans).includes(plan.id)
                       const assignedCount = Object.values(rowPaymentPlans).filter((id) => id === plan.id).length
+                      const [isExpanded, setIsExpanded] = useState(false)
+
+                      // Format duration in years and months
+                      const years = Math.floor(plan.duration / 12)
+                      const months = plan.duration % 12
+                      const durationText = `${years > 0 ? `${years} year${years > 1 ? "s" : ""}` : ""}${
+                        months > 0 ? `${years > 0 ? " & " : ""}${months} month${months > 1 ? "s" : ""}` : ""
+                      }`
 
                       return (
                         <Card key={plan.id} className={`border ${isAssigned ? "border-green-200" : ""}`}>
@@ -648,32 +731,69 @@ export function SheetPaymentPlansAttachment({ data, mapping }: SheetPaymentPlans
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                                <span>{plan.installments} Installments</span>
+                                <span>{durationText}</span>
                               </div>
                               <div className="flex items-center">
                                 <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
-                                <span>{plan.duration} Months</span>
+                                <span>{plan.installments} Installments</span>
                               </div>
                               <div className="flex items-center">
                                 <Percent className="h-4 w-4 mr-1 text-muted-foreground" />
                                 <span>{plan.cashDiscount}% Cash Discount</span>
                               </div>
                             </div>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t">
+                                <h4 className="text-sm font-medium mb-2">Additional Details</h4>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div className="flex items-center">
+                                    <span className="text-muted-foreground mr-1">Maintenance:</span>
+                                    <span>{plan.maintenanceFee}%</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <span className="text-muted-foreground mr-1">Clubhouse:</span>
+                                    <span>{plan.clubhouseFee}%</span>
+                                  </div>
+                                </div>
+
+                                <h4 className="text-sm font-medium mt-3 mb-2">Application Conditions</h4>
+                                <div className="text-sm bg-muted/30 p-2 rounded-md">
+                                  {plan.applicableUnitTypes?.length ? (
+                                    <div className="flex flex-wrap gap-1 mb-1">
+                                      <span className="text-muted-foreground">Unit types:</span>
+                                      {plan.applicableUnitTypes.map((type) => (
+                                        <Badge key={type} variant="outline" className="text-xs">
+                                          {type}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-muted-foreground">Applies to all units</p>
+                                  )}
+                                  <Button variant="ghost" size="sm" className="mt-1 h-7 text-xs">
+                                    <Edit className="h-3 w-3 mr-1" /> Edit conditions
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
                           <CardFooter className="p-4 pt-0 flex justify-between">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedPlan(plan.id)
-                                if (selectedRows.length === 0) {
-                                  // If no rows selected, show a message or prompt to select rows
-                                }
-                              }}
-                            >
-                              <Link2 className="mr-2 h-4 w-4" />
-                              Assign
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedPlan(plan.id)
+                                }}
+                              >
+                                <Link2 className="mr-2 h-4 w-4" />
+                                Assign
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+                                {isExpanded ? "Less" : "More"} details
+                              </Button>
+                            </div>
                             <div className="flex items-center gap-2">
                               <Button variant="ghost" size="icon">
                                 <Edit className="h-4 w-4" />
