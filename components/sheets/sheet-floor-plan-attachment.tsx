@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/components/ui/use-toast"
 import { Check, Filter, ImageIcon, Plus, Search, Upload, X } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 // Mock floor plan data
 const MOCK_FLOOR_PLANS = [
@@ -83,12 +84,6 @@ const MOCK_FLOOR_PLANS = [
 // Add these mock data constants after MOCK_FLOOR_PLANS
 const MOCK_PROJECTS = ["Marina Heights", "Palm Gardens", "Downtown Square", "Sunset Hills"]
 const MOCK_PHASES = ["Phase 1", "Phase 2", "Phase 3", "Phase 4"]
-const MOCK_PAYMENT_PLANS = [
-  { id: "pp-1", name: "Standard 5/95", type: "Standard" },
-  { id: "pp-2", name: "Flexible 10/90", type: "Flexible" },
-  { id: "pp-3", name: "Premium 15/85", type: "Premium" },
-  { id: "pp-4", name: "Custom 20/80", type: "Custom" },
-]
 
 interface SheetFloorPlanAttachmentProps {
   data: {
@@ -114,7 +109,9 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showAssignmentSummary, setShowAssignmentSummary] = useState(true)
   const [selectedUnits, setSelectedUnits] = useState<string[]>([])
-  const [unitAssignments, setUnitAssignments] = useState<Record<string, string>>({})
+
+  // Change from single assignment to multiple assignments per unit
+  const [unitAssignments, setUnitAssignments] = useState<Record<string, string[]>>({})
 
   // Filter floor plans based on search term and type filter
   const filteredFloorPlans = floorPlans.filter((plan) => {
@@ -149,23 +146,24 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
 
   // Auto-assign floor plans based on unit type and area
   const handleAutoAssign = () => {
-    const newAssignments: Record<string, string> = { ...unitAssignments }
+    const newAssignments: Record<string, string[]> = { ...unitAssignments }
 
     data.rows.forEach((row) => {
       const unitId = getUnitId(row)
       const unitType = getUnitType(row)
       const unitArea = Number.parseFloat(getUnitArea(row))
 
-      // Find matching floor plan
-      const matchingPlan = floorPlans.find((plan) => {
+      // Find matching floor plans
+      const matchingPlans = floorPlans.filter((plan) => {
         if (plan.type !== unitType) return false
 
         const [minArea, maxArea] = plan.area.split("-").map((a) => Number.parseFloat(a))
         return unitArea >= minArea && unitArea <= maxArea
       })
 
-      if (matchingPlan) {
-        newAssignments[unitId] = matchingPlan.id
+      if (matchingPlans.length > 0) {
+        // Assign the first matching plan
+        newAssignments[unitId] = [matchingPlans[0].id]
       }
     })
 
@@ -190,7 +188,14 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
 
     const newAssignments = { ...unitAssignments }
     selectedUnits.forEach((unitId) => {
-      newAssignments[unitId] = selectedFloorPlan
+      // Add to existing assignments or create new array
+      if (newAssignments[unitId]) {
+        if (!newAssignments[unitId].includes(selectedFloorPlan)) {
+          newAssignments[unitId] = [...newAssignments[unitId], selectedFloorPlan]
+        }
+      } else {
+        newAssignments[unitId] = [selectedFloorPlan]
+      }
     })
 
     setUnitAssignments(newAssignments)
@@ -200,6 +205,24 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
       title: "Floor plan assigned",
       description: `Assigned floor plan to ${selectedUnits.length} units.`,
     })
+  }
+
+  // Toggle a floor plan for a unit
+  const toggleFloorPlan = (unitId: string, floorPlanId: string) => {
+    const newAssignments = { ...unitAssignments }
+
+    if (!newAssignments[unitId]) {
+      newAssignments[unitId] = [floorPlanId]
+    } else if (newAssignments[unitId].includes(floorPlanId)) {
+      newAssignments[unitId] = newAssignments[unitId].filter((id) => id !== floorPlanId)
+      if (newAssignments[unitId].length === 0) {
+        delete newAssignments[unitId]
+      }
+    } else {
+      newAssignments[unitId] = [...newAssignments[unitId], floorPlanId]
+    }
+
+    setUnitAssignments(newAssignments)
   }
 
   // Handle upload of new floor plan
@@ -298,206 +321,164 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left side - Units table */}
         <div className="md:col-span-2 space-y-4">
-          <Card className="overflow-hidden">
+          <Card>
             <CardHeader className="pb-1">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Units</CardTitle>
-                {selectedUnits.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{selectedUnits.length} units selected</span>
-                    <Button size="sm" onClick={handleBulkAssign} disabled={!selectedFloorPlan}>
-                      Assign Selected
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setSelectedUnits([])}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                <div className="flex items-center gap-2">
+                  {selectedUnits.length > 0 && (
+                    <>
+                      <span className="text-sm text-muted-foreground">{selectedUnits.length} units selected</span>
+                      <Button size="sm" onClick={handleBulkAssign} disabled={!selectedFloorPlan}>
+                        Assign Selected
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedUnits([])}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  <div className="text-sm text-muted-foreground">
+                    Select a floor plan from the right panel to assign
                   </div>
-                )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="relative">
-                <ScrollArea className="h-[600px]">
-                  <div className="overflow-auto">
-                    <Table className="text-sm min-w-[1200px]">
-                      <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                          <TableHead className="w-10 p-2">
+              <div className="overflow-auto" style={{ maxHeight: "600px" }}>
+                <Table className="text-sm min-w-[1200px]">
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="sticky top-0 bg-white z-10 w-10 p-2">
+                        <Checkbox
+                          checked={selectedUnits.length === data.rows.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedUnits(data.rows.map((row) => getUnitId(row)))
+                            } else {
+                              setSelectedUnits([])
+                            }
+                          }}
+                        />
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Project</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Phase</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Unit ID</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Property Type</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Sub-Type</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Floor</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Area</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Garden</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Roof</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2">Price</TableHead>
+                      <TableHead className="sticky top-0 bg-white z-10 p-2 w-[300px]">Floor Plans</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.rows.map((row, index) => {
+                      const unitId = getUnitId(row)
+                      const unitType = getUnitType(row)
+                      const unitArea = getUnitArea(row)
+                      const assignedFloorPlans = unitAssignments[unitId] || []
+
+                      // Get floor plan objects from IDs
+                      const assignedFloorPlanObjects = assignedFloorPlans
+                        .map((id) => floorPlans.find((plan) => plan.id === id))
+                        .filter(Boolean)
+
+                      // Mock data for the new columns
+                      const project = MOCK_PROJECTS[index % MOCK_PROJECTS.length]
+                      const phase = MOCK_PHASES[index % MOCK_PHASES.length]
+                      const subType = unitType === "1BR" ? "Standard" : unitType === "2BR" ? "Deluxe" : "Premium"
+                      const floor = Math.floor(Math.random() * 20) + 1
+                      const gardenArea = Math.random() > 0.7 ? Math.floor(Math.random() * 50) + 10 : 0
+                      const roofArea = Math.random() > 0.8 ? Math.floor(Math.random() * 40) + 15 : 0
+                      const price = Math.floor(Math.random() * 5000000) + 1000000
+                      const formattedPrice = new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: "USD",
+                      }).format(price)
+
+                      // Get compatible floor plans for this unit type
+                      const compatibleFloorPlans = floorPlans.filter((plan) => plan.type === unitType)
+
+                      return (
+                        <TableRow key={index} className="hover:bg-gray-50">
+                          <TableCell className="p-2">
                             <Checkbox
-                              checked={selectedUnits.length === data.rows.length}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedUnits(data.rows.map((row) => getUnitId(row)))
-                                } else {
-                                  setSelectedUnits([])
-                                }
-                              }}
+                              checked={selectedUnits.includes(unitId)}
+                              onCheckedChange={() => toggleUnitSelection(unitId)}
                             />
-                          </TableHead>
-                          <TableHead className="p-2">Project</TableHead>
-                          <TableHead className="p-2">Phase</TableHead>
-                          <TableHead className="p-2">Unit ID</TableHead>
-                          <TableHead className="p-2">Property Type</TableHead>
-                          <TableHead className="p-2">Sub-Type</TableHead>
-                          <TableHead className="p-2">Floor</TableHead>
-                          <TableHead className="p-2">Area</TableHead>
-                          <TableHead className="p-2">Garden</TableHead>
-                          <TableHead className="p-2">Roof</TableHead>
-                          <TableHead className="p-2">Price</TableHead>
-                          <TableHead className="p-2">Floor Plan</TableHead>
-                          <TableHead className="p-2">Floor Plan Tags</TableHead>
-                          <TableHead className="p-2">Payment Plan</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.rows.map((row, index) => {
-                          const unitId = getUnitId(row)
-                          const unitType = getUnitType(row)
-                          const unitArea = getUnitArea(row)
-                          const assignedFloorPlan = unitAssignments[unitId]
-                          const floorPlanName = assignedFloorPlan
-                            ? floorPlans.find((p) => p.id === assignedFloorPlan)?.name || "Unknown"
-                            : "Not assigned"
-
-                          // Mock data for the new columns
-                          const project = MOCK_PROJECTS[index % MOCK_PROJECTS.length]
-                          const phase = MOCK_PHASES[index % MOCK_PHASES.length]
-                          const subType = unitType === "1BR" ? "Standard" : unitType === "2BR" ? "Deluxe" : "Premium"
-                          const floor = Math.floor(Math.random() * 20) + 1
-                          const gardenArea = Math.random() > 0.7 ? Math.floor(Math.random() * 50) + 10 : 0
-                          const roofArea = Math.random() > 0.8 ? Math.floor(Math.random() * 40) + 15 : 0
-                          const price = Math.floor(Math.random() * 5000000) + 1000000
-                          const formattedPrice = new Intl.NumberFormat("en-US", {
-                            style: "currency",
-                            currency: "USD",
-                          }).format(price)
-
-                          // Random payment plan assignment
-                          const paymentPlanId =
-                            Math.random() > 0.3 ? MOCK_PAYMENT_PLANS[index % MOCK_PAYMENT_PLANS.length].id : ""
-
-                          return (
-                            <TableRow key={index} className="hover:bg-gray-50">
-                              <TableCell className="p-2">
-                                <Checkbox
-                                  checked={selectedUnits.includes(unitId)}
-                                  onCheckedChange={() => toggleUnitSelection(unitId)}
-                                />
-                              </TableCell>
-                              <TableCell className="p-2">{project}</TableCell>
-                              <TableCell className="p-2">{phase}</TableCell>
-                              <TableCell className="p-2 font-medium">{unitId}</TableCell>
-                              <TableCell className="p-2">{unitType}</TableCell>
-                              <TableCell className="p-2">{subType}</TableCell>
-                              <TableCell className="p-2">{floor}</TableCell>
-                              <TableCell className="p-2">{unitArea}</TableCell>
-                              <TableCell className="p-2">{gardenArea > 0 ? `${gardenArea} sqm` : "-"}</TableCell>
-                              <TableCell className="p-2">{roofArea > 0 ? `${roofArea} sqm` : "-"}</TableCell>
-                              <TableCell className="p-2">{formattedPrice}</TableCell>
-                              <TableCell className="p-2">
-                                {assignedFloorPlan ? (
-                                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">
-                                    {floorPlanName}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
-                                    Not assigned
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="p-2">
-                                <div className="flex flex-wrap gap-1 max-w-[200px]">
-                                  {assignedFloorPlan ? (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-green-50 text-green-700 hover:bg-green-100 cursor-pointer flex items-center gap-1"
-                                    >
-                                      {floorPlanName}
-                                      <X
-                                        className="h-3 w-3"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          const newAssignments = { ...unitAssignments }
-                                          delete newAssignments[unitId]
-                                          setUnitAssignments(newAssignments)
-                                        }}
-                                      />
-                                    </Badge>
-                                  ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-6 text-xs"
-                                      onClick={() => {
-                                        if (selectedFloorPlan) {
-                                          const newAssignments = { ...unitAssignments }
-                                          newAssignments[unitId] = selectedFloorPlan
-                                          setUnitAssignments(newAssignments)
-                                        } else {
-                                          toast({
-                                            title: "No floor plan selected",
-                                            description: "Please select a floor plan from the right panel first.",
-                                            variant: "destructive",
-                                          })
-                                        }
-                                      }}
-                                    >
-                                      + Add floor plan
-                                    </Button>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="p-2">
-                                <div className="flex space-x-1">
-                                  <Select
-                                    value={assignedFloorPlan || "none"}
-                                    onValueChange={(value) => {
-                                      const newAssignments = { ...unitAssignments }
-                                      if (value && value !== "none") {
-                                        newAssignments[unitId] = value
-                                      } else {
-                                        delete newAssignments[unitId]
-                                      }
-                                      setUnitAssignments(newAssignments)
+                          </TableCell>
+                          <TableCell className="p-2">{project}</TableCell>
+                          <TableCell className="p-2">{phase}</TableCell>
+                          <TableCell className="p-2 font-medium">{unitId}</TableCell>
+                          <TableCell className="p-2">{unitType}</TableCell>
+                          <TableCell className="p-2">{subType}</TableCell>
+                          <TableCell className="p-2">{floor}</TableCell>
+                          <TableCell className="p-2">{unitArea}</TableCell>
+                          <TableCell className="p-2">{gardenArea > 0 ? `${gardenArea} sqm` : "-"}</TableCell>
+                          <TableCell className="p-2">{roofArea > 0 ? `${roofArea} sqm` : "-"}</TableCell>
+                          <TableCell className="p-2">{formattedPrice}</TableCell>
+                          <TableCell className="p-2">
+                            <div className="flex flex-wrap gap-1">
+                              {assignedFloorPlanObjects.map((plan: any) => (
+                                <Badge
+                                  key={plan.id}
+                                  variant="outline"
+                                  className="bg-green-50 text-green-700 hover:bg-green-100 cursor-pointer flex items-center gap-1"
+                                >
+                                  {plan.name}
+                                  <X
+                                    className="h-3 w-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      toggleFloorPlan(unitId, plan.id)
                                     }}
-                                  >
-                                    <SelectTrigger className="h-8 w-[120px]">
-                                      <SelectValue placeholder="Floor plan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">None</SelectItem>
-                                      {floorPlans
-                                        .filter((plan) => plan.type === unitType)
-                                        .map((plan) => (
-                                          <SelectItem key={plan.id} value={plan.id}>
-                                            {plan.name}
-                                          </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                  </Select>
+                                  />
+                                </Badge>
+                              ))}
 
-                                  <Select defaultValue={paymentPlanId || "none"}>
-                                    <SelectTrigger className="h-8 w-[120px]">
-                                      <SelectValue placeholder="Payment plan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">None</SelectItem>
-                                      {MOCK_PAYMENT_PLANS.map((plan) => (
-                                        <SelectItem key={plan.id} value={plan.id}>
-                                          {plan.name}
-                                        </SelectItem>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" size="sm" className="h-6 text-xs">
+                                    + Add floor plan
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[200px] p-2">
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium text-sm">Select Floor Plans</h4>
+                                    <div className="max-h-[200px] overflow-auto space-y-1">
+                                      {compatibleFloorPlans.map((plan) => (
+                                        <div key={plan.id} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`${unitId}-${plan.id}`}
+                                            checked={assignedFloorPlans.includes(plan.id)}
+                                            onCheckedChange={() => toggleFloorPlan(unitId, plan.id)}
+                                          />
+                                          <Label
+                                            htmlFor={`${unitId}-${plan.id}`}
+                                            className="text-sm cursor-pointer flex-1"
+                                          >
+                                            {plan.name}
+                                          </Label>
+                                        </div>
                                       ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </ScrollArea>
+                                    </div>
+                                    {compatibleFloorPlans.length === 0 && (
+                                      <div className="text-xs text-muted-foreground">
+                                        No compatible floor plans found for this unit type.
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
