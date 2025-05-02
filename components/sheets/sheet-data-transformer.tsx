@@ -25,6 +25,7 @@ import {
   Wand2,
   ListFilter,
   X,
+  Plus,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -147,6 +148,7 @@ export function SheetDataTransformer({
   const [showTransformed, setShowTransformed] = useState<boolean>(false)
   const [columns, setColumns] = useState<string[]>([])
   const [data, setData] = useState<any[]>([])
+  const [activeSplitMethod, setActiveSplitMethod] = useState<string>("delimiter")
 
   // Initialize data
   useEffect(() => {
@@ -705,7 +707,12 @@ export function SheetDataTransformer({
 
                   {/* Filter Section */}
                   <div className="border rounded-md p-4 mb-4">
-                    <h4 className="text-sm font-medium mb-3">Filter Units</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-medium">Filter Units</h4>
+                      <Button variant="outline" size="sm" onClick={() => setShowFilteredPreview(!showFilteredPreview)}>
+                        {showFilteredPreview ? "Hide Preview" : "Show Preview"}
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-3 gap-3 mb-3">
                       <div>
                         <Label htmlFor="filter-column">Column</Label>
@@ -743,9 +750,58 @@ export function SheetDataTransformer({
                         <Input id="filter-value" placeholder="Enter value" />
                       </div>
                     </div>
-                    <div className="flex justify-end">
-                      <Button>Apply Filter</Button>
+                    <div className="flex justify-between">
+                      <Button variant="outline" size="sm" onClick={() => addFilterCondition()}>
+                        Add Condition
+                      </Button>
+                      <Button size="sm" onClick={() => applyFilter()}>
+                        Apply Filter
+                      </Button>
                     </div>
+
+                    {/* Filtered Units Preview - Collapsible */}
+                    <Collapsible open={showFilteredPreview} className="mt-4">
+                      <CollapsibleContent>
+                        <div className="border rounded-md overflow-hidden">
+                          <div className="bg-muted/30 p-2 flex items-center justify-between border-b">
+                            <span className="text-xs font-medium">Filtered Units Preview ({selectedRows.length})</span>
+                          </div>
+                          <div className="max-h-[200px] overflow-y-auto">
+                            <Table className="text-xs">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-10 text-center">#</TableHead>
+                                  {transformedData.headers.slice(0, 4).map((header: string, index: number) => (
+                                    <TableHead key={index} className="py-1">
+                                      {header}
+                                    </TableHead>
+                                  ))}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {selectedRows.slice(0, 5).map((rowIndex: number) => (
+                                  <TableRow key={rowIndex}>
+                                    <TableCell className="text-center py-1">{rowIndex + 1}</TableCell>
+                                    {transformedData.headers.slice(0, 4).map((header: string, colIndex: number) => (
+                                      <TableCell key={colIndex} className="py-1">
+                                        {transformedData.rows[rowIndex][header]}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                ))}
+                                {selectedRows.length > 5 && (
+                                  <TableRow>
+                                    <TableCell colSpan={5} className="text-center py-1 text-muted-foreground">
+                                      + {selectedRows.length - 5} more units
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
 
                   <div className="grid grid-cols-5 gap-4">
@@ -792,65 +848,15 @@ export function SheetDataTransformer({
                             </Button>
                           </div>
 
-                          <div className="space-y-3">
-                            <div>
-                              <Label className="text-xs">Source Column</Label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select column to split" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {transformedData.headers.map((header: string) => (
-                                    <SelectItem key={header} value={header}>
-                                      {header}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label className="text-xs">Split Method</Label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose split method" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="delimiter">By Delimiter</SelectItem>
-                                  <SelectItem value="position">By Character Position</SelectItem>
-                                  <SelectItem value="auto">Automatic Parts</SelectItem>
-                                  <SelectItem value="ai">AI-Based Split</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Delimiter Options */}
-                            <div>
-                              <Label className="text-xs">Delimiter</Label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select delimiter" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="-">Hyphen (-)</SelectItem>
-                                  <SelectItem value="_">Underscore (_)</SelectItem>
-                                  <SelectItem value=".">Period (.)</SelectItem>
-                                  <SelectItem value="/">Forward Slash (/)</SelectItem>
-                                  <SelectItem value=" ">Space</SelectItem>
-                                  <SelectItem value="custom">Custom...</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label className="text-xs">Destination Column</Label>
-                              <div className="flex gap-2">
-                                <Select className="flex-1">
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs">Input Column</Label>
+                                <Select>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select destination" />
+                                    <SelectValue placeholder="Select column to split" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="new">Create New Column</SelectItem>
                                     {transformedData.headers.map((header: string) => (
                                       <SelectItem key={header} value={header}>
                                         {header}
@@ -858,20 +864,26 @@ export function SheetDataTransformer({
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                <Input placeholder="New column name" className="w-1/2" />
                               </div>
-                            </div>
-
-                            <div className="border rounded-md p-2 bg-white">
-                              <Label className="text-xs mb-1 block">Preview</Label>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div>
-                                  <div className="font-medium">Source</div>
-                                  <div className="border p-1 rounded bg-muted">B1-APT-202</div>
-                                </div>
-                                <div>
-                                  <div className="font-medium">Result</div>
-                                  <div className="border p-1 rounded bg-green-50">B1</div>
+                              <div>
+                                <Label className="text-xs">Output Column(s)</Label>
+                                <div className="flex gap-2">
+                                  <Select className="flex-1">
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select destination" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="new">Create New Column</SelectItem>
+                                      {transformedData.headers.map((header: string) => (
+                                        <SelectItem key={header} value={header}>
+                                          {header}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button variant="outline" size="icon" className="shrink-0">
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
                             </div>
@@ -960,25 +972,75 @@ export function SheetDataTransformer({
                               </div>
                             </div>
 
-                            <div className="border rounded-md p-2 bg-white">
-                              <Label className="text-xs mb-1 block">Preview</Label>
-                              <div className="grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                  <div className="font-medium">First</div>
-                                  <div className="border p-1 rounded bg-muted">Building</div>
-                                </div>
-                                <div>
-                                  <div className="font-medium">Second</div>
-                                  <div className="border p-1 rounded bg-muted">A1</div>
-                                </div>
-                                <div>
-                                  <div className="font-medium">Result</div>
-                                  <div className="border p-1 rounded bg-green-50">Building-A1</div>
-                                </div>
-                              </div>
+                            <Button className="w-full">Add Merge Action</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeAction === "data" && (
+                        <div className="border rounded-md p-3 bg-slate-50">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-sm font-medium">Add Data</h5>
+                            <Button variant="ghost" size="sm" onClick={() => setActiveAction(null)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-xs">Target Column</Label>
+                              <Select
+                                onValueChange={(value) =>
+                                  setConditionalUpdateOptions({ ...conditionalUpdateOptions, targetColumn: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select column" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {transformedData.headers.map((header: string) => (
+                                    <SelectItem key={header} value={header}>
+                                      {header}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
 
-                            <Button className="w-full">Add Merge Action</Button>
+                            <div>
+                              <Label className="text-xs">Value to Add</Label>
+                              <Input
+                                placeholder="Enter value"
+                                value={conditionalUpdateOptions.value}
+                                onChange={(e) =>
+                                  setConditionalUpdateOptions({ ...conditionalUpdateOptions, value: e.target.value })
+                                }
+                              />
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Apply To</Label>
+                              <Select
+                                defaultValue="all"
+                                onValueChange={(value) => setTransformScope(value as "all" | "filtered")}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="all">All Rows</SelectItem>
+                                  <SelectItem value="filtered">Filtered Rows Only</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <Button
+                              className="w-full"
+                              onClick={applyConditionalUpdate}
+                              disabled={!conditionalUpdateOptions.targetColumn || !conditionalUpdateOptions.value}
+                            >
+                              Add Data Action
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -1035,40 +1097,505 @@ export function SheetDataTransformer({
                     {/* Preview Panel */}
                     <div className="col-span-3 border rounded-md h-[400px] overflow-hidden flex flex-col">
                       <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
-                        <h4 className="text-sm font-medium">Preview (5 units selected)</h4>
+                        <h4 className="text-sm font-medium">
+                          {activeAction === "split" && "Split Column Preview"}
+                          {activeAction === "merge" && "Merge Columns Preview"}
+                          {activeAction === "data" && "Add Data Preview"}
+                          {!activeAction && "Action Preview"}
+                        </h4>
                         <div className="flex items-center gap-2">
                           <Button variant="outline" size="sm">
                             <Eye className="h-4 w-4 mr-2" />
-                            Preview Changes
+                            Apply Preview
                           </Button>
                         </div>
                       </div>
 
-                      <div className="overflow-auto flex-grow">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-12 text-center">#</TableHead>
-                              {transformedData.headers.slice(0, 4).map((header: string, index: number) => (
-                                <TableHead key={index}>
-                                  <div className="flex items-center">
-                                    <span>{header}</span>
+                      <div className="overflow-auto flex-grow p-4">
+                        {!activeAction && (
+                          <div className="h-full flex items-center justify-center text-muted-foreground">
+                            <div className="text-center">
+                              <Wand2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                              <p>Select an action to preview transformation results</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Split Column Preview */}
+                        {activeAction === "split" && (
+                          <div className="space-y-6">
+                            <div className="text-sm font-medium">Splitting "Unit Code" by delimiter</div>
+
+                            <div className="flex items-start gap-4">
+                              {/* Input Column */}
+                              <div className="flex-1 border rounded-md p-3">
+                                <div className="text-sm font-medium mb-3">Input Column</div>
+                                <div className="space-y-2">
+                                  <div className="border p-2 rounded bg-muted">B1-APT-202</div>
+                                  <div className="border p-2 rounded bg-muted">A3-APT-105</div>
+                                  <div className="border p-2 rounded bg-muted">C2-VIL-001</div>
+                                  <div className="border p-2 rounded bg-muted">D5-TH-007</div>
+                                  <div className="border p-2 rounded bg-muted">B4-APT-301</div>
+                                </div>
+                              </div>
+
+                              {/* Split Methods */}
+                              <div className="w-[200px] flex flex-col items-center">
+                                <div className="text-sm font-medium mb-3">Split Method</div>
+
+                                <div className="space-y-3 w-full">
+                                  {/* Split Method Selection */}
+                                  <div className="flex justify-center gap-3">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant={activeSplitMethod === "delimiter" ? "default" : "outline"}
+                                            size="sm"
+                                            className="h-9 w-9 p-0"
+                                            onClick={() => setActiveSplitMethod("delimiter")}
+                                          >
+                                            <Scissors className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Split by Delimiter</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant={activeSplitMethod === "character" ? "default" : "outline"}
+                                            size="sm"
+                                            className="h-9 w-9 p-0"
+                                            onClick={() => setActiveSplitMethod("character")}
+                                          >
+                                            <TextCursorInput className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Split by Character</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant={activeSplitMethod === "ai" ? "default" : "outline"}
+                                            size="sm"
+                                            className="h-9 w-9 p-0"
+                                            onClick={() => setActiveSplitMethod("ai")}
+                                          >
+                                            <Wand2 className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>AI Split</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {transformedData.rows.slice(0, 5).map((row: any, rowIndex: number) => (
-                              <TableRow key={rowIndex}>
-                                <TableCell className="text-center font-medium">{rowIndex + 1}</TableCell>
-                                {transformedData.headers.slice(0, 4).map((header: string, colIndex: number) => (
-                                  <TableCell key={colIndex}>{row[header]}</TableCell>
-                                ))}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+
+                                  {/* Delimiter Options */}
+                                  {activeSplitMethod === "delimiter" && (
+                                    <div className="border rounded-md p-2 bg-white">
+                                      <div className="text-xs font-medium mb-2">Select Delimiters</div>
+                                      <div className="flex flex-wrap gap-1 mb-3">
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <span>-</span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Hyphen</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <span>/</span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Slash</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <span>_</span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Underscore</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <span>␣</span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Space</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <span>.</span>
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Period</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button variant="outline" size="sm" className="h-7 w-7 p-0">
+                                                <Wand2 className="h-3 w-3" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Auto-detect</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+
+                                      <div className="text-xs font-medium mb-2">Select Parts</div>
+                                      <div className="border rounded p-2 mb-3 bg-muted/30 flex flex-wrap gap-1">
+                                        <Button variant="outline" size="sm" className="h-6 text-xs bg-primary/10">
+                                          AB
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 text-xs">
+                                          782
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 text-xs">
+                                          PH2
+                                        </Button>
+                                      </div>
+
+                                      <div className="text-xs font-medium mb-2">Extract</div>
+                                      <div className="flex gap-2 mb-1">
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="radio"
+                                            id="extract-both"
+                                            name="extract"
+                                            className="h-4 w-4"
+                                            defaultChecked
+                                          />
+                                          <label htmlFor="extract-both" className="text-xs">
+                                            Both
+                                          </label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <input type="radio" id="extract-letters" name="extract" className="h-4 w-4" />
+                                          <label htmlFor="extract-letters" className="text-xs">
+                                            Letters
+                                          </label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <input type="radio" id="extract-numbers" name="extract" className="h-4 w-4" />
+                                          <label htmlFor="extract-numbers" className="text-xs">
+                                            Numbers
+                                          </label>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Character Selection */}
+                                  {activeSplitMethod === "character" && (
+                                    <div className="border rounded-md p-2 bg-white">
+                                      <div className="text-xs font-medium mb-2">Select Characters</div>
+                                      <div className="border rounded p-2 mb-3 bg-muted/30 flex flex-wrap gap-1 justify-center">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-xs bg-primary/10"
+                                        >
+                                          A
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          B
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          -
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-xs bg-primary/10"
+                                        >
+                                          7
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          8
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          2
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          -
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          P
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-xs bg-primary/10"
+                                        >
+                                          H
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="h-6 w-6 p-0 text-xs">
+                                          2
+                                        </Button>
+                                      </div>
+
+                                      <div className="text-xs font-medium mb-2">Extract</div>
+                                      <div className="flex gap-2 mb-1">
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="radio"
+                                            id="char-extract-both"
+                                            name="char-extract"
+                                            className="h-4 w-4"
+                                            defaultChecked
+                                          />
+                                          <label htmlFor="char-extract-both" className="text-xs">
+                                            Both
+                                          </label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="radio"
+                                            id="char-extract-letters"
+                                            name="char-extract"
+                                            className="h-4 w-4"
+                                          />
+                                          <label htmlFor="char-extract-letters" className="text-xs">
+                                            Letters
+                                          </label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <input
+                                            type="radio"
+                                            id="char-extract-numbers"
+                                            name="char-extract"
+                                            className="h-4 w-4"
+                                          />
+                                          <label htmlFor="char-extract-numbers" className="text-xs">
+                                            Numbers
+                                          </label>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* AI Split */}
+                                  {activeSplitMethod === "ai" && (
+                                    <div className="border rounded-md p-2 bg-white">
+                                      <div className="text-xs font-medium mb-2">AI Split Example</div>
+                                      <div className="space-y-2 mb-2">
+                                        <div>
+                                          <div className="text-xs mb-1">Input Example</div>
+                                          <Input value="AB-782-PH2" className="h-7 text-xs" />
+                                        </div>
+                                        <div>
+                                          <div className="text-xs mb-1">Output Example</div>
+                                          <Input value="AB" className="h-7 text-xs" placeholder="Building" />
+                                        </div>
+                                      </div>
+                                      <Button variant="outline" size="sm" className="w-full text-xs">
+                                        <Plus className="h-3 w-3 mr-1" /> Add Output
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Output Column */}
+                              <div className="flex-1 border rounded-md p-3">
+                                <div className="text-sm font-medium mb-3">Output Column</div>
+                                <div className="space-y-2">
+                                  <div className="border p-2 rounded bg-green-50">B1</div>
+                                  <div className="border p-2 rounded bg-green-50">A3</div>
+                                  <div className="border p-2 rounded bg-green-50">C2</div>
+                                  <div className="border p-2 rounded bg-green-50">D5</div>
+                                  <div className="border p-2 rounded bg-green-50">B4</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Merge Columns Preview */}
+                        {activeAction === "merge" && (
+                          <div className="space-y-6">
+                            <div className="text-sm font-medium">
+                              Merging "Building" and "Unit Number" with "-" separator
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-8">
+                              <div>
+                                <div className="text-sm font-medium mb-2">Source Columns</div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-12 text-center">#</TableHead>
+                                      <TableHead>Building</TableHead>
+                                      <TableHead>Unit Number</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    <TableRow>
+                                      <TableCell className="text-center">1</TableCell>
+                                      <TableCell>B1</TableCell>
+                                      <TableCell>202</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">2</TableCell>
+                                      <TableCell>A3</TableCell>
+                                      <TableCell>105</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">3</TableCell>
+                                      <TableCell>C2</TableCell>
+                                      <TableCell>001</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">4</TableCell>
+                                      <TableCell>D5</TableCell>
+                                      <TableCell>007</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">5</TableCell>
+                                      <TableCell>B4</TableCell>
+                                      <TableCell>301</TableCell>
+                                    </TableRow>
+                                  </TableBody>
+                                </Table>
+                              </div>
+
+                              <div>
+                                <div className="text-sm font-medium mb-2">Result Column</div>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-12 text-center">#</TableHead>
+                                      <TableHead>Full Unit Code</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    <TableRow>
+                                      <TableCell className="text-center">1</TableCell>
+                                      <TableCell className="bg-green-50">B1-202</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">2</TableCell>
+                                      <TableCell className="bg-green-50">A3-105</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">3</TableCell>
+                                      <TableCell className="bg-green-50">C2-001</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">4</TableCell>
+                                      <TableCell className="bg-green-50">D5-007</TableCell>
+                                    </TableRow>
+                                    <TableRow>
+                                      <TableCell className="text-center">5</TableCell>
+                                      <TableCell className="bg-green-50">B4-301</TableCell>
+                                    </TableRow>
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Add Data Preview */}
+                        {activeAction === "data" && (
+                          <div className="space-y-6">
+                            <div className="text-sm font-medium">
+                              Adding "Available" to Status column for all filtered units
+                            </div>
+
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="w-12 text-center">#</TableHead>
+                                  <TableHead>Unit Code</TableHead>
+                                  <TableHead>Building</TableHead>
+                                  <TableHead>Type</TableHead>
+                                  <TableHead className="bg-green-50/50">Status</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                <TableRow>
+                                  <TableCell className="text-center">1</TableCell>
+                                  <TableCell>B1-APT-202</TableCell>
+                                  <TableCell>B1</TableCell>
+                                  <TableCell>APT</TableCell>
+                                  <TableCell className="bg-green-50">Available</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="text-center">2</TableCell>
+                                  <TableCell>A3-APT-105</TableCell>
+                                  <TableCell>A3</TableCell>
+                                  <TableCell>APT</TableCell>
+                                  <TableCell className="bg-green-50">Available</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="text-center">3</TableCell>
+                                  <TableCell>C2-VIL-001</TableCell>
+                                  <TableCell>C2</TableCell>
+                                  <TableCell>VIL</TableCell>
+                                  <TableCell className="bg-green-50">Available</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="text-center">4</TableCell>
+                                  <TableCell>D5-TH-007</TableCell>
+                                  <TableCell>D5</TableCell>
+                                  <TableCell>TH</TableCell>
+                                  <TableCell className="bg-green-50">Available</TableCell>
+                                </TableRow>
+                                <TableRow>
+                                  <TableCell className="text-center">5</TableCell>
+                                  <TableCell>B4-APT-301</TableCell>
+                                  <TableCell>B4</TableCell>
+                                  <TableCell>APT</TableCell>
+                                  <TableCell className="bg-green-50">Available</TableCell>
+                                </TableRow>
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
