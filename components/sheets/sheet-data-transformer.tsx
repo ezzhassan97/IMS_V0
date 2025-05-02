@@ -38,7 +38,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Hash, Building, Layers, Paintbrush, Tag, Milestone } from "lucide-react"
+import { Calendar, Hash, Building, Layers, Paintbrush, Milestone } from "lucide-react"
 import { Check, ChevronDown, AlertCircle } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
@@ -1614,11 +1614,107 @@ export function SheetDataTransformer({
                 Standardize Values
               </h3>
               <div className="space-y-3">
+                {/* Phase Values */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Milestone className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Phase</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mr-2">
+                        6/9 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-sm font-medium mb-2">Standardize Phase Values</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sheet Value</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Standard Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">Phase 1</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Phase 1">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Phase 1">Phase 1</SelectItem>
+                                    <SelectItem value="Phase 2">Phase 2</SelectItem>
+                                    <SelectItem value="Phase 3">Phase 3</SelectItem>
+                                    <SelectItem value="Phase 4">Phase 4</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Ph. 2</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Phase 2">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Phase 1">Phase 1</SelectItem>
+                                    <SelectItem value="Phase 2">Phase 2</SelectItem>
+                                    <SelectItem value="Phase 3">Phase 3</SelectItem>
+                                    <SelectItem value="Phase 4">Phase 4</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">المرحلة 3</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
+                                <Select>
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Phase 1">Phase 1</SelectItem>
+                                    <SelectItem value="Phase 2">Phase 2</SelectItem>
+                                    <SelectItem value="Phase 3">Phase 3</SelectItem>
+                                    <SelectItem value="Phase 4">Phase 4</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm">Apply Mappings</Button>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Property Types */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
                     <div className="flex items-center">
                       <Building className="mr-2 h-4 w-4" />
-                      <span>Property Types</span>
+                      <span className="text-xs">Property Type</span>
                     </div>
                     <div className="flex items-center">
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
@@ -1628,26 +1724,25 @@ export function SheetDataTransformer({
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
-                    <div className="text-sm font-medium mb-2">Mapped Values</div>
+                    <div className="text-sm font-medium mb-2">Standardize Property Types</div>
                     <div className="max-h-[300px] overflow-y-auto pr-2">
                       <Table className="text-xs">
                         <TableHeader>
                           <TableRow>
                             <TableHead>Sheet Value</TableHead>
-                            <TableHead>Mapped To</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Standard Value</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           <TableRow>
-                            <TableCell>apartment</TableCell>
+                            <TableCell className="font-medium">apartment</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
                             <TableCell>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                  <Check className="h-3 w-3 text-green-600 mr-1" />
-                                  <span>Apartment</span>
-                                </div>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
                                 <Select defaultValue="Apartment">
-                                  <SelectTrigger className="h-6 w-24">
+                                  <SelectTrigger className="h-6 w-36">
                                     <SelectValue placeholder="Select" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1661,15 +1756,33 @@ export function SheetDataTransformer({
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell>villa</TableCell>
+                            <TableCell className="font-medium">APT</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
                             <TableCell>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                  <Check className="h-3 w-3 text-green-600 mr-1" />
-                                  <span>Villa</span>
-                                </div>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Apartment">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Apartment">Apartment</SelectItem>
+                                    <SelectItem value="Villa">Villa</SelectItem>
+                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">villa</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
                                 <Select defaultValue="Villa">
-                                  <SelectTrigger className="h-6 w-24">
+                                  <SelectTrigger className="h-6 w-36">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1683,37 +1796,13 @@ export function SheetDataTransformer({
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell>townhouse</TableCell>
+                            <TableCell className="font-medium">TH</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
                             <TableCell>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                  <Check className="h-3 w-3 text-green-600 mr-1" />
-                                  <span>Townhouse</span>
-                                </div>
-                                <Select defaultValue="Townhouse">
-                                  <SelectTrigger className="h-6 w-24">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Apartment">Apartment</SelectItem>
-                                    <SelectItem value="Villa">Villa</SelectItem>
-                                    <SelectItem value="Townhouse">Townhouse</SelectItem>
-                                    <SelectItem value="Studio">Studio</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell>APT</TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center text-yellow-600">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  <span>Not mapped</span>
-                                </div>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
                                 <Select>
-                                  <SelectTrigger className="h-6 w-24">
+                                  <SelectTrigger className="h-6 w-36">
                                     <SelectValue placeholder="Select" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1727,15 +1816,13 @@ export function SheetDataTransformer({
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell>TH</TableCell>
+                            <TableCell className="font-medium">فيلا</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
                             <TableCell>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center text-yellow-600">
-                                  <AlertCircle className="h-3 w-3 mr-1" />
-                                  <span>Not mapped</span>
-                                </div>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
                                 <Select>
-                                  <SelectTrigger className="h-6 w-24">
+                                  <SelectTrigger className="h-6 w-36">
                                     <SelectValue placeholder="Select" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1757,11 +1844,135 @@ export function SheetDataTransformer({
                   </CollapsibleContent>
                 </Collapsible>
 
+                {/* Property Sub-Types */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Building className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Property Sub-Type</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mr-2">
+                        8/14 Mapped
+                      </Badge>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-sm font-medium mb-2">Standardize Property Sub-Types</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sheet Value</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Standard Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">1BR</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="1 Bedroom">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                    <SelectItem value="1 Bedroom">1 Bedroom</SelectItem>
+                                    <SelectItem value="2 Bedroom">2 Bedroom</SelectItem>
+                                    <SelectItem value="3 Bedroom">3 Bedroom</SelectItem>
+                                    <SelectItem value="4 Bedroom">4 Bedroom</SelectItem>
+                                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">2 Bed</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="2 Bedroom">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                    <SelectItem value="1 Bedroom">1 Bedroom</SelectItem>
+                                    <SelectItem value="2 Bedroom">2 Bedroom</SelectItem>
+                                    <SelectItem value="3 Bedroom">3 Bedroom</SelectItem>
+                                    <SelectItem value="4 Bedroom">4 Bedroom</SelectItem>
+                                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">3-BR</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="3 Bedroom">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                    <SelectItem value="1 Bedroom">1 Bedroom</SelectItem>
+                                    <SelectItem value="2 Bedroom">2 Bedroom</SelectItem>
+                                    <SelectItem value="3 Bedroom">3 Bedroom</SelectItem>
+                                    <SelectItem value="4 Bedroom">4 Bedroom</SelectItem>
+                                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">PH</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
+                                <Select>
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Studio">Studio</SelectItem>
+                                    <SelectItem value="1 Bedroom">1 Bedroom</SelectItem>
+                                    <SelectItem value="2 Bedroom">2 Bedroom</SelectItem>
+                                    <SelectItem value="3 Bedroom">3 Bedroom</SelectItem>
+                                    <SelectItem value="4 Bedroom">4 Bedroom</SelectItem>
+                                    <SelectItem value="Penthouse">Penthouse</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm">Apply Mappings</Button>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Floor Numbers */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
                     <div className="flex items-center">
                       <Layers className="mr-2 h-4 w-4" />
-                      <span>Floor Numbers</span>
+                      <span className="text-xs">Floor Numbers</span>
                     </div>
                     <div className="flex items-center">
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
@@ -1770,17 +1981,138 @@ export function SheetDataTransformer({
                       <ChevronDown className="h-4 w-4" />
                     </div>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
-                    <div className="text-sm font-medium mb-2">Mapped Values</div>
-                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-sm font-medium mb-2">Standardize Floor Numbers</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sheet Value</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Standard Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">G</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Ground Floor">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Basement">Basement</SelectItem>
+                                    <SelectItem value="Ground Floor">Ground Floor</SelectItem>
+                                    <SelectItem value="1st Floor">1st Floor</SelectItem>
+                                    <SelectItem value="2nd Floor">2nd Floor</SelectItem>
+                                    <SelectItem value="3rd Floor">3rd Floor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">GF</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Ground Floor">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Basement">Basement</SelectItem>
+                                    <SelectItem value="Ground Floor">Ground Floor</SelectItem>
+                                    <SelectItem value="1st Floor">1st Floor</SelectItem>
+                                    <SelectItem value="2nd Floor">2nd Floor</SelectItem>
+                                    <SelectItem value="3rd Floor">3rd Floor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">1</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="1st Floor">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Basement">Basement</SelectItem>
+                                    <SelectItem value="Ground Floor">Ground Floor</SelectItem>
+                                    <SelectItem value="1st Floor">1st Floor</SelectItem>
+                                    <SelectItem value="2nd Floor">2nd Floor</SelectItem>
+                                    <SelectItem value="3rd Floor">3rd Floor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">B</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Basement">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Basement">Basement</SelectItem>
+                                    <SelectItem value="Ground Floor">Ground Floor</SelectItem>
+                                    <SelectItem value="1st Floor">1st Floor</SelectItem>
+                                    <SelectItem value="2nd Floor">2nd Floor</SelectItem>
+                                    <SelectItem value="3rd Floor">3rd Floor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">الطابق الأرضي</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
+                                <Select>
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Basement">Basement</SelectItem>
+                                    <SelectItem value="Ground Floor">Ground Floor</SelectItem>
+                                    <SelectItem value="1st Floor">1st Floor</SelectItem>
+                                    <SelectItem value="2nd Floor">2nd Floor</SelectItem>
+                                    <SelectItem value="3rd Floor">3rd Floor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm">Apply Mappings</Button>
+                    </div>
                   </CollapsibleContent>
                 </Collapsible>
 
+                {/* Finishing Types */}
                 <Collapsible>
                   <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
                     <div className="flex items-center">
                       <Paintbrush className="mr-2 h-4 w-4" />
-                      <span>Finishing Types</span>
+                      <span className="text-xs">Finishing Types</span>
                     </div>
                     <div className="flex items-center">
                       <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 mr-2">
@@ -1789,47 +2121,124 @@ export function SheetDataTransformer({
                       <ChevronDown className="h-4 w-4" />
                     </div>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
-                    <div className="text-sm font-medium mb-2">Mapped Values</div>
-                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible>
-                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
-                    <div className="flex items-center">
-                      <Tag className="mr-2 h-4 w-4" />
-                      <span>Status Values</span>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-sm font-medium mb-2">Standardize Finishing Types</div>
+                    <div className="max-h-[300px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Sheet Value</TableHead>
+                            <TableHead></TableHead>
+                            <TableHead>Standard Value</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">core & shell</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Core & Shell">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Core & Shell">Core & Shell</SelectItem>
+                                    <SelectItem value="Fully Finished">Fully Finished</SelectItem>
+                                    <SelectItem value="Semi-Finished">Semi-Finished</SelectItem>
+                                    <SelectItem value="Furnished">Furnished</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">shell</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Core & Shell">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Core & Shell">Core & Shell</SelectItem>
+                                    <SelectItem value="Fully Finished">Fully Finished</SelectItem>
+                                    <SelectItem value="Semi-Finished">Semi-Finished</SelectItem>
+                                    <SelectItem value="Furnished">Furnished</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">fully finished</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Fully Finished">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Core & Shell">Core & Shell</SelectItem>
+                                    <SelectItem value="Fully Finished">Fully Finished</SelectItem>
+                                    <SelectItem value="Semi-Finished">Semi-Finished</SelectItem>
+                                    <SelectItem value="Furnished">Furnished</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">semi</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Check className="h-3 w-3 text-green-600 mr-1" />
+                                <Select defaultValue="Semi-Finished">
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Core & Shell">Core & Shell</SelectItem>
+                                    <SelectItem value="Fully Finished">Fully Finished</SelectItem>
+                                    <SelectItem value="Semi-Finished">Semi-Finished</SelectItem>
+                                    <SelectItem value="Furnished">Furnished</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">تشطيب كامل</TableCell>
+                            <TableCell className="w-8 text-center">→</TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <AlertCircle className="h-3 w-3 text-yellow-600 mr-1" />
+                                <Select>
+                                  <SelectTrigger className="h-6 w-36">
+                                    <SelectValue placeholder="Select" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Core & Shell">Core & Shell</SelectItem>
+                                    <SelectItem value="Fully Finished">Fully Finished</SelectItem>
+                                    <SelectItem value="Semi-Finished">Semi-Finished</SelectItem>
+                                    <SelectItem value="Furnished">Furnished</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
                     </div>
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
-                        8/8 Mapped
-                      </Badge>
-                      <ChevronDown className="h-4 w-4" />
+                    <div className="flex justify-end mt-2">
+                      <Button size="sm">Apply Mappings</Button>
                     </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
-                    <div className="text-sm font-medium mb-2">Mapped Values</div>
-                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible>
-                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
-                    <div className="flex items-center">
-                      <Milestone className="mr-2 h-4 w-4" />
-                      <span>Phase Values</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 mr-2">
-                        6/7 Mapped
-                      </Badge>
-                      <ChevronDown className="h-4 w-4" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px]">
-                    <div className="text-sm font-medium mb-2">Mapped Values</div>
-                    <div className="text-sm text-muted-foreground">Click to expand mapping details</div>
                   </CollapsibleContent>
                 </Collapsible>
               </div>
@@ -1841,42 +2250,296 @@ export function SheetDataTransformer({
                 Cleanup Actions
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center justify-between border rounded-md p-2">
-                  <div className="flex items-center">
-                    <TextCursorInput className="mr-2 h-4 w-4" />
-                    <span>Trim Whitespace</span>
-                  </div>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <Check className="h-3 w-3 mr-1" /> Applied
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between border rounded-md p-2">
-                  <div className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    <span>Format Dates</span>
-                  </div>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <Check className="h-3 w-3 mr-1" /> 8/10 Columns
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between border rounded-md p-2">
-                  <div className="flex items-center">
-                    <Hash className="mr-2 h-4 w-4" />
-                    <span>Format Numbers</span>
-                  </div>
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-                    <AlertCircle className="h-3 w-3 mr-1" /> 5/12 Columns
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between border rounded-md p-2">
-                  <div className="flex items-center">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>Remove Empty Rows</span>
-                  </div>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                    <Check className="h-3 w-3 mr-1" /> 3 Removed
-                  </Badge>
-                </div>
+                {/* Trim Whitespace */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <TextCursorInput className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Trim Whitespace</span>
+                    </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Check className="h-3 w-3 mr-1" /> Applied to All Columns
+                    </Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      <em>Note: This is a UI demo for frontend purposes only</em>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Column</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Example</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>Unit Code</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">" B1-204 "</span>
+                                <span>→</span>
+                                <span className="font-medium">"B1-204"</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Property Type</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">"Apartment "</span>
+                                <span>→</span>
+                                <span className="font-medium">"Apartment"</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Price</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">" 1,250,000 "</span>
+                                <span>→</span>
+                                <span className="font-medium">"1,250,000"</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Status</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">"Available "</span>
+                                <span>→</span>
+                                <span className="font-medium">"Available"</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Format Numbers */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Hash className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Format Numbers</span>
+                    </div>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                      <AlertCircle className="h-3 w-3 mr-1" /> 5/8 Columns
+                    </Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      <em>
+                        Note: This is a UI demo for frontend purposes only. Applies to Prices, Floor Numbers, Bedroom
+                        numbers, Bathroom numbers, and Areas fields.
+                      </em>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Column</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Example</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>Price</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">1250000</span>
+                                <span>→</span>
+                                <span className="font-medium">1,250,000</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Floor</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">3</span>
+                                <span>→</span>
+                                <span className="font-medium">3rd</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Bedrooms</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">2</span>
+                                <span>→</span>
+                                <span className="font-medium">2</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Bathrooms</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">2.5</span>
+                                <span>→</span>
+                                <span className="font-medium">2.5</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Area (sqft)</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">1200</span>
+                                <span>→</span>
+                                <span className="font-medium">1,200</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Area (sqm)</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                <AlertCircle className="h-3 w-3 mr-1" /> Failed
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">111.48</span>
+                                <span>→</span>
+                                <span className="font-medium text-yellow-700">Invalid format</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Balcony Area</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                <AlertCircle className="h-3 w-3 mr-1" /> Failed
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">N/A</span>
+                                <span>→</span>
+                                <span className="font-medium text-yellow-700">Not a number</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Garden Area</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                                <AlertCircle className="h-3 w-3 mr-1" /> Failed
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">--</span>
+                                <span>→</span>
+                                <span className="font-medium text-yellow-700">Not a number</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* Format Dates */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between border rounded-md p-2">
+                    <div className="flex items-center">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      <span className="text-xs">Format Dates</span>
+                    </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Check className="h-3 w-3 mr-1" /> 1/1 Column
+                    </Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
+                    <div className="text-xs text-muted-foreground mb-2">
+                      <em>Note: This is a UI demo for frontend purposes only. Applies only to Delivery date column.</em>
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto pr-2">
+                      <Table className="text-xs">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Column</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Example</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell>Delivery Date</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                <Check className="h-3 w-3 mr-1" /> Applied
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground">12/31/2025</span>
+                                <span>→</span>
+                                <span className="font-medium">December 31, 2025</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </div>
           </div>
@@ -1911,22 +2574,47 @@ export function SheetDataTransformer({
               </div>
 
               <div className="overflow-x-auto">
-                <Table>
+                <Table className="text-xs">
                   <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12 text-center">#</TableHead>
-                      {transformedData.headers.map((header: string, index: number) => (
-                        <TableHead key={index}>
-                          <div className="flex items-center">
-                            <span>{header}</span>
-                            {columnMappings[header] && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {columnMappings[header]}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableHead>
-                      ))}
+                    <TableRow className="h-8">
+                      <TableHead className="w-10 text-center py-1">#</TableHead>
+                      {transformedData.headers.map((header: string, index: number) => {
+                        // Determine if this column has been transformed
+                        const isTransformed = transformations.some(
+                          (t) =>
+                            t.column === header ||
+                            t.params?.targetColumn === header ||
+                            (t.type === "split" && t.params?.newColumnName === header),
+                        )
+
+                        return (
+                          <TableHead key={index} className={`py-1 ${isTransformed ? "bg-green-50/50" : ""}`}>
+                            <div className="flex items-center gap-1">
+                              <span>{header}</span>
+                              {columnMappings[header] && (
+                                <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                  {columnMappings[header]}
+                                </Badge>
+                              )}
+                              {isTransformed && (
+                                <Badge className="bg-green-100 text-green-800 text-[10px] py-0 h-5 border-green-200">
+                                  <Check className="h-2.5 w-2.5 mr-1" />
+                                  Modified
+                                </Badge>
+                              )}
+                              {header === "Type" && !columnMappings[header] && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-5"
+                                >
+                                  <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                                  Not Mapped
+                                </Badge>
+                              )}
+                            </div>
+                          </TableHead>
+                        )
+                      })}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1938,15 +2626,81 @@ export function SheetDataTransformer({
                       return (
                         <TableRow
                           key={rowIndex}
-                          className={selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}
+                          className={`h-7 ${selectedRows.includes(absoluteIndex) ? "bg-primary/10" : ""}`}
                         >
-                          <TableCell className="text-center font-medium">{absoluteIndex + 1}</TableCell>
-                          {transformedData.headers.map((header: string, colIndex: number) => (
-                            <TableCell key={colIndex}>{row[header]}</TableCell>
-                          ))}
+                          <TableCell className="text-center font-medium py-1">{absoluteIndex + 1}</TableCell>
+                          {transformedData.headers.map((header: string, colIndex: number) => {
+                            // Determine if this cell is in a transformed column
+                            const isTransformedColumn = transformations.some(
+                              (t) =>
+                                t.column === header ||
+                                t.params?.targetColumn === header ||
+                                (t.type === "split" && t.params?.newColumnName === header),
+                            )
+
+                            // Check if this is an unmapped property type
+                            const isUnmappedPropertyType =
+                              header === "Type" &&
+                              ["APT", "TH", "VIL"].includes(row[header]) &&
+                              !PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
+
+                            // Check if this is a mapped property type
+                            const isMappedPropertyType =
+                              header === "Type" && PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
+
+                            // Check if this is a cleaned value (e.g., trimmed whitespace)
+                            const isCleaned = header === "Status" && STATUS_MAPPINGS[row[header]?.toLowerCase()]
+
+                            return (
+                              <TableCell
+                                key={colIndex}
+                                className={`py-1 ${isTransformedColumn ? "bg-green-50/30" : ""} 
+                                  ${isUnmappedPropertyType ? "bg-yellow-50/50" : ""}
+                                  ${isCleaned ? "bg-blue-50/30" : ""}`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span>{row[header]}</span>
+                                  {isUnmappedPropertyType && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-4"
+                                    >
+                                      unmapped
+                                    </Badge>
+                                  )}
+                                  {isMappedPropertyType && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-green-50 text-green-700 border-green-200 text-[10px] py-0 h-4"
+                                    >
+                                      {PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]}
+                                    </Badge>
+                                  )}
+                                  {isCleaned && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 h-4"
+                                    >
+                                      cleaned
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                            )
+                          })}
                         </TableRow>
                       )
                     })}
+                    {paginatedData.length === 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={transformedData.headers.length + 1}
+                          className="text-center py-4 text-muted-foreground"
+                        >
+                          No data to display
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
