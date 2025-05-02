@@ -24,6 +24,7 @@ import {
   TextCursorInput,
   Wand2,
   ListFilter,
+  X,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -753,21 +754,236 @@ export function SheetDataTransformer({
                       <h4 className="text-sm font-medium mb-3">Actions</h4>
 
                       <div className="space-y-2 mb-4">
-                        <Button variant="outline" className="w-full justify-start" size="sm">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          size="sm"
+                          onClick={() => setActiveAction("split")}
+                        >
                           <Scissors className="mr-2 h-4 w-4" />
                           Add Split Column Action
                         </Button>
-                        <Button variant="outline" className="w-full justify-start" size="sm">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          size="sm"
+                          onClick={() => setActiveAction("merge")}
+                        >
                           <Combine className="mr-2 h-4 w-4" />
                           Add Merge Columns Action
                         </Button>
-                        <Button variant="outline" className="w-full justify-start" size="sm">
+                        <Button
+                          variant="outline"
+                          className="w-full justify-start"
+                          size="sm"
+                          onClick={() => setActiveAction("data")}
+                        >
                           <PenTool className="mr-2 h-4 w-4" />
                           Add Data Action
                         </Button>
                       </div>
 
-                      <h4 className="text-sm font-medium mb-2">Added Actions</h4>
+                      {activeAction === "split" && (
+                        <div className="border rounded-md p-3 bg-slate-50">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-sm font-medium">Split Column</h5>
+                            <Button variant="ghost" size="sm" onClick={() => setActiveAction(null)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-xs">Source Column</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select column to split" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {transformedData.headers.map((header: string) => (
+                                    <SelectItem key={header} value={header}>
+                                      {header}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Split Method</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose split method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="delimiter">By Delimiter</SelectItem>
+                                  <SelectItem value="position">By Character Position</SelectItem>
+                                  <SelectItem value="auto">Automatic Parts</SelectItem>
+                                  <SelectItem value="ai">AI-Based Split</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Delimiter Options */}
+                            <div>
+                              <Label className="text-xs">Delimiter</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select delimiter" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="-">Hyphen (-)</SelectItem>
+                                  <SelectItem value="_">Underscore (_)</SelectItem>
+                                  <SelectItem value=".">Period (.)</SelectItem>
+                                  <SelectItem value="/">Forward Slash (/)</SelectItem>
+                                  <SelectItem value=" ">Space</SelectItem>
+                                  <SelectItem value="custom">Custom...</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Destination Column</Label>
+                              <div className="flex gap-2">
+                                <Select className="flex-1">
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select destination" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="new">Create New Column</SelectItem>
+                                    {transformedData.headers.map((header: string) => (
+                                      <SelectItem key={header} value={header}>
+                                        {header}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Input placeholder="New column name" className="w-1/2" />
+                              </div>
+                            </div>
+
+                            <div className="border rounded-md p-2 bg-white">
+                              <Label className="text-xs mb-1 block">Preview</Label>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <div className="font-medium">Source</div>
+                                  <div className="border p-1 rounded bg-muted">B1-APT-202</div>
+                                </div>
+                                <div>
+                                  <div className="font-medium">Result</div>
+                                  <div className="border p-1 rounded bg-green-50">B1</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Button className="w-full">Add Split Action</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {activeAction === "merge" && (
+                        <div className="border rounded-md p-3 bg-slate-50">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-sm font-medium">Merge Columns</h5>
+                            <Button variant="ghost" size="sm" onClick={() => setActiveAction(null)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="text-xs">First Column</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select first column" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {transformedData.headers.map((header: string) => (
+                                    <SelectItem key={header} value={header}>
+                                      {header}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Second Column</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select second column" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {transformedData.headers.map((header: string) => (
+                                    <SelectItem key={header} value={header}>
+                                      {header}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Separator</Label>
+                              <Select>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select separator" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value=" ">Space</SelectItem>
+                                  <SelectItem value="-">Hyphen (-)</SelectItem>
+                                  <SelectItem value="/">Forward Slash (/)</SelectItem>
+                                  <SelectItem value=",">Comma (,)</SelectItem>
+                                  <SelectItem value="none">None</SelectItem>
+                                  <SelectItem value="custom">Custom...</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs">Destination Column</Label>
+                              <div className="flex gap-2">
+                                <Select className="flex-1">
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select destination" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="new">Create New Column</SelectItem>
+                                    {transformedData.headers.map((header: string) => (
+                                      <SelectItem key={header} value={header}>
+                                        {header}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Input placeholder="New column name" className="w-1/2" />
+                              </div>
+                            </div>
+
+                            <div className="border rounded-md p-2 bg-white">
+                              <Label className="text-xs mb-1 block">Preview</Label>
+                              <div className="grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                  <div className="font-medium">First</div>
+                                  <div className="border p-1 rounded bg-muted">Building</div>
+                                </div>
+                                <div>
+                                  <div className="font-medium">Second</div>
+                                  <div className="border p-1 rounded bg-muted">A1</div>
+                                </div>
+                                <div>
+                                  <div className="font-medium">Result</div>
+                                  <div className="border p-1 rounded bg-green-50">Building-A1</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Button className="w-full">Add Merge Action</Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <h4 className="text-sm font-medium my-3">Added Actions</h4>
                       <div className="space-y-2">
                         <div className="border rounded-md p-2">
                           <div className="flex items-center justify-between">
@@ -780,7 +996,7 @@ export function SheetDataTransformer({
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Split by "-" into "Building" and "Unit Number"
+                            Split by "-" into "Building" (position 1) and "Unit Number" (position 3)
                           </p>
                         </div>
 
@@ -796,6 +1012,21 @@ export function SheetDataTransformer({
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
                             Set value to "Available" for all filtered units
+                          </p>
+                        </div>
+
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Combine className="h-4 w-4 mr-2" />
+                              <span className="text-sm font-medium">Merge "Building" + "Unit"</span>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Merge with "/" separator into "Full Unit Code"
                           </p>
                         </div>
                       </div>
@@ -890,7 +1121,7 @@ export function SheetDataTransformer({
                                 </div>
                                 <Select defaultValue="Apartment">
                                   <SelectTrigger className="h-6 w-24">
-                                    <SelectValue />
+                                    <SelectValue placeholder="Select" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="Apartment">Apartment</SelectItem>
