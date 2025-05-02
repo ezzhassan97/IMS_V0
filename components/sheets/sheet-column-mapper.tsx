@@ -64,8 +64,7 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
   const [autoDetectEnabled, setAutoDetectEnabled] = useState(true)
   const [headerRowIndex, setHeaderRowIndex] = useState(0)
   const [showMappingPanel, setShowMappingPanel] = useState(true)
-  const [customFields, setCustomFields] = useState<Array<{ id: string; label: string }>>([])
-  const [newCustomFieldName, setNewCustomFieldName] = useState("")
+  const [customFields, setCustomFields] = useState<Array<{ id: string; label: string; type: "price" | "custom" }>>([])
 
   useEffect(() => {
     // Auto-detect column mappings if enabled
@@ -135,20 +134,6 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
     const detectedMappings = autoDetectColumnMappings(data.headers)
     setColumnMappings(detectedMappings)
     onMappingChange(detectedMappings)
-  }
-
-  const addCustomField = () => {
-    if (!newCustomFieldName.trim()) return
-
-    const id = `custom_${newCustomFieldName.toLowerCase().replace(/\s+/g, "_")}`
-
-    if (customFields.some((field) => field.id === id)) {
-      // Field already exists
-      return
-    }
-
-    setCustomFields([...customFields, { id, label: newCustomFieldName }])
-    setNewCustomFieldName("")
   }
 
   if (!data || !data.headers || data.headers.length === 0) {
@@ -423,7 +408,7 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
               {customFields.length > 0 && (
                 <>
                   <div className="text-xs font-semibold text-purple-600 mt-2">Custom Fields</div>
-                  {customFields.map((field) => (
+                  {customFields.map((field, index) => (
                     <div
                       key={field.id}
                       className={`flex items-center justify-between p-1.5 rounded-sm ${
@@ -431,10 +416,31 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
                       }`}
                     >
                       <div className="flex items-center space-x-1">
-                        <span className="font-medium text-sm">{field.label}</span>
-                        <Badge variant="outline" className="text-[10px] h-4 bg-purple-50">
-                          Custom
-                        </Badge>
+                        {field.type === "price" ? (
+                          <div className="flex items-center">
+                            <span className="font-medium text-sm">{field.label}</span>
+                            <Badge variant="default" className="text-[10px] h-4 bg-purple-50 ml-1">
+                              Price
+                            </Badge>
+                          </div>
+                        ) : (
+                          <Input
+                            value={field.label}
+                            onChange={(e) => {
+                              const updatedFields = [...customFields]
+                              updatedFields[index] = { ...field, label: e.target.value }
+                              setCustomFields(updatedFields)
+
+                              // Update mappings if this field is mapped
+                              if (columnMappings[field.id]) {
+                                const newMappings = { ...columnMappings }
+                                // Keep the mapping but update any references to the field
+                                onMappingChange(newMappings)
+                              }
+                            }}
+                            className="h-6 text-xs w-[120px]"
+                          />
+                        )}
                       </div>
                       <div className="flex items-center space-x-1">
                         <Select
@@ -459,6 +465,25 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
                         ) : (
                           <AlertCircle className="h-4 w-4 text-purple-400" />
                         )}
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 ml-1"
+                          onClick={() => {
+                            // Remove the field
+                            setCustomFields(customFields.filter((f) => f.id !== field.id))
+
+                            // Remove any mappings for this field
+                            if (columnMappings[field.id]) {
+                              const newMappings = { ...columnMappings }
+                              delete newMappings[field.id]
+                              onMappingChange(newMappings)
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -468,18 +493,44 @@ export function SheetColumnMapper({ data, onMappingChange }: SheetColumnMapperPr
               {/* Add Custom Field */}
               <div className="mt-3 pt-3 border-t">
                 <div className="text-xs font-semibold mb-2">Add Custom Field</div>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Custom field name"
-                    value={newCustomFieldName}
-                    onChange={(e) => setNewCustomFieldName(e.target.value)}
-                    className="h-8 text-xs"
-                  />
-                  <Button size="sm" onClick={addCustomField} className="h-8">
-                    Add
-                  </Button>
+                <div className="flex items-center space-x-2 w-full">
+                  <Select
+                    onValueChange={(value) => {
+                      // Count existing price and custom fields
+                      const existingPriceFields = customFields.filter((f) => f.label.startsWith("Price ")).length
+                      const existingCustomFields = customFields.filter((f) => f.label.startsWith("Custom ")).length
+
+                      let newField
+                      if (value === "price") {
+                        const priceNumber = existingPriceFields + 2 // Start from Price 2
+                        newField = {
+                          id: `custom_price_${priceNumber}`,
+                          label: `Price ${priceNumber}`,
+                          type: "price",
+                        }
+                      } else {
+                        const customNumber = existingCustomFields + 1
+                        newField = {
+                          id: `custom_field_${customNumber}`,
+                          label: `Custom ${customNumber}`,
+                          type: "custom",
+                        }
+                      }
+
+                      setCustomFields([...customFields, newField])
+                    }}
+                    className="w-full"
+                  >
+                    <SelectTrigger className="h-8 text-xs w-full">
+                      <SelectValue placeholder="Select field type (Price or Custom)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="price">Price</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">For extra columns like multiple price points</p>
+                <p className="text-xs text-muted-foreground mt-1">Add price columns or custom fields</p>
               </div>
 
               {unmappedColumns.length > 0 && (

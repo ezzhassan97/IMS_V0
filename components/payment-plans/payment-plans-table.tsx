@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { PaymentPlanModal } from "./payment-plan-modal"
 
 // Sample data for demonstration
 const data: PaymentPlan[] = [
@@ -159,6 +160,13 @@ export function PaymentPlansTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
+  const [showModal, setShowModal] = useState(false)
+  const [editingPlan, setEditingPlan] = useState<PaymentPlan | null>(null)
+
+  const handleEditPlan = (plan: PaymentPlan) => {
+    setEditingPlan(plan)
+    setShowModal(true)
+  }
 
   const columns: ColumnDef<PaymentPlan>[] = [
     {
@@ -196,9 +204,12 @@ export function PaymentPlansTable() {
         )
       },
       cell: ({ row }) => (
-        <Link href={`/payment-plans/${row.original.id}`} className="font-medium text-primary hover:underline">
+        <div
+          className="font-medium text-primary hover:underline cursor-pointer"
+          onClick={() => handleEditPlan(row.original)}
+        >
           {row.getValue("name")}
-        </Link>
+        </div>
       ),
     },
     {
@@ -262,12 +273,7 @@ export function PaymentPlansTable() {
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => navigator.clipboard.writeText(plan.id)}>Copy plan ID</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`/payment-plans/${plan.id}`}>View plan details</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/payment-plans/${plan.id}/edit`}>Edit plan</Link>
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEditPlan(plan)}>Edit plan</DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href={`/payment-plans/${plan.id}/units`}>View linked units</Link>
               </DropdownMenuItem>
@@ -300,118 +306,140 @@ export function PaymentPlansTable() {
   })
 
   return (
-    <Card>
-      <div className="flex items-center justify-between p-4">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Filter plans..."
-            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
-            className="max-w-sm"
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
-                Type <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Equal Installments")}>
-                Equal Installments
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Backloaded")}>
-                Backloaded
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Frontloaded")}>
-                Frontloaded
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Milestone-based")}>
-                Milestone-based
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => table.resetColumnFilters()}>Clear Filters</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
+    <>
+      {showModal && (
+        <PaymentPlanModal
+          open={showModal}
+          onOpenChange={setShowModal}
+          isEditing={!!editingPlan}
+          initialData={editingPlan}
+        />
+      )}
+
+      <Card>
+        <div className="flex items-center justify-between p-4">
+          <div className="flex flex-1 items-center space-x-2">
+            <Input
+              placeholder="Filter plans..."
+              value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+              onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
+              className="max-w-sm"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="ml-auto">
+                  Type <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Equal Installments")}>
+                  Equal Installments
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Backloaded")}>
+                  Backloaded
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Frontloaded")}>
+                  Frontloaded
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Milestone-based")}>
+                  Milestone-based
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => table.resetColumnFilters()}>Clear Filters</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={() => {
+                setEditingPlan(null)
+                setShowModal(true)
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              New Plan
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
-                  ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Columns <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 p-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
-          selected.
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-            Next
-          </Button>
+        <div className="flex items-center justify-end space-x-2 p-4">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
+            selected.
+          </div>
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+              Next
+            </Button>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </>
   )
 }

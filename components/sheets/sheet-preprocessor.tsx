@@ -39,7 +39,6 @@ import {
   DollarSign,
   LampFloorIcon as FloorPlan,
   LayoutGrid,
-  Scissors,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -1487,402 +1486,424 @@ export function SheetPreprocessor() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Final Review & Analysis</h2>
-              {/* Action Summary button moved to fixed position */}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Main content area */}
-              <div className={`md:col-span-${showActionSummary ? "2" : "3"} space-y-6`}>
-                {/* Analytics Overview */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Health Score */}
-                  <div className="border rounded-md p-4 flex flex-col items-center justify-center">
-                    <div className="text-3xl font-bold text-green-600">92%</div>
-                    <div className="text-sm font-medium mt-1">Health Score</div>
-                    <div className="text-xs text-muted-foreground mt-1">Based on data quality checks</div>
-                  </div>
-
-                  {/* Issues Summary */}
-                  <div className="border rounded-md p-4">
-                    <h4 className="text-sm font-medium mb-2">Issues Found</h4>
-                    <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Left side - Analysis Cards */}
+              <div className="md:col-span-2 space-y-3">
+                {/* Health Score and Issues Card */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-sm">Data Health</CardTitle>
+                      <div className="text-2xl font-bold text-green-600">92%</div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3">
+                    <h4 className="text-xs font-medium mb-2">Issues Found</h4>
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs">Unmapped columns</span>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
                           3
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs">Duplicate unit IDs</span>
-                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                        <Badge variant="outline" className="bg-red-50 text-red-700 text-[10px]">
                           2
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs">Missing values</span>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
                           8
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs">Inconsistent formats</span>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
                           5
                         </Badge>
                       </div>
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
 
-                  {/* Completeness */}
-                  <div className="border rounded-md p-4">
-                    <h4 className="text-sm font-medium mb-2">Data Completeness</h4>
-                    <div className="space-y-2">
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Unit IDs</span>
-                          <span className="text-xs font-medium">100%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "100%" }}></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Prices</span>
-                          <span className="text-xs font-medium">98%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "98%" }}></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Property Types</span>
-                          <span className="text-xs font-medium">95%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "95%" }}></div>
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Areas</span>
-                          <span className="text-xs font-medium">92%</span>
-                        </div>
-                        <div className="w-full bg-muted rounded-full h-1.5">
-                          <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "92%" }}></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Distribution and Mapping */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Property Types Distribution */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Property Types Distribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Apartment</span>
-                            <span className="text-xs font-medium">42% (21 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: "42%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Villa</span>
-                            <span className="text-xs font-medium">28% (14 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Townhouse</span>
-                            <span className="text-xs font-medium">16% (8 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-amber-500 h-2 rounded-full" style={{ width: "16%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Studio</span>
-                            <span className="text-xs font-medium">10% (5 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Penthouse</span>
-                            <span className="text-xs font-medium">4% (2 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: "4%" }}></div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Bedroom Distribution */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Bedroom Distribution</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="space-y-2">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">Studio</span>
-                            <span className="text-xs font-medium">10% (5 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-slate-500 h-2 rounded-full" style={{ width: "10%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">1 Bedroom</span>
-                            <span className="text-xs font-medium">24% (12 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: "24%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">2 Bedrooms</span>
-                            <span className="text-xs font-medium">36% (18 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-green-500 h-2 rounded-full" style={{ width: "36%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">3 Bedrooms</span>
-                            <span className="text-xs font-medium">20% (10 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-amber-500 h-2 rounded-full" style={{ width: "20%" }}></div>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs">4+ Bedrooms</span>
-                            <span className="text-xs font-medium">10% (5 units)</span>
-                          </div>
-                          <div className="w-full bg-muted rounded-full h-2">
-                            <div className="bg-red-500 h-2 rounded-full" style={{ width: "10%" }}></div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Transformation and Mapping Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Transformation Summary */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Transformation Summary</CardTitle>
-                      <CardDescription className="text-xs">All changes applied to the sheet</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <ScrollArea className="h-[180px] pr-4">
-                        <div className="space-y-3">
-                          {transformations.length > 0 ? (
-                            transformations.map((transform, index) => (
-                              <div key={index} className="flex items-start gap-2 pb-2 border-b">
-                                <div className="mt-0.5">
-                                  {transform.type === "split" && <Scissors className="h-4 w-4 text-blue-500" />}
-                                  {transform.type === "merge" && <Merge className="h-4 w-4 text-purple-500" />}
-                                  {transform.type === "standardize" && <Check className="h-4 w-4 text-green-500" />}
-                                  {transform.type === "conditional-update" && (
-                                    <Wand2 className="h-4 w-4 text-amber-500" />
-                                  )}
-                                  {!["split", "merge", "standardize", "conditional-update"].includes(
-                                    transform.type,
-                                  ) && <Brush className="h-4 w-4 text-gray-500" />}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium">
-                                    {transform.description || `${transform.type} on ${transform.column}`}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {new Date(transform.timestamp).toLocaleString()}
-                                  </p>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <p>No transformations applied</p>
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-
-                  {/* Column Mapping Summary */}
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">Column Mapping</CardTitle>
-                      <CardDescription className="text-xs">Sheet columns to system fields mapping</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <ScrollArea className="h-[180px] pr-4">
-                        <div className="space-y-1">
-                          {Object.entries(columnMappings).length > 0 ? (
-                            Object.entries(columnMappings).map(([originalColumn, systemField], index) => (
-                              <div key={index} className="flex items-center justify-between py-1 border-b">
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4 text-blue-500" />
-                                  <span className="text-sm">{originalColumn}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                                  <Badge variant="outline">{systemField}</Badge>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <p>No column mappings defined</p>
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Sheet Preview */}
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm">Sheet Preview</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <Checkbox
-                            id="show-original"
-                            defaultChecked
-                            onCheckedChange={(checked) => {
-                              const originalSection = document.getElementById("original-sheet")
-                              if (originalSection) {
-                                originalSection.style.display = checked ? "block" : "none"
-                              }
-                            }}
-                          />
-                          <label htmlFor="show-original" className="text-xs">
-                            Original
-                          </label>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Checkbox
-                            id="show-transformed"
-                            defaultChecked
-                            onCheckedChange={(checked) => {
-                              const transformedSection = document.getElementById("transformed-sheet")
-                              if (transformedSection) {
-                                transformedSection.style.display = checked ? "block" : "none"
-                              }
-                            }}
-                          />
-                          <label htmlFor="show-transformed" className="text-xs">
-                            Transformed
-                          </label>
-                        </div>
-                      </div>
-                    </div>
+                {/* Data Completeness Card */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Data Completeness</CardTitle>
                   </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="grid grid-cols-2 gap-0">
-                      <div id="original-sheet" className="border-r">
-                        <div className="p-2 bg-muted/30 border-b">
-                          <h3 className="text-xs font-medium">Original Data</h3>
-                        </div>
-                        <ScrollArea className="h-[250px]">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-12">#</TableHead>
-                                {sheetData?.headers?.map((header: string, i: number) => (
-                                  <TableHead key={i}>{header}</TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                                <TableRow key={rowIndex}>
-                                  <TableCell className="font-medium">{rowIndex + 1}</TableCell>
-                                  {sheetData.headers.map((header: string, colIndex: number) => (
-                                    <TableCell key={colIndex}>{row[header]}</TableCell>
-                                  ))}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </ScrollArea>
+                  <CardContent className="py-2 px-3 space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Unit IDs</span>
+                        <span className="text-xs font-medium">100%</span>
                       </div>
-                      <div id="transformed-sheet">
-                        <div className="p-2 bg-muted/30 border-b">
-                          <h3 className="text-xs font-medium">Transformed Data</h3>
-                        </div>
-                        <ScrollArea className="h-[250px]">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="w-12">#</TableHead>
-                                {sheetData?.headers?.map((header: string, i: number) => (
-                                  <TableHead key={i} className={columnMappings[header] ? "bg-green-50" : ""}>
-                                    {header}
-                                    {columnMappings[header] && (
-                                      <Badge variant="outline" className="ml-2 text-xs">
-                                        {columnMappings[header]}
-                                      </Badge>
-                                    )}
-                                  </TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {sheetData?.rows?.slice(0, 10).map((row: any, rowIndex: number) => (
-                                <TableRow key={rowIndex}>
-                                  <TableCell className="font-medium">{rowIndex + 1}</TableCell>
-                                  {sheetData.headers.map((header: string, colIndex: number) => (
-                                    <TableCell
-                                      key={colIndex}
-                                      className={transformations.some((t) => t.column === header) ? "bg-blue-50" : ""}
-                                    >
-                                      {row[header]}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </ScrollArea>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "100%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Prices</span>
+                        <span className="text-xs font-medium">98%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "98%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Property Types</span>
+                        <span className="text-xs font-medium">95%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "95%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Areas</span>
+                        <span className="text-xs font-medium">92%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "92%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Floor Numbers</span>
+                        <span className="text-xs font-medium">88%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "88%" }}></div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Property Category Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Property Category Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3 space-y-2">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Residential</span>
+                        <span className="text-xs font-medium">78% (39 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "78%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Commercial</span>
+                        <span className="text-xs font-medium">22% (11 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "22%" }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Property Type Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Property Type Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3 space-y-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Apartment</span>
+                        <span className="text-xs font-medium">42% (21 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "42%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Villa</span>
+                        <span className="text-xs font-medium">28% (14 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "28%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Retail</span>
+                        <span className="text-xs font-medium">16% (8 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "16%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Townhouse</span>
+                        <span className="text-xs font-medium">10% (5 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Penthouse</span>
+                        <span className="text-xs font-medium">4% (2 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-red-500 h-2 rounded-full" style={{ width: "4%" }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Property Sub-Type Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Property Sub-Type Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3 space-y-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Typical</span>
+                        <span className="text-xs font-medium">45% (22 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "45%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Stand-alone</span>
+                        <span className="text-xs font-medium">25% (13 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "25%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">F&B</span>
+                        <span className="text-xs font-medium">18% (9 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "18%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Clinics</span>
+                        <span className="text-xs font-medium">12% (6 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "12%" }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Project Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Project Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3 space-y-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Palm Heights</span>
+                        <span className="text-xs font-medium">40% (20 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "40%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Metro Residences</span>
+                        <span className="text-xs font-medium">32% (16 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "32%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Green Valley</span>
+                        <span className="text-xs font-medium">18% (9 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "18%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Sunset Towers</span>
+                        <span className="text-xs font-medium">10% (5 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Column Mapping Summary */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Column Mapping</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3">
+                    <ScrollArea className="h-[150px] pr-4">
+                      <div className="space-y-1">
+                        {Object.entries(columnMappings).length > 0 ? (
+                          Object.entries(columnMappings).map(([originalColumn, systemField], index) => (
+                            <div key={index} className="flex items-center justify-between py-1 border-b">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm">{originalColumn}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                                <Badge variant="outline">{systemField}</Badge>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <p>No column mappings defined</p>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Action Summary Sidebar */}
+              {/* Right side - Sheet Preview */}
+              <div className="md:col-span-3">
+                <Card>
+                  <CardHeader className="py-2 px-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm">Sheet Preview</CardTitle>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => {
+                            const originalSection = document.getElementById("original-sheet")
+                            const transformedSection = document.getElementById("transformed-sheet")
+                            if (originalSection && transformedSection) {
+                              originalSection.style.display = "block"
+                              transformedSection.style.display = "none"
+                            }
+                          }}
+                        >
+                          Original
+                        </Button>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => {
+                            const originalSection = document.getElementById("original-sheet")
+                            const transformedSection = document.getElementById("transformed-sheet")
+                            if (originalSection && transformedSection) {
+                              originalSection.style.display = "none"
+                              transformedSection.style.display = "block"
+                            }
+                          }}
+                        >
+                          Transformed
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div id="original-sheet" style={{ display: "none" }}>
+                      <div className="p-1 bg-muted/30 border-b">
+                        <h3 className="text-xs font-medium">Original Data</h3>
+                      </div>
+                      <ScrollArea className="h-[600px]">
+                        <Table className="w-full">
+                          <TableHeader>
+                            <TableRow className="h-7">
+                              <TableHead className="w-8 py-1 px-2 text-xs">#</TableHead>
+                              {sheetData?.headers?.map((header: string, i: number) => (
+                                <TableHead key={i} className="py-1 px-2 text-xs">
+                                  {header}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => (
+                              <TableRow key={rowIndex} className="h-6">
+                                <TableCell className="py-1 px-2 text-xs font-medium">{rowIndex + 1}</TableCell>
+                                {sheetData.headers.map((header: string, colIndex: number) => (
+                                  <TableCell key={colIndex} className="py-1 px-2 text-xs">
+                                    {row[header]}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </div>
+                    <div id="transformed-sheet" style={{ display: "block" }}>
+                      <div className="p-1 bg-muted/30 border-b">
+                        <h3 className="text-xs font-medium">Transformed Data</h3>
+                      </div>
+                      <ScrollArea className="h-[600px]">
+                        <Table className="w-full">
+                          <TableHeader>
+                            <TableRow className="h-7">
+                              <TableHead className="w-8 py-1 px-2 text-xs">#</TableHead>
+                              {sheetData?.headers?.map((header: string, i: number) => (
+                                <TableHead
+                                  key={i}
+                                  className={`py-1 px-2 text-xs ${columnMappings[header] ? "bg-green-50" : ""}`}
+                                >
+                                  {header}
+                                  {columnMappings[header] && (
+                                    <Badge variant="outline" className="ml-1 text-[10px] py-0 h-4">
+                                      {columnMappings[header]}
+                                    </Badge>
+                                  )}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => (
+                              <TableRow key={rowIndex} className="h-6">
+                                <TableCell className="py-1 px-2 text-xs font-medium">{rowIndex + 1}</TableCell>
+                                {sheetData.headers.map((header: string, colIndex: number) => (
+                                  <TableCell
+                                    key={colIndex}
+                                    className={`py-1 px-2 text-xs ${transformations.some((t) => t.column === header) ? "bg-blue-50" : ""}`}
+                                  >
+                                    {row[header]}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </TabsContent>
