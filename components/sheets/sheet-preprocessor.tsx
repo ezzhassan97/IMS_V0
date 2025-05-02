@@ -1486,6 +1486,24 @@ export function SheetPreprocessor() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">Final Review & Analysis</h2>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-blue-100 border border-blue-300"></div>
+                  <span className="text-xs">Unchanged</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-300"></div>
+                  <span className="text-xs">Modified</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-green-100 border border-green-300"></div>
+                  <span className="text-xs">New</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-red-100 border border-red-300"></div>
+                  <span className="text-xs">Removed</span>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -1595,8 +1613,8 @@ export function SheetPreprocessor() {
                         <span className="text-xs">Residential</span>
                         <span className="text-xs font-medium">78% (39 units)</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "78%" }}></div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: "78%" }}></div>
                       </div>
                     </div>
                     <div>
@@ -1604,8 +1622,8 @@ export function SheetPreprocessor() {
                         <span className="text-xs">Commercial</span>
                         <span className="text-xs font-medium">22% (11 units)</span>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "22%" }}></div>
+                      <div className="w-full bg-muted rounded-full h-1.5">
+                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "22%" }}></div>
                       </div>
                     </div>
                   </CardContent>
@@ -1833,30 +1851,38 @@ export function SheetPreprocessor() {
                         <h3 className="text-xs font-medium">Original Data</h3>
                       </div>
                       <ScrollArea className="h-[600px]">
-                        <Table className="w-full">
-                          <TableHeader>
-                            <TableRow className="h-7">
-                              <TableHead className="w-8 py-1 px-2 text-xs">#</TableHead>
-                              {sheetData?.headers?.map((header: string, i: number) => (
-                                <TableHead key={i} className="py-1 px-2 text-xs">
-                                  {header}
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => (
-                              <TableRow key={rowIndex} className="h-6">
-                                <TableCell className="py-1 px-2 text-xs font-medium">{rowIndex + 1}</TableCell>
-                                {sheetData.headers.map((header: string, colIndex: number) => (
-                                  <TableCell key={colIndex} className="py-1 px-2 text-xs">
-                                    {row[header]}
-                                  </TableCell>
+                        <div className="overflow-x-auto" style={{ minWidth: "100%" }}>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="h-7">
+                                <TableHead className="w-8 py-1 px-2 text-xs sticky left-0 bg-white z-10">#</TableHead>
+                                {sheetData?.headers?.map((header: string, i: number) => (
+                                  <TableHead key={i} className="py-1 px-2 text-xs whitespace-nowrap">
+                                    {header}
+                                  </TableHead>
                                 ))}
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+
+                            <TableBody>
+                              {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => {
+                                // No color highlighting in original view
+                                return (
+                                  <TableRow key={rowIndex} className="h-6">
+                                    <TableCell className="py-1 px-2 text-xs font-medium sticky left-0 bg-white z-10">
+                                      {rowIndex + 1}
+                                    </TableCell>
+                                    {sheetData.headers.map((header: string, colIndex: number) => (
+                                      <TableCell key={colIndex} className="py-1 px-2 text-xs whitespace-nowrap">
+                                        {row[header]}
+                                      </TableCell>
+                                    ))}
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </ScrollArea>
                     </div>
                     <div id="transformed-sheet" style={{ display: "block" }}>
@@ -1864,41 +1890,123 @@ export function SheetPreprocessor() {
                         <h3 className="text-xs font-medium">Transformed Data</h3>
                       </div>
                       <ScrollArea className="h-[600px]">
-                        <Table className="w-full">
-                          <TableHeader>
-                            <TableRow className="h-7">
-                              <TableHead className="w-8 py-1 px-2 text-xs">#</TableHead>
-                              {sheetData?.headers?.map((header: string, i: number) => (
-                                <TableHead
-                                  key={i}
-                                  className={`py-1 px-2 text-xs ${columnMappings[header] ? "bg-green-50" : ""}`}
-                                >
-                                  {header}
-                                  {columnMappings[header] && (
-                                    <Badge variant="outline" className="ml-1 text-[10px] py-0 h-4">
-                                      {columnMappings[header]}
-                                    </Badge>
-                                  )}
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => (
-                              <TableRow key={rowIndex} className="h-6">
-                                <TableCell className="py-1 px-2 text-xs font-medium">{rowIndex + 1}</TableCell>
-                                {sheetData.headers.map((header: string, colIndex: number) => (
-                                  <TableCell
-                                    key={colIndex}
-                                    className={`py-1 px-2 text-xs ${transformations.some((t) => t.column === header) ? "bg-blue-50" : ""}`}
+                        <div className="overflow-x-auto" style={{ minWidth: "100%" }}>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="h-7">
+                                <TableHead className="w-8 py-1 px-2 text-xs sticky left-0 bg-white z-10">#</TableHead>
+                                {sheetData?.headers?.map((header: string, i: number) => (
+                                  <TableHead
+                                    key={i}
+                                    className={`py-1 px-2 text-xs whitespace-nowrap ${columnMappings[header] ? "bg-green-50" : ""}`}
                                   >
-                                    {row[header]}
-                                  </TableCell>
+                                    <div>
+                                      {header}
+                                      {columnMappings[header] && (
+                                        <Badge variant="outline" className="ml-1 text-[10px] py-0 h-4">
+                                          {columnMappings[header]}
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    {/* Add blue Trimmed tag with icon for Unit ID */}
+                                    {(header === "Unit ID" || header === "Unit Code") && (
+                                      <div className="mt-1">
+                                        <Badge
+                                          variant="outline"
+                                          className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 h-5"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            className="h-2.5 w-2.5 mr-1"
+                                          >
+                                            <path d="M4 20h16"></path>
+                                            <path d="M4 20v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path>
+                                            <path d="M2 12h20"></path>
+                                            <path d="M2 12v-2a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2"></path>
+                                            <path d="M2 4h20"></path>
+                                          </svg>
+                                          Trimmed
+                                        </Badge>
+                                      </div>
+                                    )}
+                                  </TableHead>
                                 ))}
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+
+                            <TableBody>
+                              {sheetData?.rows?.slice(0, 30).map((row: any, rowIndex: number) => {
+                                // Apply color coding based on row ranges
+                                let rowClass = ""
+                                if (rowIndex < 10)
+                                  rowClass = "bg-blue-50" // First 10 rows: Unchanged (blue)
+                                else if (rowIndex < 20)
+                                  rowClass = "bg-yellow-50" // Next 10 rows: Modified (yellow)
+                                else if (rowIndex < 25)
+                                  rowClass = "bg-green-50" // Next 5 rows: New (green)
+                                else rowClass = "bg-red-50" // Last 5 rows: Removed/sold (red)
+
+                                return (
+                                  <TableRow key={rowIndex} className={`h-6 ${rowClass}`}>
+                                    <TableCell className="py-1 px-2 text-xs font-medium sticky left-0 bg-white z-10">
+                                      {rowIndex + 1}
+                                    </TableCell>
+                                    {sheetData.headers.map((header: string, colIndex: number) => {
+                                      // Only highlight changes in specific columns (price, area, type) for yellow rows
+                                      const isModifiedRow = rowIndex >= 10 && rowIndex < 20
+                                      const isChangeableColumn =
+                                        header === "Price" ||
+                                        header === "Area (sqm)" ||
+                                        header === "Type" ||
+                                        header === "Status"
+                                      const isModifiedCell =
+                                        isModifiedRow &&
+                                        isChangeableColumn &&
+                                        ((header === "Price" && rowIndex % 3 === 0) ||
+                                          (header === "Area (sqm)" && rowIndex % 4 === 0) ||
+                                          (header === "Type" && rowIndex % 5 === 0) ||
+                                          (header === "Status" && rowIndex % 6 === 0))
+
+                                      return (
+                                        <TableCell
+                                          key={colIndex}
+                                          className={`py-1 px-2 text-xs whitespace-nowrap ${isModifiedCell ? "bg-yellow-100 border border-yellow-300" : ""}`}
+                                        >
+                                          {isModifiedCell ? (
+                                            <div className="flex items-center gap-1 whitespace-nowrap">
+                                              <span className="text-yellow-700 font-medium">
+                                                {header === "Price"
+                                                  ? Math.floor(row[header] * 0.9).toLocaleString()
+                                                  : header === "Area (sqm)"
+                                                    ? Math.floor(row[header] * 0.95)
+                                                    : header === "Type"
+                                                      ? row[header].replace("BR", "")
+                                                      : "Available"}
+                                              </span>
+                                              <span className="text-gray-400 mx-1">→</span>
+                                              <span className="text-black">
+                                                {header === "Price" ? row[header].toLocaleString() : row[header]}
+                                              </span>
+                                            </div>
+                                          ) : (
+                                            row[header]
+                                          )}
+                                        </TableCell>
+                                      )
+                                    })}
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </ScrollArea>
                     </div>
                   </CardContent>

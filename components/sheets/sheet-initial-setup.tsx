@@ -49,16 +49,16 @@ const DEVELOPERS = [
 
 // Mock data for projects
 const PROJECTS = [
-  { id: "proj1", name: "Palm Heights", developer: "dev1" },
-  { id: "proj2", name: "Green Valley", developer: "dev7" },
-  { id: "proj3", name: "Metro Residences", developer: "dev5" },
-  { id: "proj4", name: "Sunset Towers", developer: "dev3" },
-  { id: "proj5", name: "City Center", developer: "dev4" },
-  { id: "proj6", name: "Oasis Gardens", developer: "dev2" },
-  { id: "proj7", name: "Riverside Apartments", developer: "dev6" },
-  { id: "proj8", name: "Mountain View", developer: "dev1" },
-  { id: "proj9", name: "Harbor Lights", developer: "dev3" },
-  { id: "proj10", name: "Downtown Lofts", developer: "dev4" },
+  { id: "proj1", name: "Palm Heights", nameAr: "بالم هايتس", developer: "dev1", type: "main" },
+  { id: "proj2", name: "Green Valley", nameAr: "جرين فالي", developer: "dev7", type: "main" },
+  { id: "proj3", name: "Metro Residences", nameAr: "مترو ريزيدنسز", developer: "dev5", type: "sub" },
+  { id: "proj4", name: "Sunset Towers", nameAr: "صن سيت تاورز", developer: "dev3", type: "sub" },
+  { id: "proj5", name: "City Center", nameAr: "سيتي سنتر", developer: "dev4", type: "main" },
+  { id: "proj6", name: "Oasis Gardens", nameAr: "واحة الحدائق", developer: "dev2", type: "sub" },
+  { id: "proj7", name: "Riverside Apartments", nameAr: "ريفرسايد أبارتمنتس", developer: "dev6", type: "main" },
+  { id: "proj8", name: "Mountain View", nameAr: "ماونتن فيو", developer: "dev1", type: "sub" },
+  { id: "proj9", name: "Harbor Lights", nameAr: "هاربور لايتس", developer: "dev3", type: "main" },
+  { id: "proj10", name: "Downtown Lofts", nameAr: "داون تاون لوفتس", developer: "dev4", type: "sub" },
 ]
 
 // Property type options
@@ -341,7 +341,23 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
                           <CommandItem key={proj.id} value={proj.id} onSelect={() => handleProjectToggle(proj.id)}>
                             <div className="flex items-center space-x-2">
                               <Checkbox checked={projects.includes(proj.id)} />
-                              <span>{proj.name}</span>
+                              <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                  <span>{proj.name}</span>
+                                  <Badge
+                                    variant={proj.type === "main" ? "default" : "secondary"}
+                                    className="text-[10px] px-1 py-0 h-4"
+                                  >
+                                    {proj.type === "main" ? "Main" : "Sub"}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span dir="rtl" className="font-arabic">
+                                    {proj.nameAr}
+                                  </span>
+                                  <span className="text-[10px]">({proj.id})</span>
+                                </div>
+                              </div>
                             </div>
                           </CommandItem>
                         ))}
@@ -356,7 +372,12 @@ export function SheetInitialSetup({ initialData, onSetupChange }: SheetInitialSe
                   return project ? (
                     <Badge key={projId} variant="secondary" className="flex items-center gap-1 text-xs">
                       <Building2 className="h-3 w-3" />
-                      {project.name}
+                      <div className="flex flex-col">
+                        <span>{project.name}</span>
+                        <span className="text-[10px] opacity-70">
+                          {project.id} • {project.type === "main" ? "Main" : "Sub"}
+                        </span>
+                      </div>
                       <button
                         type="button"
                         className="ml-1 rounded-full outline-none focus:ring-2"

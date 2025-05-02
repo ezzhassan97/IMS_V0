@@ -65,7 +65,7 @@ const MOCK_FLOOR_PLANS = [
     name: "3BR Standard Floor Plan",
     type: "3BR",
     area: "120-130",
-    imageUrl: "/placeholder.svg?height=200&width=300&query=3+bedroom+floor+plan",
+    imageUrl: "/placeholder.svg?key=4e6au",
     assignedUnits: 6,
     tags: ["3BR", "Standard"],
   },
@@ -74,10 +74,20 @@ const MOCK_FLOOR_PLANS = [
     name: "Penthouse Floor Plan",
     type: "Penthouse",
     area: "180-200",
-    imageUrl: "/placeholder.svg?height=200&width=300&query=penthouse+floor+plan",
+    imageUrl: "/placeholder.svg?key=eb0g0",
     assignedUnits: 2,
     tags: ["Penthouse", "Luxury"],
   },
+]
+
+// Add these mock data constants after MOCK_FLOOR_PLANS
+const MOCK_PROJECTS = ["Marina Heights", "Palm Gardens", "Downtown Square", "Sunset Hills"]
+const MOCK_PHASES = ["Phase 1", "Phase 2", "Phase 3", "Phase 4"]
+const MOCK_PAYMENT_PLANS = [
+  { id: "pp-1", name: "Standard 5/95", type: "Standard" },
+  { id: "pp-2", name: "Flexible 10/90", type: "Flexible" },
+  { id: "pp-3", name: "Premium 15/85", type: "Premium" },
+  { id: "pp-4", name: "Custom 20/80", type: "Custom" },
 ]
 
 interface SheetFloorPlanAttachmentProps {
@@ -288,8 +298,8 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Left side - Units table */}
         <div className="md:col-span-2 space-y-4">
-          <Card>
-            <CardHeader className="pb-2">
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-1">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Units</CardTitle>
                 {selectedUnits.length > 0 && (
@@ -306,95 +316,189 @@ export function SheetFloorPlanAttachment({ data, mapping }: SheetFloorPlanAttach
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[600px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedUnits.length === data.rows.length}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedUnits(data.rows.map((row) => getUnitId(row)))
-                            } else {
-                              setSelectedUnits([])
-                            }
-                          }}
-                        />
-                      </TableHead>
-                      <TableHead>Unit ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Area (sqm)</TableHead>
-                      <TableHead>Floor Plan</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.rows.map((row, index) => {
-                      const unitId = getUnitId(row)
-                      const unitType = getUnitType(row)
-                      const unitArea = getUnitArea(row)
-                      const assignedFloorPlan = unitAssignments[unitId]
-                      const floorPlanName = assignedFloorPlan
-                        ? floorPlans.find((p) => p.id === assignedFloorPlan)?.name || "Unknown"
-                        : "Not assigned"
-
-                      return (
-                        <TableRow key={index}>
-                          <TableCell>
+              <div className="relative">
+                <ScrollArea className="h-[600px]">
+                  <div className="overflow-auto">
+                    <Table className="text-sm min-w-[1200px]">
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="w-10 p-2">
                             <Checkbox
-                              checked={selectedUnits.includes(unitId)}
-                              onCheckedChange={() => toggleUnitSelection(unitId)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{unitId}</TableCell>
-                          <TableCell>{unitType}</TableCell>
-                          <TableCell>{unitArea}</TableCell>
-                          <TableCell>
-                            {assignedFloorPlan ? (
-                              <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">
-                                {floorPlanName}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
-                                Not assigned
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Select
-                              value={assignedFloorPlan || ""}
-                              onValueChange={(value) => {
-                                const newAssignments = { ...unitAssignments }
-                                if (value) {
-                                  newAssignments[unitId] = value
+                              checked={selectedUnits.length === data.rows.length}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedUnits(data.rows.map((row) => getUnitId(row)))
                                 } else {
-                                  delete newAssignments[unitId]
+                                  setSelectedUnits([])
                                 }
-                                setUnitAssignments(newAssignments)
                               }}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select floor plan" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                {floorPlans
-                                  .filter((plan) => plan.type === unitType)
-                                  .map((plan) => (
-                                    <SelectItem key={plan.id} value={plan.id}>
-                                      {plan.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
+                            />
+                          </TableHead>
+                          <TableHead className="p-2">Project</TableHead>
+                          <TableHead className="p-2">Phase</TableHead>
+                          <TableHead className="p-2">Unit ID</TableHead>
+                          <TableHead className="p-2">Property Type</TableHead>
+                          <TableHead className="p-2">Sub-Type</TableHead>
+                          <TableHead className="p-2">Floor</TableHead>
+                          <TableHead className="p-2">Area</TableHead>
+                          <TableHead className="p-2">Garden</TableHead>
+                          <TableHead className="p-2">Roof</TableHead>
+                          <TableHead className="p-2">Price</TableHead>
+                          <TableHead className="p-2">Floor Plan</TableHead>
+                          <TableHead className="p-2">Floor Plan Tags</TableHead>
+                          <TableHead className="p-2">Payment Plan</TableHead>
                         </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+                      </TableHeader>
+                      <TableBody>
+                        {data.rows.map((row, index) => {
+                          const unitId = getUnitId(row)
+                          const unitType = getUnitType(row)
+                          const unitArea = getUnitArea(row)
+                          const assignedFloorPlan = unitAssignments[unitId]
+                          const floorPlanName = assignedFloorPlan
+                            ? floorPlans.find((p) => p.id === assignedFloorPlan)?.name || "Unknown"
+                            : "Not assigned"
+
+                          // Mock data for the new columns
+                          const project = MOCK_PROJECTS[index % MOCK_PROJECTS.length]
+                          const phase = MOCK_PHASES[index % MOCK_PHASES.length]
+                          const subType = unitType === "1BR" ? "Standard" : unitType === "2BR" ? "Deluxe" : "Premium"
+                          const floor = Math.floor(Math.random() * 20) + 1
+                          const gardenArea = Math.random() > 0.7 ? Math.floor(Math.random() * 50) + 10 : 0
+                          const roofArea = Math.random() > 0.8 ? Math.floor(Math.random() * 40) + 15 : 0
+                          const price = Math.floor(Math.random() * 5000000) + 1000000
+                          const formattedPrice = new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                          }).format(price)
+
+                          // Random payment plan assignment
+                          const paymentPlanId =
+                            Math.random() > 0.3 ? MOCK_PAYMENT_PLANS[index % MOCK_PAYMENT_PLANS.length].id : ""
+
+                          return (
+                            <TableRow key={index} className="hover:bg-gray-50">
+                              <TableCell className="p-2">
+                                <Checkbox
+                                  checked={selectedUnits.includes(unitId)}
+                                  onCheckedChange={() => toggleUnitSelection(unitId)}
+                                />
+                              </TableCell>
+                              <TableCell className="p-2">{project}</TableCell>
+                              <TableCell className="p-2">{phase}</TableCell>
+                              <TableCell className="p-2 font-medium">{unitId}</TableCell>
+                              <TableCell className="p-2">{unitType}</TableCell>
+                              <TableCell className="p-2">{subType}</TableCell>
+                              <TableCell className="p-2">{floor}</TableCell>
+                              <TableCell className="p-2">{unitArea}</TableCell>
+                              <TableCell className="p-2">{gardenArea > 0 ? `${gardenArea} sqm` : "-"}</TableCell>
+                              <TableCell className="p-2">{roofArea > 0 ? `${roofArea} sqm` : "-"}</TableCell>
+                              <TableCell className="p-2">{formattedPrice}</TableCell>
+                              <TableCell className="p-2">
+                                {assignedFloorPlan ? (
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-100">
+                                    {floorPlanName}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-amber-50 text-amber-700 hover:bg-amber-100">
+                                    Not assigned
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                  {assignedFloorPlan ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-green-50 text-green-700 hover:bg-green-100 cursor-pointer flex items-center gap-1"
+                                    >
+                                      {floorPlanName}
+                                      <X
+                                        className="h-3 w-3"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          const newAssignments = { ...unitAssignments }
+                                          delete newAssignments[unitId]
+                                          setUnitAssignments(newAssignments)
+                                        }}
+                                      />
+                                    </Badge>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-6 text-xs"
+                                      onClick={() => {
+                                        if (selectedFloorPlan) {
+                                          const newAssignments = { ...unitAssignments }
+                                          newAssignments[unitId] = selectedFloorPlan
+                                          setUnitAssignments(newAssignments)
+                                        } else {
+                                          toast({
+                                            title: "No floor plan selected",
+                                            description: "Please select a floor plan from the right panel first.",
+                                            variant: "destructive",
+                                          })
+                                        }
+                                      }}
+                                    >
+                                      + Add floor plan
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="p-2">
+                                <div className="flex space-x-1">
+                                  <Select
+                                    value={assignedFloorPlan || "none"}
+                                    onValueChange={(value) => {
+                                      const newAssignments = { ...unitAssignments }
+                                      if (value && value !== "none") {
+                                        newAssignments[unitId] = value
+                                      } else {
+                                        delete newAssignments[unitId]
+                                      }
+                                      setUnitAssignments(newAssignments)
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 w-[120px]">
+                                      <SelectValue placeholder="Floor plan" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">None</SelectItem>
+                                      {floorPlans
+                                        .filter((plan) => plan.type === unitType)
+                                        .map((plan) => (
+                                          <SelectItem key={plan.id} value={plan.id}>
+                                            {plan.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+
+                                  <Select defaultValue={paymentPlanId || "none"}>
+                                    <SelectTrigger className="h-8 w-[120px]">
+                                      <SelectValue placeholder="Payment plan" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">None</SelectItem>
+                                      {MOCK_PAYMENT_PLANS.map((plan) => (
+                                        <SelectItem key={plan.id} value={plan.id}>
+                                          {plan.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </ScrollArea>
+              </div>
             </CardContent>
           </Card>
         </div>

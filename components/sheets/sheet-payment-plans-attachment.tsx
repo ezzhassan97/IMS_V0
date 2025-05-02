@@ -11,30 +11,17 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import {
-  Plus,
-  Edit,
-  Filter,
-  AlertCircle,
-  CheckCircle2,
-  Calendar,
-  DollarSign,
-  Percent,
-  Clock,
-  ImageIcon,
-} from "lucide-react"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Plus, Edit, Filter, AlertCircle, Calendar, DollarSign, Percent, Clock, ImageIcon } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { PaymentPlanModal } from "@/components/payment-plans/payment-plan-modal"
 
 interface SheetPaymentPlansAttachmentProps {
   data: {
@@ -186,6 +173,8 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
   const [isExpandedMap, setIsExpandedMap] = useState<Record<string, boolean>>({})
   const [planPriceSelections, setPlanPriceSelections] = useState<Record<string, string[]>>({})
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean>>({})
+  const [isPaymentPlanModalOpen, setIsPaymentPlanModalOpen] = useState(false)
+  const [editingPaymentPlan, setEditingPaymentPlan] = useState<any | null>(null)
 
   // Function to generate initial assignments
   const generateInitialAssignments = useCallback(() => {
@@ -465,6 +454,25 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
     }))
   }
 
+  const handlePaymentPlanSubmit = (planData: any) => {
+    if (editingPaymentPlan) {
+      // Update existing plan
+      setPaymentPlans((prev) =>
+        prev.map((plan) => (plan.id === editingPaymentPlan.id ? { ...plan, ...planData } : plan)),
+      )
+    } else {
+      // Create new plan
+      const newPlan = {
+        ...planData,
+        id: `PP-${String(paymentPlans.length + 1).padStart(3, "0")}`,
+        imageUrl: "/placeholder.svg?height=600&width=800",
+      }
+      setPaymentPlans([...paymentPlans, newPlan])
+    }
+    setEditingPaymentPlan(null)
+    setIsPaymentPlanModalOpen(false)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -491,79 +499,6 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
               {showAssignmentSummary ? "Hide" : "Show"} Summary
             </Button>
           </div>
-          <Dialog open={autoAssignDialogOpen} onOpenChange={setAutoAssignDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Auto-Assign Plans
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Auto-Assign Payment Plans</DialogTitle>
-                <DialogDescription>Automatically assign payment plans to units based on criteria</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="column" className="text-right">
-                    Column
-                  </Label>
-                  <Select
-                    value={autoAssignCriteria.column}
-                    onValueChange={(value) => setAutoAssignCriteria({ ...autoAssignCriteria, column: value })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select column" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {data.columns.map((column) => (
-                        <SelectItem key={column} value={column}>
-                          {column}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="value" className="text-right">
-                    Value Contains
-                  </Label>
-                  <Input
-                    id="value"
-                    value={autoAssignCriteria.value}
-                    onChange={(e) => setAutoAssignCriteria({ ...autoAssignCriteria, value: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="plan" className="text-right">
-                    Payment Plan
-                  </Label>
-                  <Select
-                    value={autoAssignCriteria.planId}
-                    onValueChange={(value) => setAutoAssignCriteria({ ...autoAssignCriteria, planId: value })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select payment plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setAutoAssignDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAutoAssign}>Apply</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -848,171 +783,17 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
             <CardHeader className="pb-2 pt-3 px-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Payment Plans</CardTitle>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="h-7 text-xs">
-                      <Plus className="mr-1 h-3 w-3" />
-                      New Plan
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Payment Plan</DialogTitle>
-                      <DialogDescription>Add a new payment plan to assign to units</DialogDescription>
-                    </DialogHeader>
-                    <Form {...form}>
-                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Plan Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter plan name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Plan Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Equal Installments">Equal Installments</SelectItem>
-                                    <SelectItem value="Backloaded">Backloaded</SelectItem>
-                                    <SelectItem value="Frontloaded">Frontloaded</SelectItem>
-                                    <SelectItem value="Milestone-based">Milestone-based</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="projectName"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Project</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select project" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Palm Hills October">Palm Hills October</SelectItem>
-                                    <SelectItem value="Marassi North Coast">Marassi North Coast</SelectItem>
-                                    <SelectItem value="Mountain View iCity">Mountain View iCity</SelectItem>
-                                    <SelectItem value="Zed East">Zed East</SelectItem>
-                                    <SelectItem value="SODIC East">SODIC East</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="downPayment"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Down Payment (%)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="installments"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Installments</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="duration"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Duration (months)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="cashDiscount"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Cash Discount (%)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="maintenanceFee"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Maintenance (%)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="clubhouseFee"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Clubhouse (%)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <DialogFooter>
-                          <Button type="submit">{editingPlan ? "Update Plan" : "Create Plan"}</Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => {
+                    setEditingPaymentPlan(null)
+                    setIsPaymentPlanModalOpen(true)
+                  }}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  New Plan
+                </Button>
               </div>
               <CardDescription className="text-xs">Available payment plans for assignment</CardDescription>
               <div className="flex items-center mt-2 gap-2">
@@ -1222,182 +1003,17 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
                               {isExpanded[plan.id] ? "Less" : "More"} details
                             </Button>
                             <div className="flex items-center gap-1">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => {
-                                      setEditingPlan(plan)
-                                      setIsEditDialogOpen(true)
-                                    }}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Payment Plan</DialogTitle>
-                                    <DialogDescription>Modify the payment plan details</DialogDescription>
-                                  </DialogHeader>
-                                  <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                      <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field }) => (
-                                          <FormItem>
-                                            <FormLabel>Plan Name</FormLabel>
-                                            <FormControl>
-                                              <Input placeholder="Enter plan name" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                          </FormItem>
-                                        )}
-                                      />
-                                      <div className="grid grid-cols-2 gap-4">
-                                        <FormField
-                                          control={form.control}
-                                          name="type"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Plan Type</FormLabel>
-                                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                  <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                  </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                  <SelectItem value="Equal Installments">Equal Installments</SelectItem>
-                                                  <SelectItem value="Backloaded">Backloaded</SelectItem>
-                                                  <SelectItem value="Frontloaded">Frontloaded</SelectItem>
-                                                  <SelectItem value="Milestone-based">Milestone-based</SelectItem>
-                                                </SelectContent>
-                                              </Select>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="projectName"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Project</FormLabel>
-                                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                  <SelectTrigger>
-                                                    <SelectValue placeholder="Select project" />
-                                                  </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                  <SelectItem value="Palm Hills October">Palm Hills October</SelectItem>
-                                                  <SelectItem value="Marassi North Coast">
-                                                    Marassi North Coast
-                                                  </SelectItem>
-                                                  <SelectItem value="Mountain View iCity">
-                                                    Mountain View iCity
-                                                  </SelectItem>
-                                                  <SelectItem value="Zed East">Zed East</SelectItem>
-                                                  <SelectItem value="SODIC East">SODIC East</SelectItem>
-                                                </SelectContent>
-                                              </Select>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                      </div>
-                                      <div className="grid grid-cols-3 gap-4">
-                                        <FormField
-                                          control={form.control}
-                                          name="downPayment"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Down Payment (%)</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="installments"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Installments</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="duration"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Duration (months)</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                      </div>
-                                      <div className="grid grid-cols-3 gap-4">
-                                        <FormField
-                                          control={form.control}
-                                          name="cashDiscount"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Cash Discount (%)</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="maintenanceFee"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Maintenance (%)</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                        <FormField
-                                          control={form.control}
-                                          name="clubhouseFee"
-                                          render={({ field }) => (
-                                            <FormItem>
-                                              <FormLabel>Clubhouse (%)</FormLabel>
-                                              <FormControl>
-                                                <Input type="number" {...field} />
-                                              </FormControl>
-                                              <FormMessage />
-                                            </FormItem>
-                                          )}
-                                        />
-                                      </div>
-                                      <DialogFooter>
-                                        <Button type="submit">Update Plan</Button>
-                                      </DialogFooter>
-                                    </form>
-                                  </Form>
-                                </DialogContent>
-                              </Dialog>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6"
+                                onClick={() => {
+                                  setEditingPaymentPlan(plan)
+                                  setIsPaymentPlanModalOpen(true)
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
                               <Dialog>
                                 <DialogTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -1435,67 +1051,14 @@ export function SheetPaymentPlansAttachment({ data, mapping, priceColumns }: She
           </Card>
         </div>
       </div>
-
-      {/* Assignment Recommendations */}
-      <Card>
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-base">Recommendations</CardTitle>
-          <CardDescription className="text-xs">
-            Suggested payment plan assignments based on unit characteristics
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-3">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 border rounded-md bg-blue-50">
-              <div className="flex items-center">
-                <CheckCircle2 className="h-3 w-3 mr-2 text-blue-600" />
-                <div>
-                  <p className="text-xs font-medium">Villas should use Premium 7 Years plan</p>
-                  <p className="text-[10px] text-muted-foreground">5 units match this criteria</p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setAutoAssignCriteria({
-                    column: "Type",
-                    value: "Villa",
-                    planId: "PP-002",
-                  })
-                  setAutoAssignDialogOpen(true)
-                }}
-                className="h-6 text-xs"
-              >
-                Apply
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between p-2 border rounded-md bg-blue-50">
-              <div className="flex items-center">
-                <CheckCircle2 className="h-3 w-3 mr-2 text-blue-600" />
-                <div>
-                  <p className="text-xs font-medium">Apartments should use Standard 5 Years plan</p>
-                  <p className="text-[10px] text-muted-foreground">12 units match this criteria</p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setAutoAssignCriteria({
-                    column: "Type",
-                    value: "Apartment",
-                    planId: "PP-001",
-                  })
-                  setAutoAssignDialogOpen(true)
-                }}
-                className="h-6 text-xs"
-              >
-                Apply
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Payment Plan Modal */}
+      <PaymentPlanModal
+        open={isPaymentPlanModalOpen}
+        onOpenChange={setIsPaymentPlanModalOpen}
+        isEditing={!!editingPaymentPlan}
+        initialData={editingPaymentPlan}
+        onSubmit={handlePaymentPlanSubmit}
+      />
     </div>
   )
 }

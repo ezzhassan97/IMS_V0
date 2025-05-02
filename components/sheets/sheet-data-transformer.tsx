@@ -26,6 +26,15 @@ import {
   ListFilter,
   X,
   Plus,
+  Calendar,
+  Hash,
+  Building,
+  Layers,
+  Paintbrush,
+  Milestone,
+  Check,
+  ChevronDown,
+  AlertCircle,
 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -38,8 +47,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Calendar, Hash, Building, Layers, Paintbrush, Milestone } from "lucide-react"
-import { Check, ChevronDown, AlertCircle } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface SheetDataTransformerProps {
@@ -153,10 +160,22 @@ export function SheetDataTransformer({
   // Initialize data
   useEffect(() => {
     if (initialData && initialData.rows) {
-      setOriginalData(initialData)
-      setTransformedData(JSON.parse(JSON.stringify(initialData))) // Deep copy
-      setData(initialData.rows)
-      setColumns(initialData.headers)
+      const newData = JSON.parse(JSON.stringify(initialData))
+
+      // Add Delivery Date column if it doesn't exist
+      if (!newData.headers.includes("Delivery Date")) {
+        newData.headers.push("Delivery Date")
+        newData.rows.forEach((row: any) => {
+          // Add random dates in different formats
+          const formats = ["12/31/2025", "2025-06-15", "15-03-2026", "Dec 2025"]
+          row["Delivery Date"] = formats[Math.floor(Math.random() * formats.length)]
+        })
+      }
+
+      setOriginalData(newData)
+      setTransformedData(JSON.parse(JSON.stringify(newData))) // Deep copy
+      setData(newData.rows)
+      setColumns(newData.headers)
     }
   }, [initialData])
 
@@ -2262,7 +2281,6 @@ export function SheetDataTransformer({
                     </Badge>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="border-x border-b rounded-b-md p-3 mt-[-1px] space-y-2">
-
                     <div className="max-h-[200px] overflow-y-auto pr-2">
                       <Table className="text-xs">
                         <TableHeader>
@@ -2577,6 +2595,9 @@ export function SheetDataTransformer({
                     <TableRow className="h-8">
                       <TableHead className="w-10 text-center py-1">#</TableHead>
                       {transformedData.headers.map((header: string, index: number) => {
+                        // Skip rendering the Status column
+                        if (header === "Status") return null
+
                         // Determine if this column has been transformed
                         const isTransformed = transformations.some(
                           (t) =>
@@ -2586,29 +2607,64 @@ export function SheetDataTransformer({
                         )
 
                         return (
-                          <TableHead key={index} className={`py-1 ${isTransformed ? "bg-green-50/50" : ""}`}>
-                            <div className="flex items-center gap-1">
+                          <TableHead
+                            key={index}
+                            className={`py-1 ${isTransformed ? "bg-green-50/50" : ""}`}
+                            // Make Unit ID column width fit content
+                            style={header === "Unit Code" ? { width: "1px", whiteSpace: "nowrap" } : {}}
+                          >
+                            <div className="flex flex-col items-start gap-1">
                               <span>{header}</span>
-                              {columnMappings[header] && (
-                                <Badge variant="outline" className="text-[10px] py-0 h-5">
-                                  {columnMappings[header]}
-                                </Badge>
-                              )}
-                              {isTransformed && (
-                                <Badge className="bg-green-100 text-green-800 text-[10px] py-0 h-5 border-green-200">
-                                  <Check className="h-2.5 w-2.5 mr-1" />
-                                  Modified
-                                </Badge>
-                              )}
-                              {header === "Type" && !columnMappings[header] && (
-                                <Badge
-                                  variant="outline"
-                                  className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-5"
-                                >
-                                  <AlertCircle className="h-2.5 w-2.5 mr-1" />
-                                  Not Mapped
-                                </Badge>
-                              )}
+                              <div className="flex flex-wrap gap-1">
+                                {columnMappings[header] && (
+                                  <Badge variant="outline" className="text-[10px] py-0 h-5">
+                                    {columnMappings[header]}
+                                  </Badge>
+                                )}
+                                {isTransformed && (
+                                  <Badge className="bg-green-100 text-green-800 text-[10px] py-0 h-5 border-green-200">
+                                    <Check className="h-2.5 w-2.5 mr-1" />
+                                    Modified
+                                  </Badge>
+                                )}
+                                {/* Add cleanup action indicators under headers */}
+                                {header === "Unit Code" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 h-5"
+                                  >
+                                    <TextCursorInput className="h-2.5 w-2.5 mr-1" />
+                                    Trimmed
+                                  </Badge>
+                                )}
+                                {header === "Price" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-purple-50 text-purple-700 border-purple-200 text-[10px] py-0 h-5"
+                                  >
+                                    <Hash className="h-2.5 w-2.5 mr-1" />
+                                    Numeric
+                                  </Badge>
+                                )}
+                                {header === "Delivery Date" && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] py-0 h-5"
+                                  >
+                                    <Calendar className="h-2.5 w-2.5 mr-1" />
+                                    Date
+                                  </Badge>
+                                )}
+                                {header === "Type" && !columnMappings[header] && (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-5"
+                                  >
+                                    <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                                    Unmapped Values
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </TableHead>
                         )
@@ -2628,6 +2684,17 @@ export function SheetDataTransformer({
                         >
                           <TableCell className="text-center font-medium py-1">{absoluteIndex + 1}</TableCell>
                           {transformedData.headers.map((header: string, colIndex: number) => {
+                            // Skip rendering the Status column
+                            if (header === "Status") return null
+
+                            // Check if this is an unmapped property type
+                            const isUnmappedPropertyType =
+                              header === "Type" && row[header] && !PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
+
+                            // Check if this is a mapped property type
+                            const isMappedPropertyType =
+                              header === "Type" && row[header] && PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
+
                             // Determine if this cell is in a transformed column
                             const isTransformedColumn = transformations.some(
                               (t) =>
@@ -2636,51 +2703,54 @@ export function SheetDataTransformer({
                                 (t.type === "split" && t.params?.newColumnName === header),
                             )
 
-                            // Check if this is an unmapped property type
-                            const isUnmappedPropertyType =
-                              header === "Type" &&
-                              ["APT", "TH", "VIL"].includes(row[header]) &&
-                              !PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
-
-                            // Check if this is a mapped property type
-                            const isMappedPropertyType =
-                              header === "Type" && PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]
-
-                            // Check if this is a cleaned value (e.g., trimmed whitespace)
-                            const isCleaned = header === "Status" && STATUS_MAPPINGS[row[header]?.toLowerCase()]
-
                             return (
                               <TableCell
                                 key={colIndex}
                                 className={`py-1 ${isTransformedColumn ? "bg-green-50/30" : ""} 
-                                  ${isUnmappedPropertyType ? "bg-yellow-50/50" : ""}
-                                  ${isCleaned ? "bg-blue-50/30" : ""}`}
+                                  ${isUnmappedPropertyType ? "bg-yellow-50/50" : ""}`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span>{row[header]}</span>
-                                  {isUnmappedPropertyType && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-4"
-                                    >
-                                      unmapped
-                                    </Badge>
-                                  )}
-                                  {isMappedPropertyType && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-green-50 text-green-700 border-green-200 text-[10px] py-0 h-4"
-                                    >
-                                      {PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]}
-                                    </Badge>
-                                  )}
-                                  {isCleaned && (
-                                    <Badge
-                                      variant="outline"
-                                      className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] py-0 h-4"
-                                    >
-                                      cleaned
-                                    </Badge>
+                                  {header === "Type" ? (
+                                    <div className="flex items-center gap-1">
+                                      {isMappedPropertyType ? (
+                                        <>
+                                          <span>{row[header]}</span>
+                                          <span className="text-muted-foreground mx-1">→</span>
+                                          <Check className="h-3 w-3 text-green-600 mr-1" />
+                                          <span className="font-medium">
+                                            {PROPERTY_TYPE_MAPPINGS[row[header]?.toLowerCase()]}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <div className="flex items-center justify-between w-full">
+                                          <span>{row[header]}</span>
+                                          {isUnmappedPropertyType && (
+                                            <Badge
+                                              variant="outline"
+                                              className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[10px] py-0 h-4"
+                                            >
+                                              unmapped
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : header === "Delivery Date" ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-muted-foreground">{row[header] || "12/31/2025"}</span>
+                                      <span className="mx-1">→</span>
+                                      <span className="font-medium">
+                                        {row[header]
+                                          ? new Date(row[header]).toLocaleDateString("en-US", {
+                                              year: "numeric",
+                                              month: "long",
+                                              day: "numeric",
+                                            })
+                                          : "December 31, 2025"}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span>{row[header]}</span>
                                   )}
                                 </div>
                               </TableCell>
@@ -2692,7 +2762,7 @@ export function SheetDataTransformer({
                     {paginatedData.length === 0 && (
                       <TableRow>
                         <TableCell
-                          colSpan={transformedData.headers.length + 1}
+                          colSpan={transformedData.headers.length}
                           className="text-center py-4 text-muted-foreground"
                         >
                           No data to display
