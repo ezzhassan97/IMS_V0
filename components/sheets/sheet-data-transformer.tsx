@@ -650,7 +650,7 @@ export function SheetDataTransformer({
                   <History className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
                 <DialogHeader>
                   <DialogTitle>Transformation History</DialogTitle>
                   <DialogDescription>View all transformations applied to this sheet</DialogDescription>
@@ -718,7 +718,7 @@ export function SheetDataTransformer({
                     Transform
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-5xl max-h-[90vh]">
+                <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
                   <DialogHeader>
                     <DialogTitle>Transform Data</DialogTitle>
                     <DialogDescription>Filter units and apply multiple transformation actions</DialogDescription>
@@ -825,7 +825,7 @@ export function SheetDataTransformer({
 
                   <div className="grid grid-cols-5 gap-4">
                     {/* Actions Panel */}
-                    <div className="col-span-2 border rounded-md p-4 h-[400px] overflow-y-auto">
+                    <div className="col-span-2 border rounded-md p-4 overflow-y-auto">
                       <h4 className="text-sm font-medium mb-3">Actions</h4>
 
                       <div className="space-y-2 mb-4">
@@ -1114,7 +1114,7 @@ export function SheetDataTransformer({
                     </div>
 
                     {/* Preview Panel */}
-                    <div className="col-span-3 border rounded-md h-[400px] overflow-hidden flex flex-col">
+                    <div className="col-span-3 border rounded-md overflow-hidden flex flex-col">
                       <div className="p-3 border-b bg-muted/30 flex items-center justify-between">
                         <h4 className="text-sm font-medium">
                           {activeAction === "split" && "Split Column Preview"}
@@ -1619,9 +1619,9 @@ export function SheetDataTransformer({
                     </div>
                   </div>
 
-                  <DialogFooter className="mt-4">
+                  <DialogFooter className="mt-4 border-t pt-4 sticky bottom-0 bg-background z-10">
                     <Button variant="outline">Cancel</Button>
-                    <Button>Apply All Transformations</Button>
+                    <Button>Apply Transformations</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
