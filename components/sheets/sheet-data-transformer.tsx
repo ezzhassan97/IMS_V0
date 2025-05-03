@@ -2589,6 +2589,20 @@ export function SheetDataTransformer({
                 </div>
               </div>
 
+              {/* Add column-level action for Bedrooms column */}
+              <div className="border-b px-4 py-2 bg-yellow-50/50 flex justify-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-yellow-800">Accept all suggested bedroom values?</span>
+                  <Button size="sm" variant="outline" className="h-7 text-xs py-0 px-3 text-green-700">
+                    <Check className="h-3 w-3 mr-1" />
+                    Accept All
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 text-xs py-0 px-3 text-red-700">
+                    <X className="h-3 w-3 mr-1" />
+                    Reject All
+                  </Button>
+                </div>
+              </div>
               <div className="overflow-x-auto">
                 <Table className="text-xs">
                   <TableHeader>
@@ -2606,14 +2620,36 @@ export function SheetDataTransformer({
                             (t.type === "split" && t.params?.newColumnName === header),
                         )
 
+                        // Special styling for Bedrooms and Bathrooms columns
+                        const isBedrooms = header === "Bedrooms"
+                        const isBathrooms = header === "Bathrooms"
+                        const isMissingDataColumn = isBedrooms || isBathrooms
+
                         return (
                           <TableHead
                             key={index}
-                            className={`py-1 ${isTransformed ? "bg-green-50/50" : ""}`}
+                            className={`py-1 ${isTransformed ? "bg-green-50/50" : ""} 
+      ${isMissingDataColumn ? "bg-yellow-50/80" : ""}`}
                             // Make Unit ID column width fit content
                             style={header === "Unit Code" ? { width: "1px", whiteSpace: "nowrap" } : {}}
                           >
                             <div className="flex flex-col items-start gap-1">
+                              {isBedrooms && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-yellow-100 text-yellow-800 border-yellow-300 mb-1 text-[10px]"
+                                >
+                                  (Suggested)
+                                </Badge>
+                              )}
+                              {isBathrooms && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-yellow-100 text-yellow-800 border-yellow-300 mb-1 text-[10px]"
+                                >
+                                  (Database)
+                                </Badge>
+                              )}
                               <span>{header}</span>
                               <div className="flex flex-wrap gap-1">
                                 {columnMappings[header] && (
@@ -2703,14 +2739,62 @@ export function SheetDataTransformer({
                                 (t.type === "split" && t.params?.newColumnName === header),
                             )
 
+                            // Special styling for Bedrooms and Bathrooms columns
+                            const isBedrooms = header === "Bedrooms"
+                            const isBathrooms = header === "Bathrooms"
+                            const isMissingDataColumn = isBedrooms || isBathrooms
+
+                            // Mock data for empty cells
+                            const isMissingValue = !row[header] || row[header] === ""
+                            const suggestedBedroomValue = isBedrooms && isMissingValue ? "2" : row[header]
+                            const databaseBathroomValue = isBathrooms && isMissingValue ? "2" : row[header]
+
                             return (
                               <TableCell
                                 key={colIndex}
                                 className={`py-1 ${isTransformedColumn ? "bg-green-50/30" : ""} 
-                                  ${isUnmappedPropertyType ? "bg-yellow-50/50" : ""}`}
+${isUnmappedPropertyType ? "bg-yellow-50/50" : ""}
+${isMissingDataColumn ? "bg-yellow-50/30" : ""}`}
                               >
                                 <div className="flex items-center justify-between">
-                                  {header === "Type" ? (
+                                  {isBedrooms && isMissingValue ? (
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="bg-yellow-100/80 px-2 py-0.5 rounded font-medium text-yellow-800">
+                                        {suggestedBedroomValue}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-5 text-[10px] py-0 px-2 text-green-700"
+                                        >
+                                          <Check className="h-3 w-3 mr-1" />
+                                          Accept
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-5 text-[10px] py-0 px-2 text-red-700"
+                                        >
+                                          <X className="h-3 w-3 mr-1" />
+                                          Reject
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : isBathrooms && isMissingValue ? (
+                                    <div className="flex items-center justify-between w-full">
+                                      <span className="bg-yellow-100/80 px-2 py-0.5 rounded font-medium text-yellow-800">
+                                        {databaseBathroomValue}
+                                        <span className="text-[10px] ml-1 text-yellow-700">(DB match)</span>
+                                      </span>
+                                      <Badge
+                                        variant="outline"
+                                        className="bg-blue-50 text-blue-700 border-blue-200 text-[10px]"
+                                      >
+                                        Auto-filled
+                                      </Badge>
+                                    </div>
+                                  ) : header === "Type" ? (
                                     <div className="flex items-center gap-1">
                                       {isMappedPropertyType ? (
                                         <>

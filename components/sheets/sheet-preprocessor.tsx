@@ -10,13 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SheetColumnMapper } from "./sheet-column-mapper"
 import { SheetDataTransformer } from "./sheet-data-transformer"
 import { SheetInitialSetup } from "./sheet-initial-setup"
-import { AIAssistant } from "./ai-assistant"
 import { useToast } from "@/components/ui/use-toast"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import {
-  ArrowLeft,
-  ArrowRight,
   Check,
   FileSpreadsheet,
   MapPin,
@@ -39,6 +36,8 @@ import {
   DollarSign,
   LampFloorIcon as FloorPlan,
   LayoutGrid,
+  ArrowLeft,
+  ArrowRight,
   Plus,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -50,6 +49,7 @@ import { SheetPaymentPlansAttachment } from "./sheet-payment-plans-attachment"
 import { SheetFloorPlanAttachment } from "./sheet-floor-plan-attachment"
 import { SheetRenderImageAttachment } from "./sheet-render-image-attachment"
 import { SheetGrouping } from "./sheet-grouping"
+import { AIAssistant } from "./ai-assistant"
 
 // Mock data for sheet processing
 const MOCK_SHEET_DATA = {
@@ -589,7 +589,7 @@ export function SheetPreprocessor() {
     message: string
   }>({ tabs: [], compatible: false, message: "" })
 
-  // Add these new state variables at the top of the component with the other state variables:
+  // Add these new state variables at the top of the component with the other state variables:\
   const [isCleaningInProgress, setIsCleaningInProgress] = useState(false)
   const [cleaningStatus, setCleaningStatus] = useState({
     emptyRows: true,
@@ -1575,7 +1575,7 @@ export function SheetPreprocessor() {
 
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               {/* Left side - Analysis Cards */}
-              <div className="md:col-span-2 space-y-3">
+              <div className="md:col-span-1 space-y-3">
                 {/* Health Score and Issues Card */}
                 <Card className="overflow-hidden">
                   <CardHeader className="py-2 px-3">
@@ -1586,30 +1586,24 @@ export function SheetPreprocessor() {
                   </CardHeader>
                   <CardContent className="py-2 px-3">
                     <h4 className="text-xs font-medium mb-2">Issues Found</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs">Unmapped columns</span>
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
-                          3
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs">Duplicate unit IDs</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
                         <Badge variant="outline" className="bg-red-50 text-red-700 text-[10px]">
                           2
                         </Badge>
+                        <span className="text-xs">Duplicate Unit IDs</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs">Missing values</span>
+                      <div className="flex items-center gap-2">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
                           8
                         </Badge>
+                        <span className="text-xs">Missing Values</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs">Inconsistent formats</span>
+                      <div className="flex items-center gap-2">
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 text-[10px]">
-                          5
+                          3
                         </Badge>
+                        <span className="text-xs">Unmapped columns</span>
                       </div>
                     </div>
                   </CardContent>
@@ -1664,6 +1658,51 @@ export function SheetPreprocessor() {
                       </div>
                       <div className="w-full bg-muted rounded-full h-1.5">
                         <div className="bg-green-500 h-1.5 rounded-full" style={{ width: "88%" }}></div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Project Distribution */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="py-2 px-3">
+                    <CardTitle className="text-sm">Project Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent className="py-2 px-3 space-y-1">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Palm Heights</span>
+                        <span className="text-xs font-medium">40% (20 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "40%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Metro Residences</span>
+                        <span className="text-xs font-medium">32% (16 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "32%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Green Valley</span>
+                        <span className="text-xs font-medium">18% (9 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "18%" }}></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs">Sunset Towers</span>
+                        <span className="text-xs font-medium">10% (5 units)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
                       </div>
                     </div>
                   </CardContent>
@@ -1749,131 +1788,10 @@ export function SheetPreprocessor() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Property Sub-Type Distribution */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-3">
-                    <CardTitle className="text-sm">Property Sub-Type Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3 space-y-1">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Typical</span>
-                        <span className="text-xs font-medium">45% (22 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "45%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Stand-alone</span>
-                        <span className="text-xs font-medium">25% (13 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "25%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">F&B</span>
-                        <span className="text-xs font-medium">18% (9 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "18%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Clinics</span>
-                        <span className="text-xs font-medium">12% (6 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "12%" }}></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Project Distribution */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-3">
-                    <CardTitle className="text-sm">Project Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3 space-y-1">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Palm Heights</span>
-                        <span className="text-xs font-medium">40% (20 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full" style={{ width: "40%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Metro Residences</span>
-                        <span className="text-xs font-medium">32% (16 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-green-500 h-2 rounded-full" style={{ width: "32%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Green Valley</span>
-                        <span className="text-xs font-medium">18% (9 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-amber-500 h-2 rounded-full" style={{ width: "18%" }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs">Sunset Towers</span>
-                        <span className="text-xs font-medium">10% (5 units)</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div className="bg-purple-500 h-2 rounded-full" style={{ width: "10%" }}></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Column Mapping Summary */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="py-2 px-3">
-                    <CardTitle className="text-sm">Column Mapping</CardTitle>
-                  </CardHeader>
-                  <CardContent className="py-2 px-3">
-                    <ScrollArea className="h-[150px] pr-4">
-                      <div className="space-y-1">
-                        {Object.entries(columnMappings).length > 0 ? (
-                          Object.entries(columnMappings).map(([originalColumn, systemField], index) => (
-                            <div key={index} className="flex items-center justify-between py-1 border-b">
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-blue-500" />
-                                <span className="text-sm">{originalColumn}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                                <Badge variant="outline">{systemField}</Badge>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <p>No column mappings defined</p>
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Right side - Sheet Preview */}
-              <div className="md:col-span-3">
+              <div className="md:col-span-4">
                 <Card>
                   <CardHeader className="py-2 px-3">
                     <div className="flex items-center justify-between">
