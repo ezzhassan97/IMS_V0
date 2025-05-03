@@ -39,6 +39,7 @@ import {
   DollarSign,
   LampFloorIcon as FloorPlan,
   LayoutGrid,
+  Plus,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -1176,37 +1177,57 @@ export function SheetPreprocessor() {
 
                     {openAccordion === "headers" && (
                       <div className="border-t p-2 space-y-2 bg-muted/10">
-                        {Object.entries(headerDetectionStatus).map(([tab, status]) => (
-                          <div key={tab} className="flex items-center justify-between text-xs">
-                            <span>{tab}</span>
-                            <div className="flex items-center gap-2">
-                              {status === "detected" ? (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
-                                  12 headers detected
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-red-50 text-red-700 text-xs">
-                                  No headers
-                                </Badge>
-                              )}
-                              {status === "undetected" && (
-                                <div className="flex gap-1">
-                                  <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-                                    Auto-detect
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-                                    Select manually
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                        {/* Project 1 Tab - 1 header */}
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-xs">{Object.keys(headerDetectionStatus)[0]}</div>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                              1 Header
+                            </Badge>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Project 2 Tab - 3 headers */}
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-xs">{Object.keys(headerDetectionStatus)[1]}</div>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 text-xs">
+                              3 Headers
+                            </Badge>
+                          </div>
+                          <Button size="sm" variant="outline" className="h-6 px-2 text-xs mt-1.5 w-full">
+                            Split to tabs
+                          </Button>
+                        </div>
+
+                        {/* Payment Sheet Tab - No headers */}
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium text-xs">{Object.keys(headerDetectionStatus)[2]}</div>
+                            <Badge variant="outline" className="bg-red-50 text-red-700 text-xs">
+                              No Headers
+                            </Badge>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 px-2 text-xs mt-1.5 w-full"
+                            onClick={() => {
+                              toast({
+                                title: "Manual header selection mode",
+                                description: "Click on cells in the sheet to select headers",
+                              })
+                              // This would normally set a state to enable cell selection mode
+                            }}
+                          >
+                            Set Manual
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Data Cleaning */}
+                  {/* Sheet Cleaning (renamed from Data Cleaning) */}
                   <div className="mb-3 border rounded-md overflow-hidden">
                     <Button
                       variant="ghost"
@@ -1215,7 +1236,7 @@ export function SheetPreprocessor() {
                     >
                       <div className="flex items-center">
                         <Brush className="h-4 w-4 mr-2 text-blue-500" />
-                        Data Cleaning
+                        Sheet Cleaning
                       </div>
                       <ChevronRight
                         className={`h-4 w-4 text-muted-foreground transition-transform ${openAccordion === "cleaning" ? "transform rotate-90" : ""}`}
@@ -1239,40 +1260,37 @@ export function SheetPreprocessor() {
                         </div>
 
                         <div className="space-y-2">
+                          {/* Empty Rows - New compact layout */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs">Empty Rows</span>
-                            <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="text-red-600 text-xs">
-                                12 detected
-                              </Badge>
-                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-                                Remove
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-red-100 text-red-600 border-red-200">12</Badge>
+                              <span className="text-xs">Empty rows</span>
                             </div>
+                            <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                              Remove
+                            </Button>
                           </div>
 
+                          {/* Empty Columns - New compact layout */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs">Empty Columns</span>
-                            <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="text-red-600 text-xs">
-                                2 detected
-                              </Badge>
-                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-                                Remove
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-red-100 text-red-600 border-red-200">2</Badge>
+                              <span className="text-xs">Empty columns</span>
                             </div>
+                            <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                              Remove
+                            </Button>
                           </div>
 
+                          {/* Merged Cells - New compact layout */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs">Merged Cells</span>
-                            <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="text-amber-600 text-xs">
-                                3 detected
-                              </Badge>
-                              <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
-                                Unmerge
-                              </Button>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-red-100 text-red-600 border-red-200">3</Badge>
+                              <span className="text-xs">Merged cells</span>
                             </div>
+                            <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                              Unmerge
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -1297,29 +1315,78 @@ export function SheetPreprocessor() {
 
                     {openAccordion === "projects" && (
                       <div className="border-t p-2 space-y-2 bg-muted/10">
-                        {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map((sheet, index) => (
-                          <div key={index} className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-1">
-                              <Checkbox id={`ignore-${sheet}`} className="h-3 w-3" />
-                              <label htmlFor={`ignore-${sheet}`}>{sheet}</label>
+                        <div className="grid grid-cols-1 gap-2">
+                          {(sheetData.sheets || ["Project 1", "Project 2", "Payment Sheet"]).map((sheet, index) => (
+                            <div key={index} className="border rounded-md p-2 flex flex-col">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    id={`tab-select-${sheet}`}
+                                    className="h-3.5 w-3.5"
+                                    checked={tabsToMerge[sheet] || false}
+                                    onCheckedChange={(checked) => {
+                                      setTabsToMerge({
+                                        ...tabsToMerge,
+                                        [sheet]: !!checked,
+                                      })
+                                    }}
+                                  />
+                                  <label htmlFor={`tab-select-${sheet}`} className="text-xs font-medium">
+                                    {sheet}
+                                  </label>
+                                </div>
+                              </div>
+                              <Select
+                                defaultValue={projectAssignments[sheet] || "proj1"}
+                                onValueChange={(value) => {
+                                  setProjectAssignments({
+                                    ...projectAssignments,
+                                    [sheet]: value,
+                                  })
+                                }}
+                              >
+                                <SelectTrigger className="h-7 text-xs">
+                                  <SelectValue placeholder="Assign to project" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PROJECTS.map((project) => (
+                                    <SelectItem key={project.id} value={project.id}>
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
-                            <Select defaultValue={index === 0 ? "proj1" : "proj3"} className="w-24">
-                              <SelectTrigger className="h-6 text-xs">
-                                <SelectValue placeholder="Project" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {PROJECTS.map((project) => (
-                                  <SelectItem key={project.id} value={project.id}>
-                                    {project.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
 
-                        <Button variant="outline" size="sm" className="w-full mt-1 text-xs h-7">
-                          <Merge className="h-3 w-3 mr-1" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`w-full mt-3 text-xs h-7 ${Object.values(tabsToMerge).filter(Boolean).length > 1 ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}`}
+                          disabled={Object.values(tabsToMerge).filter(Boolean).length < 2}
+                          onClick={() => {
+                            // Get selected tabs
+                            const selectedTabs = Object.entries(tabsToMerge)
+                              .filter(([_, selected]) => selected)
+                              .map(([tabName]) => tabName)
+
+                            // In a real app, we would analyze column similarity here
+                            // For demo, we'll simulate finding similar columns
+                            const hasSimilarColumns = selectedTabs.length > 1
+
+                            setMergeDialogData({
+                              tabs: selectedTabs,
+                              compatible: true,
+                              message: hasSimilarColumns
+                                ? "Some columns appear to have similar meanings but different names."
+                                : "All columns are compatible for merging.",
+                            })
+
+                            setShowMergeDialog(true)
+                          }}
+                        >
+                          <Merge className="h-3.5 w-3.5 mr-1" />
                           Merge Selected Tabs
                         </Button>
                       </div>
@@ -2072,56 +2139,290 @@ export function SheetPreprocessor() {
       {/* Tab Merging Dialog */}
       {showMergeDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-medium mb-2">Tab Merging Validation</h3>
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium">Tab Merging Preview</h3>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setShowMergeDialog(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
 
-            <div className="my-4">
-              {mergeDialogData.compatible ? (
-                <div className="flex items-center text-green-600 gap-2">
-                  <Check className="h-5 w-5" />
-                  <p>Validation successful! The selected tabs can be merged.</p>
-                </div>
-              ) : (
-                <div className="flex items-center text-red-600 gap-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  <p>{mergeDialogData.message}</p>
-                </div>
-              )}
+            <div className="mb-4">
+              <p className="text-muted-foreground text-sm">
+                Review the columns from each tab and configure how they will be merged.
+              </p>
+            </div>
 
-              <div className="mt-2 text-sm text-muted-foreground">
-                <p>Selected tabs: {mergeDialogData.tabs.join(", ")}</p>
+            {/* Column comparison section */}
+            <div className="border rounded-md overflow-hidden mb-4">
+              <div className="bg-muted/30 p-2 border-b">
+                <h4 className="text-sm font-medium">Column Comparison Across Tabs</h4>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/20">
+                      <th className="p-2 text-left text-xs font-medium">Column Name</th>
+                      <th className="p-2 text-center text-xs font-medium">
+                        <div>Project 1</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {PROJECTS.find((p) => p.id === projectAssignments["Project 1"])?.name || "Unassigned"}
+                        </div>
+                      </th>
+                      <th className="p-2 text-center text-xs font-medium">
+                        <div>Project 2</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {PROJECTS.find((p) => p.id === projectAssignments["Project 2"])?.name || "Unassigned"}
+                        </div>
+                      </th>
+                      <th className="p-2 text-center text-xs font-medium">
+                        <div>Payment Sheet</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {PROJECTS.find((p) => p.id === projectAssignments["Payment Sheet"])?.name || "Unassigned"}
+                        </div>
+                      </th>
+                      <th className="p-2 text-left text-xs font-medium">Result</th>
+                      <th className="p-2 text-left text-xs font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* Unit ID - Exact match across all tabs */}
+                    <tr className="border-b">
+                      <td className="p-2 text-xs font-medium">Unit ID</td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <Badge className="bg-blue-100 text-blue-700">Unit ID</Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className="text-green-600 flex items-center gap-1">
+                          <Check className="h-3 w-3" /> Exact match
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Area vs Space - Similar columns */}
+                    <tr className="border-b bg-blue-50/30">
+                      <td className="p-2 text-xs font-medium">Area / Space</td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                          Area (sqm)
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                          Space (sqm)
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-red-50 text-red-600">
+                          Missing
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <Select defaultValue="area_sqm">
+                          <SelectTrigger className="h-7 text-xs w-full">
+                            <SelectValue placeholder="Select name" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="area_sqm">Area (sqm)</SelectItem>
+                            <SelectItem value="space_sqm">Space (sqm)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className="text-amber-600 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Similar (92%)
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Price - Exact match in two tabs */}
+                    <tr className="border-b">
+                      <td className="p-2 text-xs font-medium">Price</td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-red-50 text-red-600">
+                          Missing
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <Badge className="bg-blue-100 text-blue-700">Price</Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className="text-green-600 flex items-center gap-1">
+                          <Check className="h-3 w-3" /> Exact match
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Payment Schedule - Only in Payment Sheet */}
+                    <tr className="border-b">
+                      <td className="p-2 text-xs font-medium">Payment Schedule</td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-red-50 text-red-600">
+                          Missing
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-red-50 text-red-600">
+                          Missing
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-green-50 text-green-600">
+                          Present
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <Badge className="bg-blue-100 text-blue-700">Payment Schedule</Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className="text-blue-600 flex items-center gap-1">
+                          <Plus className="h-3 w-3" /> Added
+                        </span>
+                      </td>
+                    </tr>
+
+                    {/* Type vs Property Type - Similar columns */}
+                    <tr className="border-b bg-blue-50/30">
+                      <td className="p-2 text-xs font-medium">Type / Property Type</td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                          Type
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-blue-50 text-blue-600">
+                          Property Type
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-center text-xs">
+                        <Badge variant="outline" className="bg-red-50 text-red-600">
+                          Missing
+                        </Badge>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <Select defaultValue="property_type">
+                          <SelectTrigger className="h-7 text-xs w-full">
+                            <SelectValue placeholder="Select name" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="type">Type</SelectItem>
+                            <SelectItem value="property_type">Property Type</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2 text-xs">
+                        <span className="text-amber-600 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Similar (85%)
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            {/* Result preview */}
+            <div className="border rounded-md overflow-hidden mb-4">
+              <div className="bg-muted/30 p-2 border-b">
+                <h4 className="text-sm font-medium">Merged Result Preview</h4>
+              </div>
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileSpreadsheet className="h-4 w-4 text-blue-600" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Merged Sheet Name:</span>
+                    <Input className="h-7 w-48 text-sm" defaultValue="Merged Sheet" placeholder="Enter sheet name" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {mergeDialogData.tabs.map((tab, index) => (
+                    <div key={index} className="border rounded-md p-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">{tab}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {tab === "Project 1" ? "24 rows" : tab === "Project 2" ? "18 rows" : "8 rows"}
+                        </Badge>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {PROJECTS.find((p) => p.id === projectAssignments[tab])?.name || "Unassigned"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 mb-3">
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                    Total: 50 rows
+                  </Badge>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge className="bg-blue-100 text-blue-700">Unit ID</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Project</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Area (sqm)</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Price</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Status</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Floor</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Payment Schedule</Badge>
+                  <Badge className="bg-blue-100 text-blue-700">Property Type</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowMergeDialog(false)}>
                 Cancel
               </Button>
-              {mergeDialogData.compatible && (
-                <Button
-                  onClick={() => {
-                    // Add to action history
-                    setActionHistory([
-                      ...actionHistory,
-                      {
-                        step: "Tab Merging",
-                        action: "Merged tabs",
-                        timestamp: new Date().toISOString(),
-                        details: `Merged tabs: ${mergeDialogData.tabs.join(", ")}`,
-                      },
-                    ])
+              <Button
+                onClick={() => {
+                  // Add to action history
+                  setActionHistory([
+                    ...actionHistory,
+                    {
+                      step: "Tab Merging",
+                      action: "Merged tabs",
+                      timestamp: new Date().toISOString(),
+                      details: `Merged tabs: ${mergeDialogData.tabs.join(", ")}`,
+                    },
+                  ])
 
-                    toast({
-                      title: "Tabs merged successfully",
-                      description: `${mergeDialogData.tabs.length} tabs have been merged.`,
-                    })
+                  toast({
+                    title: "Tabs merged successfully",
+                    description: `${mergeDialogData.tabs.length} tabs have been merged.`,
+                  })
 
-                    setShowMergeDialog(false)
-                  }}
-                >
-                  Merge Tabs
-                </Button>
-              )}
+                  setShowMergeDialog(false)
+                }}
+              >
+                Merge Tabs
+              </Button>
             </div>
           </div>
         </div>
