@@ -2589,20 +2589,7 @@ export function SheetDataTransformer({
                 </div>
               </div>
 
-              {/* Add column-level action for Bedrooms column */}
-              <div className="border-b px-4 py-2 bg-yellow-50/50 flex justify-end">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-yellow-800">Accept all suggested bedroom values?</span>
-                  <Button size="sm" variant="outline" className="h-7 text-xs py-0 px-3 text-green-700">
-                    <Check className="h-3 w-3 mr-1" />
-                    Accept All
-                  </Button>
-                  <Button size="sm" variant="outline" className="h-7 text-xs py-0 px-3 text-red-700">
-                    <X className="h-3 w-3 mr-1" />
-                    Reject All
-                  </Button>
-                </div>
-              </div>
+              {/* Remove the entire banner div that contains the buttons */}
               <div className="overflow-x-auto">
                 <Table className="text-xs">
                   <TableHeader>
@@ -2635,12 +2622,24 @@ export function SheetDataTransformer({
                           >
                             <div className="flex flex-col items-start gap-1">
                               {isBedrooms && (
-                                <Badge
-                                  variant="outline"
-                                  className="bg-yellow-100 text-yellow-800 border-yellow-300 mb-1 text-[10px]"
-                                >
-                                  (Suggested)
-                                </Badge>
+                                <div className="flex flex-col gap-1 w-full">
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-yellow-100 text-yellow-800 border-yellow-300 mb-1 text-[10px]"
+                                  >
+                                    (Suggested)
+                                  </Badge>
+                                  <div className="flex gap-1 justify-end">
+                                    <Button size="sm" variant="outline" className="h-5 px-1 py-0 text-[9px]">
+                                      <Check className="h-3 w-3 text-green-700 mr-1" />
+                                      Accept All
+                                    </Button>
+                                    <Button size="sm" variant="outline" className="h-5 px-1 py-0 text-[9px]">
+                                      <X className="h-3 w-3 text-red-700 mr-1" />
+                                      Reject All
+                                    </Button>
+                                  </div>
+                                </div>
                               )}
                               {isBathrooms && (
                                 <Badge
@@ -2769,7 +2768,6 @@ ${isMissingDataColumn ? "bg-yellow-50/30" : ""}`}
                                           className="h-5 text-[10px] py-0 px-2 text-green-700"
                                         >
                                           <Check className="h-3 w-3 mr-1" />
-                                          Accept
                                         </Button>
                                         <Button
                                           variant="outline"
@@ -2777,7 +2775,6 @@ ${isMissingDataColumn ? "bg-yellow-50/30" : ""}`}
                                           className="h-5 text-[10px] py-0 px-2 text-red-700"
                                         >
                                           <X className="h-3 w-3 mr-1" />
-                                          Reject
                                         </Button>
                                       </div>
                                     </div>

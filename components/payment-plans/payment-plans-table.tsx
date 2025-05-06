@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -38,7 +37,8 @@ const data: PaymentPlan[] = [
   {
     id: "PP-001",
     name: "Standard 5 Years",
-    type: "Equal Installments",
+    developer: "Palm Hills Developments",
+    type: "Equal",
     downPayment: 10,
     installments: 20,
     duration: 60,
@@ -47,11 +47,15 @@ const data: PaymentPlan[] = [
     clubhouseFee: 5,
     projectName: "Palm Hills October",
     status: "Active",
+    createdBy: "Ahmed Hassan",
+    createdAt: new Date(2023, 5, 15),
+    updatedAt: new Date(2023, 6, 20),
   },
   {
     id: "PP-002",
     name: "Premium 7 Years",
-    type: "Equal Installments",
+    developer: "Palm Hills Developments",
+    type: "Equal",
     downPayment: 15,
     installments: 28,
     duration: 84,
@@ -60,10 +64,14 @@ const data: PaymentPlan[] = [
     clubhouseFee: 5,
     projectName: "Palm Hills October",
     status: "Active",
+    createdBy: "Ahmed Hassan",
+    createdAt: new Date(2023, 5, 16),
+    updatedAt: new Date(2023, 6, 21),
   },
   {
     id: "PP-003",
     name: "Luxury 8 Years",
+    developer: "Emaar Misr",
     type: "Backloaded",
     downPayment: 20,
     installments: 16,
@@ -73,11 +81,15 @@ const data: PaymentPlan[] = [
     clubhouseFee: 7,
     projectName: "Marassi North Coast",
     status: "Active",
+    createdBy: "Sara Ahmed",
+    createdAt: new Date(2023, 7, 10),
+    updatedAt: new Date(2023, 8, 5),
   },
   {
     id: "PP-004",
     name: "Flexible 6 Years",
-    type: "Milestone-based",
+    developer: "Mountain View",
+    type: "Frontloaded",
     downPayment: 15,
     installments: 12,
     duration: 72,
@@ -86,10 +98,14 @@ const data: PaymentPlan[] = [
     clubhouseFee: 5,
     projectName: "Mountain View iCity",
     status: "Active",
+    createdBy: "Mohamed Ali",
+    createdAt: new Date(2023, 8, 20),
+    updatedAt: new Date(2023, 9, 15),
   },
   {
     id: "PP-005",
     name: "Easy 4 Years",
+    developer: "Zed Developments",
     type: "Frontloaded",
     downPayment: 25,
     installments: 8,
@@ -99,11 +115,15 @@ const data: PaymentPlan[] = [
     clubhouseFee: 4,
     projectName: "Zed East",
     status: "Active",
+    createdBy: "Laila Mahmoud",
+    createdAt: new Date(2023, 9, 5),
+    updatedAt: new Date(2023, 10, 10),
   },
   {
     id: "PP-006",
     name: "Corporate 10 Years",
-    type: "Equal Installments",
+    developer: "SODIC",
+    type: "Equal",
     downPayment: 5,
     installments: 40,
     duration: 120,
@@ -112,10 +132,14 @@ const data: PaymentPlan[] = [
     clubhouseFee: 5,
     projectName: "SODIC East",
     status: "Active",
+    createdBy: "Khaled Ibrahim",
+    createdAt: new Date(2023, 10, 15),
+    updatedAt: new Date(2023, 11, 20),
   },
   {
     id: "PP-007",
     name: "VIP 3 Years",
+    developer: "Emaar Misr",
     type: "Frontloaded",
     downPayment: 30,
     installments: 6,
@@ -124,12 +148,16 @@ const data: PaymentPlan[] = [
     maintenanceFee: 10,
     clubhouseFee: 7,
     projectName: "Marassi North Coast",
-    status: "Inactive",
+    status: "Hidden",
+    createdBy: "Sara Ahmed",
+    createdAt: new Date(2023, 11, 10),
+    updatedAt: new Date(2024, 0, 5),
   },
   {
     id: "PP-008",
     name: "Seasonal 5 Years",
-    type: "Milestone-based",
+    developer: "Mountain View",
+    type: "Frontloaded",
     downPayment: 20,
     installments: 10,
     duration: 60,
@@ -138,13 +166,30 @@ const data: PaymentPlan[] = [
     clubhouseFee: 5,
     projectName: "Mountain View iCity",
     status: "Active",
+    createdBy: "Mohamed Ali",
+    createdAt: new Date(2024, 0, 20),
+    updatedAt: new Date(2024, 1, 15),
   },
 ]
+
+const formatDuration = (months: number): string => {
+  const years = Math.floor(months / 12)
+  const remainingMonths = months % 12
+
+  if (years === 0) {
+    return `${remainingMonths} Month${remainingMonths !== 1 ? "s" : ""}`
+  } else if (remainingMonths === 0) {
+    return `${years} Year${years !== 1 ? "s" : ""}`
+  } else {
+    return `${years} Year${years !== 1 ? "s" : ""} ${remainingMonths} Month${remainingMonths !== 1 ? "s" : ""}`
+  }
+}
 
 export type PaymentPlan = {
   id: string
   name: string
-  type: "Equal Installments" | "Backloaded" | "Frontloaded" | "Milestone-based"
+  developer: string
+  type: "Equal" | "Backloaded" | "Frontloaded"
   downPayment: number
   installments: number
   duration: number
@@ -152,7 +197,10 @@ export type PaymentPlan = {
   maintenanceFee: number
   clubhouseFee: number
   projectName: string
-  status: "Active" | "Inactive"
+  status: "Active" | "Hidden"
+  createdBy: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 export function PaymentPlansTable() {
@@ -190,8 +238,39 @@ export function PaymentPlansTable() {
     },
     {
       accessorKey: "id",
-      header: "Plan ID",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Plan ID
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => <div className="font-medium">{row.getValue("id")}</div>,
+    },
+    {
+      accessorKey: "developer",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Developer
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{row.getValue("developer")}</div>,
+    },
+    {
+      accessorKey: "projectName",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Project
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{row.getValue("projectName")}</div>,
     },
     {
       accessorKey: "name",
@@ -214,46 +293,106 @@ export function PaymentPlansTable() {
     },
     {
       accessorKey: "type",
-      header: "Type",
-      cell: ({ row }) => <div>{row.getValue("type")}</div>,
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Type
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => {
+        const type = row.getValue("type") as string
+        return (
+          <Badge
+            variant="outline"
+            className={
+              type === "Equal"
+                ? "bg-blue-100 text-blue-800 border-blue-300"
+                : type === "Backloaded"
+                  ? "bg-purple-100 text-purple-800 border-purple-300"
+                  : "bg-green-100 text-green-800 border-green-300"
+            }
+          >
+            {type}
+          </Badge>
+        )
+      },
     },
     {
       accessorKey: "downPayment",
-      header: "Down Payment",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Down Payment
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => <div>{row.getValue("downPayment")}%</div>,
     },
     {
-      accessorKey: "installments",
-      header: "Installments",
-      cell: ({ row }) => <div className="text-center">{row.getValue("installments")}</div>,
-    },
-    {
       accessorKey: "duration",
-      header: "Duration (months)",
-      cell: ({ row }) => <div className="text-center">{row.getValue("duration")}</div>,
-    },
-    {
-      accessorKey: "cashDiscount",
-      header: "Cash Discount",
-      cell: ({ row }) => <div>{row.getValue("cashDiscount")}%</div>,
-    },
-    {
-      accessorKey: "maintenanceFee",
-      header: "Maintenance",
-      cell: ({ row }) => <div>{row.getValue("maintenanceFee")}%</div>,
-    },
-    {
-      accessorKey: "projectName",
-      header: "Project",
-      cell: ({ row }) => <div>{row.getValue("projectName")}</div>,
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Duration
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{formatDuration(row.getValue("duration"))}</div>,
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Status
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
       cell: ({ row }) => {
         const status = row.getValue("status") as string
         return <Badge variant={status === "Active" ? "default" : "secondary"}>{status}</Badge>
       },
+    },
+    {
+      accessorKey: "createdBy",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Created By
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{row.getValue("createdBy")}</div>,
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Created At
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{(row.getValue("createdAt") as Date).toLocaleDateString()}</div>,
+    },
+    {
+      accessorKey: "updatedAt",
+      header: ({ column }) => {
+        return (
+          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+            Updated At
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        )
+      },
+      cell: ({ row }) => <div>{(row.getValue("updatedAt") as Date).toLocaleDateString()}</div>,
     },
     {
       id: "actions",
@@ -305,6 +444,41 @@ export function PaymentPlansTable() {
     },
   })
 
+  const handleExportSelected = () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    if (selectedRows.length === 0) return
+
+    const selectedData = selectedRows.map((row) => row.original)
+    const csvContent = [
+      // Headers
+      Object.keys(selectedData[0]).join(","),
+      // Data rows
+      ...selectedData.map((item) => {
+        return Object.values(item)
+          .map((value) => {
+            if (value instanceof Date) {
+              return value.toISOString().split("T")[0]
+            }
+            if (typeof value === "string" && value.includes(",")) {
+              return `"${value}"`
+            }
+            return value
+          })
+          .join(",")
+      }),
+    ].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `payment-plans-export-${new Date().toISOString().split("T")[0]}.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   return (
     <>
       {showModal && (
@@ -327,14 +501,74 @@ export function PaymentPlansTable() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
+                <Button variant="outline">
+                  Developer <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by Developer</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => table.getColumn("developer")?.setFilterValue("Palm Hills Developments")}
+                >
+                  Palm Hills Developments
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Emaar Misr")}>
+                  Emaar Misr
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Mountain View")}>
+                  Mountain View
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Zed Developments")}>
+                  Zed Developments
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("SODIC")}>
+                  SODIC
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("")}>
+                  Clear Filter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Project <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Filter by Project</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("Palm Hills October")}>
+                  Palm Hills October
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("Marassi North Coast")}>
+                  Marassi North Coast
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("Mountain View iCity")}>
+                  Mountain View iCity
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("Zed East")}>
+                  Zed East
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("SODIC East")}>
+                  SODIC East
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => table.getColumn("projectName")?.setFilterValue("")}>
+                  Clear Filter
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
                   Type <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Equal Installments")}>
-                  Equal Installments
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Equal")}>
+                  Equal
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Backloaded")}>
                   Backloaded
@@ -342,15 +576,21 @@ export function PaymentPlansTable() {
                 <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Frontloaded")}>
                   Frontloaded
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("Milestone-based")}>
-                  Milestone-based
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => table.resetColumnFilters()}>Clear Filters</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => table.getColumn("type")?.setFilterValue("")}>
+                  Clear Filter
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
           <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleExportSelected}
+              disabled={table.getFilteredSelectedRowModel().rows.length === 0}
+            >
+              Export Selected
+            </Button>
             <Button
               onClick={() => {
                 setEditingPlan(null)
@@ -360,30 +600,6 @@ export function PaymentPlansTable() {
               <Plus className="mr-2 h-4 w-4" />
               New Plan
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Columns <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    )
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
         <div className="rounded-md border">
