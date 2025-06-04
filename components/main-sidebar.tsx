@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Rocket,
   Settings,
   Users,
 } from "lucide-react"
@@ -84,6 +85,15 @@ const sidebarItems: SidebarItem[] = [
     submenu: [
       { title: "All Brochures", href: "/brochures" },
       { title: "Media Library", href: "/brochures/media-library" },
+    ],
+  },
+  {
+    title: "Launches",
+    href: "/launches",
+    icon: Rocket,
+    submenu: [
+      { title: "Whatsapp Announcements", href: "/launches/whatsapp" },
+      { title: "All Launches", href: "/launches" },
     ],
   },
   {

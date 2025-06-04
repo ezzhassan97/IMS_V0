@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Copy, Download } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -24,136 +24,154 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 
-// Sample data for demonstration
 const data: Project[] = [
   {
     id: "PRJ-001",
     name: "Palm Hills October",
     developer: "Palm Hills Developments",
-    location: "6th of October City",
-    type: "Residential",
-    units: 1245,
-    phases: 3,
-    progress: 78,
+    category: "Residential",
+    type: "Compound",
+    area: "6th of October City",
+    subArea: "Central October",
+    listingStatus: "Active",
+    nawyEligible: true,
     status: "Active",
-    launchDate: "2022-05-15",
+    createdAt: "2022-05-15T10:30:00Z",
+    updatedAt: "2024-01-15T14:20:00Z",
   },
   {
     id: "PRJ-002",
     name: "Marassi North Coast",
     developer: "Emaar Misr",
-    location: "North Coast",
-    type: "Mixed Use",
-    units: 876,
-    phases: 4,
-    progress: 92,
+    category: "Mixed Use",
+    type: "Compound",
+    area: "North Coast",
+    subArea: "Sidi Abdel Rahman",
+    listingStatus: "Active",
+    nawyEligible: true,
     status: "Active",
-    launchDate: "2021-06-20",
+    createdAt: "2021-06-20T09:15:00Z",
+    updatedAt: "2024-01-10T16:45:00Z",
   },
   {
     id: "PRJ-003",
     name: "Mountain View iCity",
     developer: "Mountain View",
-    location: "New Cairo",
-    type: "Residential",
-    units: 1532,
-    phases: 5,
-    progress: 45,
-    status: "Active",
-    launchDate: "2023-02-10",
+    category: "Residential",
+    type: "Compound",
+    area: "New Cairo",
+    subArea: "New Cairo City",
+    listingStatus: "Active",
+    nawyEligible: false,
+    status: "Pre-Launch",
+    createdAt: "2023-02-10T11:00:00Z",
+    updatedAt: "2024-01-20T10:30:00Z",
   },
   {
     id: "PRJ-004",
     name: "Zed East",
     developer: "Ora Developers",
-    location: "New Cairo",
+    category: "Mixed Use",
     type: "Mixed Use",
-    units: 654,
-    phases: 2,
-    progress: 63,
-    status: "Active",
-    launchDate: "2022-09-05",
+    area: "New Cairo",
+    subArea: "Sheikh Zayed",
+    listingStatus: "Active",
+    nawyEligible: true,
+    status: "Launching Soon",
+    createdAt: "2022-09-05T13:45:00Z",
+    updatedAt: "2024-01-18T12:15:00Z",
   },
   {
     id: "PRJ-005",
     name: "SODIC East",
     developer: "SODIC",
-    location: "New Cairo",
-    type: "Residential",
-    units: 987,
-    phases: 3,
-    progress: 32,
+    category: "Residential",
+    type: "Compound",
+    area: "New Cairo",
+    subArea: "New Cairo City",
+    listingStatus: "Active",
+    nawyEligible: true,
     status: "Active",
-    launchDate: "2023-04-18",
+    createdAt: "2023-04-18T08:20:00Z",
+    updatedAt: "2024-01-22T09:10:00Z",
   },
   {
     id: "PRJ-006",
-    name: "Hyde Park",
+    name: "Hyde Park New Cairo",
     developer: "Hyde Park Developments",
-    location: "New Cairo",
-    type: "Residential",
-    units: 543,
-    phases: 2,
-    progress: 100,
+    category: "Residential",
+    type: "Compound",
+    area: "New Cairo",
+    subArea: "New Cairo City",
+    listingStatus: "Active",
+    nawyEligible: true,
     status: "Completed",
-    launchDate: "2020-03-12",
+    createdAt: "2020-03-12T14:30:00Z",
+    updatedAt: "2023-12-15T11:20:00Z",
   },
   {
     id: "PRJ-007",
     name: "Madinaty",
     developer: "Talaat Moustafa Group",
-    location: "New Cairo",
-    type: "Mixed Use",
-    units: 1876,
-    phases: 6,
-    progress: 100,
+    category: "Mixed Use",
+    type: "Compound",
+    area: "New Cairo",
+    subArea: "Heliopolis",
+    listingStatus: "Active",
+    nawyEligible: false,
     status: "Completed",
-    launchDate: "2019-07-25",
+    createdAt: "2019-07-25T16:45:00Z",
+    updatedAt: "2023-11-30T13:40:00Z",
   },
   {
     id: "PRJ-008",
     name: "Uptown Cairo",
     developer: "Emaar Misr",
-    location: "Mokattam",
-    type: "Luxury Residential",
-    units: 765,
-    phases: 4,
-    progress: 100,
+    category: "Residential",
+    type: "Standalone Tower",
+    area: "Mokattam",
+    subArea: "Mokattam Hills",
+    listingStatus: "Hidden",
+    nawyEligible: true,
     status: "Completed",
-    launchDate: "2018-11-30",
+    createdAt: "2018-11-30T12:15:00Z",
+    updatedAt: "2023-10-20T15:25:00Z",
   },
   {
     id: "PRJ-009",
     name: "O West",
     developer: "Orascom Development",
-    location: "6th of October City",
-    type: "Mixed Use",
-    units: 1234,
-    phases: 3,
-    progress: 55,
+    category: "Mixed Use",
+    type: "Compound",
+    area: "6th of October City",
+    subArea: "West October",
+    listingStatus: "Active",
+    nawyEligible: true,
     status: "Active",
-    launchDate: "2022-08-15",
+    createdAt: "2022-08-15T10:00:00Z",
+    updatedAt: "2024-01-25T14:30:00Z",
   },
   {
     id: "PRJ-010",
-    name: "Badya",
+    name: "Badya Palm Hills",
     developer: "Palm Hills Developments",
-    location: "6th of October City",
-    type: "Mixed Use",
-    units: 2345,
-    phases: 5,
-    progress: 25,
-    status: "Active",
-    launchDate: "2023-01-10",
+    category: "Mixed Use",
+    type: "Compound",
+    area: "6th of October City",
+    subArea: "Central October",
+    listingStatus: "Active",
+    nawyEligible: true,
+    status: "On Hold",
+    parentProject: { id: "PRJ-001", name: "Palm Hills October" },
+    createdAt: "2023-01-10T09:30:00Z",
+    updatedAt: "2024-01-28T11:45:00Z",
   },
 ]
 
@@ -161,13 +179,16 @@ export type Project = {
   id: string
   name: string
   developer: string
-  location: string
-  type: string
-  units: number
-  phases: number
-  progress: number
-  status: "Active" | "Completed" | "On Hold" | "Planned"
-  launchDate: string
+  category: "Residential" | "Commercial" | "Mixed Use"
+  type: "Compound" | "Standalone Tower" | "Mixed Use" | "Villa Community"
+  area: string
+  subArea: string
+  listingStatus: "Active" | "Hidden"
+  nawyEligible: boolean
+  status: "Active" | "On Hold" | "Pre-Launch" | "Launching Soon" | "Completed"
+  parentProject?: { id: string; name: string }
+  createdAt: string
+  updatedAt: string
 }
 
 export function ProjectsDataTable() {
@@ -176,13 +197,25 @@ export function ProjectsDataTable() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
+  const [statusFilter, setStatusFilter] = useState<string>("")
+  const [categoryFilter, setCategoryFilter] = useState<string>("")
+  const [typeFilter, setTypeFilter] = useState<string>("")
+  const [areaFilter, setAreaFilter] = useState<string>("")
+  const [listingStatusFilter, setListingStatusFilter] = useState<string>("")
+  const [nawyEligibleFilter, setNavyEligibleFilter] = useState<string>("")
+  const [developerFilter, setDeveloperFilter] = useState<string>("")
+  const [selectAll, setSelectAll] = useState(false)
+
   const columns: ColumnDef<Project>[] = [
     {
       id: "select",
       header: ({ table }) => (
         <Checkbox
           checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={(value) => {
+            table.toggleAllPageRowsSelected(!!value)
+            setSelectAll(!!value)
+          }}
           aria-label="Select all"
         />
       ),
@@ -197,137 +230,143 @@ export function ProjectsDataTable() {
       enableHiding: false,
     },
     {
-      accessorKey: "id",
-      header: "Project ID",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("id")}</div>,
+      accessorKey: "developer",
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Developer
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div className="font-medium">{row.getValue("developer")}</div>,
     },
     {
       accessorKey: "name",
-      header: ({ column }) => {
-        return (
-          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Project Name
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Project Name & ID
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => (
-        <Link href={`/projects/${row.original.id}`} className="font-medium text-primary hover:underline">
-          {row.getValue("name")}
-        </Link>
+        <div className="space-y-1">
+          <Link href={`/projects/${row.original.id}`} className="font-medium text-primary hover:underline block">
+            {row.getValue("name")}
+          </Link>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{row.original.id}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={() => navigator.clipboard.writeText(row.original.id)}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
       ),
     },
     {
-      accessorKey: "developer",
-      header: "Developer",
-      cell: ({ row }) => <div>{row.getValue("developer")}</div>,
-    },
-    {
-      accessorKey: "location",
-      header: "Location",
-      cell: ({ row }) => <div>{row.getValue("location")}</div>,
+      accessorKey: "category",
+      header: "Project Category",
+      cell: ({ row }) => <div>{row.getValue("category")}</div>,
     },
     {
       accessorKey: "type",
-      header: "Type",
+      header: "Project Type",
       cell: ({ row }) => <div>{row.getValue("type")}</div>,
     },
     {
-      accessorKey: "units",
-      header: ({ column }) => {
-        return (
-          <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-            Units
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        )
-      },
-      cell: ({ row }) => <div className="text-right">{row.getValue("units")}</div>,
+      accessorKey: "area",
+      header: "Project Area",
+      cell: ({ row }) => <div>{row.getValue("area")}</div>,
     },
     {
-      accessorKey: "phases",
-      header: "Phases",
-      cell: ({ row }) => <div className="text-center">{row.getValue("phases")}</div>,
+      accessorKey: "subArea",
+      header: "Project Sub-Area",
+      cell: ({ row }) => <div>{row.getValue("subArea")}</div>,
     },
     {
-      accessorKey: "progress",
-      header: "Progress",
+      accessorKey: "listingStatus",
+      header: "Listing Status",
       cell: ({ row }) => {
-        const progress = row.getValue("progress") as number
+        const status = row.getValue("listingStatus") as string
+        return <Badge variant={status === "Active" ? "default" : "secondary"}>{status}</Badge>
+      },
+    },
+    {
+      accessorKey: "nawyEligible",
+      header: "Nawy Eligible",
+      cell: ({ row }) => {
+        const eligible = row.getValue("nawyEligible") as boolean
+        return <Badge variant={eligible ? "default" : "secondary"}>{eligible ? "True" : "False"}</Badge>
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Project Status",
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string
+        const variant =
+          status === "Active"
+            ? "default"
+            : status === "Completed"
+              ? "secondary"
+              : status === "On Hold"
+                ? "destructive"
+                : status === "Pre-Launch"
+                  ? "outline"
+                  : "default"
+        return <Badge variant={variant}>{status}</Badge>
+      },
+    },
+    {
+      accessorKey: "parentProject",
+      header: "Parent Project",
+      cell: ({ row }) => {
+        const parent = row.original.parentProject
+        if (!parent) return <span className="text-muted-foreground">-</span>
         return (
-          <div className="flex items-center gap-2">
-            <Progress value={progress} className="h-2 w-24" />
-            <span className="text-xs">{progress}%</span>
+          <div className="space-y-1">
+            <Link href={`/projects/${parent.id}`} className="text-sm text-primary hover:underline block">
+              {parent.name}
+            </Link>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{parent.id}</span>
           </div>
         )
       },
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Created At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => {
-        const status = row.getValue("status") as string
+        const date = new Date(row.getValue("createdAt"))
         return (
-          <Badge
-            variant={
-              status === "Active"
-                ? "default"
-                : status === "Completed"
-                  ? "success"
-                  : status === "On Hold"
-                    ? "warning"
-                    : "secondary"
-            }
-          >
-            {status}
-          </Badge>
+          <div className="text-sm">
+            {date.toLocaleDateString()} {date.toLocaleTimeString()}
+          </div>
         )
       },
     },
     {
-      accessorKey: "launchDate",
-      header: "Launch Date",
+      accessorKey: "updatedAt",
+      header: ({ column }) => (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Updated At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       cell: ({ row }) => {
-        const date = new Date(row.getValue("launchDate"))
-        return <div>{date.toLocaleDateString()}</div>
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const project = row.original
-
+        const date = new Date(row.getValue("updatedAt"))
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(project.id)}>
-                Copy project ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={`/projects/${project.id}`}>View project details</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/projects/${project.id}/edit`}>Edit project</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/projects/${project.id}/phases`}>Manage phases</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/projects/${project.id}/documents`}>Manage documents</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Delete project</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="text-sm">
+            {date.toLocaleDateString()} {date.toLocaleTimeString()}
+          </div>
         )
       },
     },
@@ -357,43 +396,108 @@ export function ProjectsDataTable() {
       <div className="flex items-center justify-between p-4">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Filter projects..."
+            placeholder="Search projects by name or ID..."
             value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
             onChange={(event) => table.getColumn("name")?.setFilterValue(event.target.value)}
             className="max-w-sm"
           />
+
+          {/* Developer Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="outline">
+                Developer <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter by Developer</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("")}>
+                All Developers
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Palm Hills Developments")}>
+                Palm Hills Developments
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Emaar Misr")}>
+                Emaar Misr
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("developer")?.setFilterValue("Mountain View")}>
+                Mountain View
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Category Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Category <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => table.getColumn("category")?.setFilterValue("")}>
+                All Categories
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("category")?.setFilterValue("Residential")}>
+                Residential
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("category")?.setFilterValue("Commercial")}>
+                Commercial
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => table.getColumn("category")?.setFilterValue("Mixed Use")}>
+                Mixed Use
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Status Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
                 Status <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("")}>
+                All Statuses
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("Active")}>
-                Active Projects
+                Active
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("Completed")}>
-                Completed Projects
+                Completed
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("On Hold")}>
-                On Hold Projects
+                On Hold
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("Planned")}>
-                Planned Projects
+              <DropdownMenuItem onClick={() => table.getColumn("status")?.setFilterValue("Pre-Launch")}>
+                Pre-Launch
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => table.resetColumnFilters()}>Clear Filters</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
-            <Link href="/projects/phases">
-              <Plus className="mr-2 h-4 w-4" />
-              Manage Phases
-            </Link>
+
+          <Button variant="outline" onClick={() => table.resetColumnFilters()}>
+            Clear Filters
           </Button>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button
+              variant="default"
+              onClick={() => {
+                // Export functionality
+                const selectedData = table.getFilteredSelectedRowModel().rows.map((row) => row.original)
+                console.log("Exporting:", selectedData)
+                // Here you would implement actual CSV export
+              }}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export ({table.getFilteredSelectedRowModel().rows.length})
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">

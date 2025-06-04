@@ -315,6 +315,7 @@ export default function BrochureReviewPage({ params }: { params: { id: string } 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingMetadata, setEditingMetadata] = useState<string | null>(null)
   const [editedContent, setEditedContent] = useState<BrochureContent[]>([])
+  const [currentSlideIndices, setCurrentSlideIndices] = useState<Record<string, number>>({})
 
   // Load data based on ID
   useEffect(() => {
@@ -458,6 +459,53 @@ export default function BrochureReviewPage({ params }: { params: { id: string } 
       alert("Review submitted successfully!")
     }, 1500)
   }
+
+  const handleSlideChange = (floorPlanId: string, index: number) => {
+    setCurrentSlideIndices((prev) => ({ ...prev, [floorPlanId]: index }))
+  }
+
+  useEffect(() => {
+    // Initialize all floor plans with slide index 0
+    const initialIndices: Record<string, number> = {}
+    content
+      .filter((item) => item.type === "FloorPlan")
+      .forEach((floorPlan) => {
+        initialIndices[floorPlan.id] = 0
+      })
+    setCurrentSlideIndices(initialIndices)
+
+    // Set up intersection observers for each carousel
+    content
+      .filter((item) => item.type === "FloorPlan")
+      .forEach((floorPlan) => {
+        const carouselId = `floor-plan-carousel`
+        const carousel = document.getElementById(carouselId)
+
+        if (carousel) {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  const slideIndex = Array.from(carousel.children).indexOf(entry.target)
+                  if (slideIndex >= 0) {
+                    handleSlideChange(floorPlan.id, slideIndex)
+                  }
+                }
+              })
+            },
+            { root: carousel, threshold: 0.7 },
+          )
+
+          Array.from(carousel.children).forEach((slide) => {
+            observer.observe(slide)
+          })
+
+          return () => {
+            observer.disconnect()
+          }
+        }
+      })
+  }, [content])
 
   // If brochure is not loaded yet, show loading
   if (!brochure) {
@@ -652,7 +700,16 @@ export default function BrochureReviewPage({ params }: { params: { id: string } 
                 onClick={() => {
                   const carousel = document.getElementById("floor-plan-carousel")
                   if (carousel) {
+                    const currentFloorPlanId = Object.keys(currentSlideIndices)[0] // Get the first floor plan ID
+                    const currentIndex = currentSlideIndices[currentFloorPlanId] || 0
+                    const newIndex = Math.max(0, currentIndex - 1)
+
                     carousel.scrollBy({ left: -carousel.offsetWidth, behavior: "smooth" })
+
+                    // Update the current slide index after scrolling
+                    setTimeout(() => {
+                      handleSlideChange(currentFloorPlanId, newIndex)
+                    }, 500)
                   }
                 }}
               >
@@ -661,26 +718,30 @@ export default function BrochureReviewPage({ params }: { params: { id: string } 
               <div className="flex gap-1">
                 {content
                   .filter((item) => item.type === "FloorPlan")
-                  .map((_, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      className="w-8 h-8 p-0"
-                      onClick={() => {
-                        const carousel = document.getElementById("floor-plan-carousel")
-                        const items = carousel?.querySelectorAll(".carousel-item")
-                        if (carousel && items && items[index]) {
-                          carousel.scrollTo({
-                            left: items[index].offsetLeft,
-                            behavior: "smooth",
-                          })
-                        }
-                      }}
-                    >
-                      {index + 1}
-                    </Button>
-                  ))}
+                  .map((floorPlan, index) => {
+                    const isActive = currentSlideIndices[floorPlan.id] === index
+                    return (
+                      <Button
+                        key={index}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        className={`w-8 h-8 p-0 ${isActive ? "bg-primary text-primary-foreground" : ""}`}
+                        onClick={() => {
+                          const carousel = document.getElementById("floor-plan-carousel")
+                          const items = carousel?.querySelectorAll(".carousel-item")
+                          if (carousel && items && items[index]) {
+                            carousel.scrollTo({
+                              left: items[index].offsetLeft,
+                              behavior: "smooth",
+                            })
+                            handleSlideChange(floorPlan.id, index)
+                          }
+                        }}
+                      >
+                        {index + 1}
+                      </Button>
+                    )
+                  })}
               </div>
               <Button
                 variant="outline"
@@ -688,7 +749,17 @@ export default function BrochureReviewPage({ params }: { params: { id: string } 
                 onClick={() => {
                   const carousel = document.getElementById("floor-plan-carousel")
                   if (carousel) {
+                    const currentFloorPlanId = Object.keys(currentSlideIndices)[0] // Get the first floor plan ID
+                    const currentIndex = currentSlideIndices[currentFloorPlanId] || 0
+                    const maxIndex = content.filter((item) => item.type === "FloorPlan").length - 1
+                    const newIndex = Math.min(maxIndex, currentIndex + 1)
+
                     carousel.scrollBy({ left: carousel.offsetWidth, behavior: "smooth" })
+
+                    // Update the current slide index after scrolling
+                    setTimeout(() => {
+                      handleSlideChange(currentFloorPlanId, newIndex)
+                    }, 500)
                   }
                 }}
               >
